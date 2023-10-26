@@ -1,0 +1,5 @@
+-I/home/winston/Works/mac_work/dev/gateway/easeview/plugin/core-plugin-manager/tools/armv5l/lib/libc/usr/include
+-I/home/winston/Works/mac_work/dev/gateway/easeview/plugin/core-plugin-manager/tools/armv5l/lib/libc/usr/local/include
+-I/home/winston/Works/mac_work/dev/gateway/easeview/plugin/core-plugin-manager/include/core-plugin-manager
+-I/home/winston/Works/mac_work/dev/gateway/easeview/plugin/core-plugin-manager/core-plugin-manager
+-I/home/winston/Works/mac_work/dev/gateway/easeview/plugin/core-plugin-manager/plugins
