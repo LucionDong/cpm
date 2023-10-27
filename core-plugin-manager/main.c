@@ -76,21 +76,18 @@ int main(int argc, char *argv[])
     pid_t          pid    = 0;
     neu_cli_args_t args   = { 0 };
 
-	printf("to init args\n");
     global_timestamp = neu_time_ms();
     neu_cli_args_init(&args, argc, argv);
-	printf("end init args\n");
 
     disable_jwt = args.disable_auth;
     snprintf(host_port, sizeof(host_port), "http://%s:%d", args.ip, args.port);
 
 	if (args.daemonized) {
         // become a daemon, this should be before calling `init`
-		printf("to daemonize\n");
         daemonize();
     }
 
-	printf("to init zlog: %s\n", args.log_init_file);
+	/* printf("to init zlog: %s\n", args.log_init_file); */
     zlog_init(args.log_init_file);
     neuron = zlog_get_category("neuron");
 

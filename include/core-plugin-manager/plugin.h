@@ -25,7 +25,8 @@ extern "C" {
 #endif
 
 #include "utils/utextend.h"
-#include "utils/zlog.h"
+/* #include "utils/zlog.h" */
+#include <zlog.h>
 
 #include "event/event.h"
 

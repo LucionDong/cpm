@@ -54,6 +54,7 @@ set(MANG_SOURCE
 	${MY_PROJECT_NAME}/core/manager_internal.c
 	${MY_PROJECT_NAME}/core/plugin_manager.c
 	${MY_PROJECT_NAME}/core/node_manager.c
+	${MY_PROJECT_NAME}/core/storage.c
 	${MY_PROJECT_NAME}/event/event_linux.c
 	${MY_PROJECT_NAME}/adapter/adapter.c
 	${MY_PROJECT_NAME}/adapter/driver/cache.c
@@ -80,6 +81,8 @@ set(MANG_SOURCE
 	${MY_PROJECT_NAME}/utils/http.c
 	${MY_PROJECT_NAME}/utils/neu_jwt.c
 	${MY_PROJECT_NAME}/utils/asprintf.c
+	${MY_PROJECT_NAME}/persist/persist.c
+	${MY_PROJECT_NAME}/persist/json/persist_json_plugin.c
 	)
 
 set(PLUGIN_RESTFUL_SOURCE
@@ -122,6 +125,7 @@ find_library(NNG_LIB NAMES nng REQUIRED)
 find_library(JWT_LIB NAMES jwt REQUIRED)
 find_library(CRYPTO_LIB NAMES crypto REQUIRED)
 find_library(SSL_LIB NAMES ssl REQUIRED)
+find_library(SQLITE3_LIB NAMES sqlite3 REQUIRED)
 
 target_link_libraries(${MY_PROJECT_NAME} PRIVATE 
 	${DL_LIB}
@@ -133,6 +137,7 @@ target_link_libraries(${MY_PROJECT_NAME} PRIVATE
 	${JWT_LIB}
 	${CRYPTO_LIB}
 	${SSL_LIB}
+	${SQLITE3_LIB}
 	)
 
 # add_executable(nngtest)
@@ -147,3 +152,27 @@ target_link_libraries(${MY_PROJECT_NAME} PRIVATE
 # 	${PTHREAD_LIB}
 # 	${NNG_LIB}
 # 	)
+
+add_library(cpm-base SHARED)
+target_sources(cpm-base PRIVATE 
+	${MANG_SOURCE}
+	${PLUGIN_RESTFUL_SOURCE}
+	)
+target_include_directories(cpm-base PRIVATE 
+	${CMAKE_CURRENT_SOURCE_DIR}/include/${MY_PROJECT_NAME}
+	${CMAKE_CURRENT_SOURCE_DIR}/${MY_PROJECT_NAME}
+	${CMAKE_CURRENT_SOURCE_DIR}/plugins
+	)
+
+target_link_libraries(cpm-base PRIVATE 
+	${DL_LIB}
+	${MATH_LIB}
+	${PTHREAD_LIB}
+	${ZLOG_LIB}
+	${JANSSON_LIB}
+	${NNG_LIB}
+	${JWT_LIB}
+	${CRYPTO_LIB}
+	${SSL_LIB}
+	${SQLITE3_LIB}
+	)

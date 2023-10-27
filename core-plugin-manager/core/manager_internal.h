@@ -46,16 +46,16 @@ typedef struct neu_manager {
     int64_t            timestamp_lev_manager;
 } neu_manager_t;
 
-/* int       neu_manager_add_plugin(neu_manager_t *manager, const char *library); */
+int       neu_manager_add_plugin(neu_manager_t *manager, const char *library);
 /* int       neu_manager_del_plugin(neu_manager_t *manager, const char *plugin); */
-/* UT_array *neu_manager_get_plugins(neu_manager_t *manager); */
+UT_array *neu_manager_get_plugins(neu_manager_t *manager);
 
 /* int       neu_manager_add_node(neu_manager_t *manager, const char *node_name, */
 /*                                const char *             plugin_name, */
 /*                                neu_node_running_state_e state, bool load); */
 /* int       neu_manager_del_node(neu_manager_t *manager, const char *node_name); */
-/* UT_array *neu_manager_get_nodes(neu_manager_t *manager, int type, */
-/*                                 const char *plugin, const char *node); */
+UT_array *neu_manager_get_nodes(neu_manager_t *manager, int type,
+                                const char *plugin, const char *node);
 /* int       neu_manager_update_node_name(neu_manager_t *manager, const char *node, */
 /*                                        const char *new_name); */
 /* int neu_manager_update_group_name(neu_manager_t *manager, const char *driver, */

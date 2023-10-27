@@ -28,10 +28,10 @@
 
 #include "manager_internal.h"
 
-/* int neu_manager_add_plugin(neu_manager_t *manager, const char *library) */
-/* { */
-/*     return neu_plugin_manager_add(manager->plugin_manager, library); */
-/* } */
+int neu_manager_add_plugin(neu_manager_t *manager, const char *library)
+{
+    return neu_plugin_manager_add(manager->plugin_manager, library);
+}
 
 /* int neu_manager_del_plugin(neu_manager_t *manager, const char *plugin) */
 /* { */
