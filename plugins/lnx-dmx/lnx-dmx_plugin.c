@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <stdlib.h>
 
 #include "lnx-dmx_plugin.h"
@@ -49,6 +50,8 @@ static int mqtt_plugin_start(neu_plugin_t *plugin)
 {
     int         rv          = 0;
     const char *plugin_name = neu_plugin_module.module_name;
+    plog_notice(plugin, "start plugin `%s` success",
+                neu_plugin_module.module_name);
 
     return rv;
 }
@@ -57,7 +60,8 @@ static int mqtt_plugin_request(neu_plugin_t *plugin, neu_reqresp_head_t *head,
                                void *data)
 {
     neu_err_code_e error = NEU_ERR_SUCCESS;
-
+    plog_notice(plugin, "plugin `%s` request",
+                neu_plugin_module.module_name);
 	return error;
 }
 
@@ -74,6 +78,8 @@ static int mqtt_plugin_config(neu_plugin_t *plugin, const char *setting)
     const char *  plugin_name = neu_plugin_module.module_name;
     bool          started     = false;
 
+    plog_notice(plugin, "plugin `%s` config",
+                neu_plugin_module.module_name);
 	return rv;
 }
 

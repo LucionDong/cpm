@@ -24,9 +24,9 @@
 
 #include "manager_internal.h"
 
-void manager_strorage_plugin(neu_manager_t *manager);
+/* void manager_strorage_plugin(neu_manager_t *manager); */
 /* void manager_storage_del_node(neu_manager_t *manager, const char *node); */
-/* void manager_storage_add_node(neu_manager_t *manager, const char *node); */
+void manager_storage_add_node(neu_manager_t *manager, const char *node);
 /* void manager_storage_update_node(neu_manager_t *manager, const char *node, */
 /*                                  const char *new_name); */
 /* void manager_storage_subscribe(neu_manager_t *manager, const char *app, */
@@ -71,7 +71,7 @@ void manager_strorage_plugin(neu_manager_t *manager);
 /*                                        const char *const *tags, size_t n); */
 
 int manager_load_plugin(neu_manager_t *manager);
-/* int manager_load_node(neu_manager_t *manager); */
+int manager_load_node(neu_manager_t *manager);
 /* int manager_load_subscribe(neu_manager_t *manager); */
 /* int manager_load_template(neu_manager_t *manager); */
 

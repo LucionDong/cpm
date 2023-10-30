@@ -93,7 +93,7 @@ static inline void neu_persist_node_info_fini(neu_persist_node_info_t *info)
  * Create persister.
  * @return 0 on success, -1 otherwise.
  */
-/* int neu_persister_create(const char *schema_dir); */
+int neu_persister_create(const char *schema_dir);
 /**
  * Destroy perister.
  */
@@ -108,14 +108,14 @@ static inline void neu_persist_node_info_fini(neu_persist_node_info_t *info)
  * @param node_info                 neu_persist_node_info_t.
  * @return 0 on success, non-zero on failure
  */
-/* int neu_persister_store_node(neu_persist_node_info_t *info); */
+int neu_persister_store_node(neu_persist_node_info_t *info);
 /**
  * Load node infos.
  * @param[out] node_infos           used to return pointer to heap allocated
  *                                  vector of neu_persist_node_info_t.
  * @return 0 on success, none-zero on failure
  */
-/* int neu_persister_load_nodes(UT_array **node_infos); */
+int neu_persister_load_nodes(UT_array **node_infos);
 /**
  * Delete node.
  * @param node_name                 name of the node to delete.
@@ -137,7 +137,7 @@ static inline void neu_persist_node_info_fini(neu_persist_node_info_t *info)
  * @param state                     state of the adapter.
  * @return 0 on success, none-zero on failure
  */
-/* int neu_persister_update_node_state(const char *node_name, int state); */
+int neu_persister_update_node_state(const char *node_name, int state);
 
 /**
  * Persist plugins.
@@ -295,16 +295,16 @@ int neu_persister_load_plugins(UT_array **plugin_infos);
  * @param setting                   node setting string.
  * @return 0 on success, non-zero otherwise
  */
-/* int neu_persister_store_node_setting(const char *node_name, */
-                                     /* const char *setting); */
+int neu_persister_store_node_setting(const char *node_name,
+                                     const char *setting);
 /**
  * Load node setting.
  * @param node_name                 name of the node.
  * @param[out] setting              used to return node setting string.
  * @return 0 on success, non-zero otherwise
  */
-/* int neu_persister_load_node_setting(const char *       node_name, */
-                                    /* const char **const setting); */
+int neu_persister_load_node_setting(const char *       node_name,
+                                    const char **const setting);
 /**
  * Delete node setting.
  * @param node_name                 name of the node.

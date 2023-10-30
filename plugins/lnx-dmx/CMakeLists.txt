@@ -39,6 +39,8 @@ target_include_directories(${MY_PROJECT_NAME} PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}/../../include/core-plugin-manager
 	)
 
+message(STATUS include: ${CMAKE_CURRENT_SOURCE_DIR}/../../include/core-plugin-manager)
+
 find_library(DL_LIB NAMES dl REQUIRED)
 find_library(MATH_LIB NAMES m REQUIRED)
 find_library(PTHREAD_LIB NAMES pthread REQUIRED)

@@ -39,7 +39,7 @@
 #include "errcodes.h"
 /* #include "persist/persist.h" */
 #include "plugin.h"
-/* #include "storage.h" */
+#include "storage.h"
 
 static int adapter_loop(enum neu_event_io_type type, int fd, void *usr_data);
 static int adapter_command(neu_adapter_t *adapter, neu_reqresp_head_t header,
@@ -186,15 +186,15 @@ neu_adapter_t *neu_adapter_create(neu_adapter_info_t *info, bool load)
 
     init_rv = adapter->module->intf_funs->init(adapter->plugin, load);
 
-    /* if (adapter_load_setting(adapter->name, &adapter->setting) == 0) { */
-    /*     if (adapter->module->intf_funs->setting(adapter->plugin, */
-    /*                                             adapter->setting) == 0) { */
-    /*         adapter->state = NEU_NODE_RUNNING_STATE_READY; */
-    /*     } else { */
-    /*         free(adapter->setting); */
-    /*         adapter->setting = NULL; */
-    /*     } */
-    /* } */
+    if (adapter_load_setting(adapter->name, &adapter->setting) == 0) {
+        if (adapter->module->intf_funs->setting(adapter->plugin,
+                                                adapter->setting) == 0) {
+            adapter->state = NEU_NODE_RUNNING_STATE_READY;
+        } else {
+            free(adapter->setting);
+            adapter->setting = NULL;
+        }
+    }
 
     /* if (info->module->type == NEU_NA_TYPE_DRIVER) { */
     /*     adapter_load_group_and_tag((neu_adapter_driver_t *) adapter); */
@@ -212,7 +212,7 @@ neu_adapter_t *neu_adapter_create(neu_adapter_info_t *info, bool load)
 
     nlog_notice("Success to create adapter: %s", adapter->name);
 
-    /* adapter_storage_state(adapter->name, adapter->state); */
+    adapter_storage_state(adapter->name, adapter->state);
 
     if (init_rv != 0) {
         nlog_warn("Failed to init adapter: %s", adapter->name);
@@ -596,9 +596,9 @@ static int adapter_loop(enum neu_event_io_type type, int fd, void *usr_data)
 
         error.error = neu_adapter_set_setting(adapter, cmd->setting);
         if (error.error == NEU_ERR_SUCCESS) {
-            /* adapter_storage_setting(adapter->name, cmd->setting); */
+            adapter_storage_setting(adapter->name, cmd->setting);
             // ownership of `cmd->setting` transfer
-            notify_monitor(adapter, NEU_REQ_NODE_SETTING_EVENT, cmd);
+            /* notify_monitor(adapter, NEU_REQ_NODE_SETTING_EVENT, cmd); */
         } else {
             free(cmd->setting);
         }
@@ -1106,7 +1106,7 @@ int neu_adapter_start(neu_adapter_t *adapter)
     error = intf_funs->start(adapter->plugin);
     if (error == NEU_ERR_SUCCESS) {
         adapter->state = NEU_NODE_RUNNING_STATE_RUNNING;
-        /* adapter_storage_state(adapter->name, adapter->state); */
+        adapter_storage_state(adapter->name, adapter->state);
     }
 
     return error;

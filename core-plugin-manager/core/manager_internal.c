@@ -43,49 +43,49 @@ UT_array *neu_manager_get_plugins(neu_manager_t *manager)
     return neu_plugin_manager_get(manager->plugin_manager);
 }
 
-/* int neu_manager_add_node(neu_manager_t *manager, const char *node_name, */
-/*                          const char *             plugin_name, */
-/*                          neu_node_running_state_e state, bool load) */
-/* { */
-/*     neu_adapter_t *       adapter      = NULL; */
-/*     neu_plugin_instance_t instance     = { 0 }; */
-/*     neu_adapter_info_t    adapter_info = { */
-/*         .name = node_name, */
-/*     }; */
-/*     neu_resp_plugin_info_t info = { 0 }; */
-/*     int                    ret = */
-/*         neu_plugin_manager_find(manager->plugin_manager, plugin_name, &info); */
+int neu_manager_add_node(neu_manager_t *manager, const char *node_name,
+                         const char *             plugin_name,
+                         neu_node_running_state_e state, bool load)
+{
+    neu_adapter_t *       adapter      = NULL;
+    neu_plugin_instance_t instance     = { 0 };
+    neu_adapter_info_t    adapter_info = {
+        .name = node_name,
+    };
+    neu_resp_plugin_info_t info = { 0 };
+    int                    ret =
+        neu_plugin_manager_find(manager->plugin_manager, plugin_name, &info);
 
-/*     if (ret != 0) { */
-/*         return NEU_ERR_LIBRARY_NOT_FOUND; */
-/*     } */
+    if (ret != 0) {
+        return NEU_ERR_LIBRARY_NOT_FOUND;
+    }
 
-/*     if (info.single) { */
-/*         return NEU_ERR_LIBRARY_NOT_ALLOW_CREATE_INSTANCE; */
-/*     } */
+    if (info.single) {
+        return NEU_ERR_LIBRARY_NOT_ALLOW_CREATE_INSTANCE;
+    }
 
-/*     adapter = neu_node_manager_find(manager->node_manager, node_name); */
-/*     if (adapter != NULL) { */
-/*         return NEU_ERR_NODE_EXIST; */
-/*     } */
+    adapter = neu_node_manager_find(manager->node_manager, node_name);
+    if (adapter != NULL) {
+        return NEU_ERR_NODE_EXIST;
+    }
 
-/*     ret = neu_plugin_manager_create_instance(manager->plugin_manager, info.name, */
-/*                                              &instance); */
-/*     if (ret != 0) { */
-/*         return NEU_ERR_LIBRARY_FAILED_TO_OPEN; */
-/*     } */
-/*     adapter_info.handle = instance.handle; */
-/*     adapter_info.module = instance.module; */
+    ret = neu_plugin_manager_create_instance(manager->plugin_manager, info.name,
+                                             &instance);
+    if (ret != 0) {
+        return NEU_ERR_LIBRARY_FAILED_TO_OPEN;
+    }
+    adapter_info.handle = instance.handle;
+    adapter_info.module = instance.module;
 
-/*     adapter = neu_adapter_create(&adapter_info, load); */
-/*     if (adapter == NULL) { */
-/*         return neu_adapter_error(); */
-/*     } */
-/*     neu_node_manager_add(manager->node_manager, adapter); */
-/*     neu_adapter_init(adapter, state); */
+    adapter = neu_adapter_create(&adapter_info, load);
+    if (adapter == NULL) {
+        return neu_adapter_error();
+    }
+    neu_node_manager_add(manager->node_manager, adapter);
+    neu_adapter_init(adapter, state);
 
-/*     return NEU_ERR_SUCCESS; */
-/* } */
+    return NEU_ERR_SUCCESS;
+}
 
 /* int neu_manager_del_node(neu_manager_t *manager, const char *node_name) */
 /* { */
@@ -801,18 +801,18 @@ UT_array *neu_manager_get_nodes(neu_manager_t *manager, int type,
 /*     return 0; */
 /* } */
 
-/* int neu_manager_get_node_info(neu_manager_t *manager, const char *name, */
-/*                               neu_persist_node_info_t *info) */
-/* { */
-/*     neu_adapter_t *adapter = neu_node_manager_find(manager->node_manager, name); */
+int neu_manager_get_node_info(neu_manager_t *manager, const char *name,
+                              neu_persist_node_info_t *info)
+{
+    neu_adapter_t *adapter = neu_node_manager_find(manager->node_manager, name);
 
-/*     if (adapter != NULL) { */
-/*         info->name        = strdup(name); */
-/*         info->type        = adapter->module->type; */
-/*         info->plugin_name = strdup(adapter->module->module_name); */
-/*         info->state       = adapter->state; */
-/*         return 0; */
-/*     } */
+    if (adapter != NULL) {
+        info->name        = strdup(name);
+        info->type        = adapter->module->type;
+        info->plugin_name = strdup(adapter->module->module_name);
+        info->state       = adapter->state;
+        return 0;
+    }
 
-/*     return -1; */
-/* } */
+    return -1;
+}

@@ -57,6 +57,7 @@ set(MANG_SOURCE
 	${MY_PROJECT_NAME}/core/storage.c
 	${MY_PROJECT_NAME}/event/event_linux.c
 	${MY_PROJECT_NAME}/adapter/adapter.c
+	${MY_PROJECT_NAME}/adapter/storage.c
 	${MY_PROJECT_NAME}/adapter/driver/cache.c
 	${MY_PROJECT_NAME}/adapter/driver/driver.c
 	${MY_PROJECT_NAME}/base/neu_plugin_common.c

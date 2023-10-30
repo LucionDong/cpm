@@ -129,7 +129,7 @@ neu_manager_t *neu_manager_create()
     /*     nlog_warn("load template error"); */
     /* } */
 
-    /* manager_load_node(manager); */
+    manager_load_node(manager);
     while (neu_node_manager_exist_uninit(manager->node_manager)) {
         usleep(1000 * 100);
     }
@@ -584,22 +584,22 @@ static int manager_loop(enum neu_event_io_type type, int fd, void *usr_data)
     /*     reply(manager, header, &e); */
     /*     break; */
     /* } */
-    /* case NEU_REQ_ADD_NODE: { */
-    /*     neu_req_add_node_t *cmd = (neu_req_add_node_t *) &header[1]; */
-    /*     int                 error = */
-    /*         neu_manager_add_node(manager, cmd->node, cmd->plugin, false, false); */
-    /*     neu_resp_error_t e = { .error = error }; */
+    case NEU_REQ_ADD_NODE: {
+        neu_req_add_node_t *cmd = (neu_req_add_node_t *) &header[1];
+        int                 error =
+            neu_manager_add_node(manager, cmd->node, cmd->plugin, false, false);
+        neu_resp_error_t e = { .error = error };
 
-    /*     if (error == NEU_ERR_SUCCESS) { */
-    /*         manager_storage_add_node(manager, cmd->node); */
-    /*         notify_monitor(manager, NEU_REQ_ADD_NODE_EVENT, cmd); */
-    /*     } */
+        if (error == NEU_ERR_SUCCESS) {
+            manager_storage_add_node(manager, cmd->node);
+            /* notify_monitor(manager, NEU_REQ_ADD_NODE_EVENT, cmd); */
+        }
 
-    /*     header->type = NEU_RESP_ERROR; */
-    /*     strcpy(header->receiver, header->sender); */
-    /*     reply(manager, header, &e); */
-    /*     break; */
-    /* } */
+        header->type = NEU_RESP_ERROR;
+        strcpy(header->receiver, header->sender);
+        reply(manager, header, &e);
+        break;
+    }
     /* case NEU_REQ_UPDATE_NODE: { */
     /*     neu_req_update_node_t *cmd = (neu_req_update_node_t *) &header[1]; */
     /*     neu_resp_error_t       e   = { 0 }; */
@@ -833,20 +833,20 @@ static int manager_loop(enum neu_event_io_type type, int fd, void *usr_data)
 
     /*     break; */
     /* } */
-    /* case NEU_REQ_GET_NODES_STATE: { */
-    /*     neu_resp_get_nodes_state_t resp = { 0 }; */
-    /*     UT_array *states = neu_node_manager_get_state(manager->node_manager); */
+    case NEU_REQ_GET_NODES_STATE: {
+        neu_resp_get_nodes_state_t resp = { 0 };
+        UT_array *states = neu_node_manager_get_state(manager->node_manager);
 
-    /*     resp.states = utarray_clone(states); */
+        resp.states = utarray_clone(states);
 
-    /*     strcpy(header->receiver, header->sender); */
-    /*     strcpy(header->sender, "manager"); */
-    /*     header->type = NEU_RESP_GET_NODES_STATE; */
-    /*     reply(manager, header, &resp); */
+        strcpy(header->receiver, header->sender);
+        strcpy(header->sender, "manager");
+        header->type = NEU_RESP_GET_NODES_STATE;
+        reply(manager, header, &resp);
 
-    /*     utarray_free(states); */
-    /*     break; */
-    /* } */
+        utarray_free(states);
+        break;
+    }
     /* case NEU_REQ_GET_DRIVER_GROUP: { */
     /*     neu_resp_get_driver_group_t resp = { 0 }; */
 
@@ -860,27 +860,28 @@ static int manager_loop(enum neu_event_io_type type, int fd, void *usr_data)
     /*     break; */
     /* } */
     /* case NEU_REQ_GET_GROUP: */
-    /* case NEU_REQ_GET_NODE_SETTING: */
+    case NEU_REQ_GET_NODE_SETTING:
     /* case NEU_REQ_READ_GROUP: */
     /* case NEU_REQ_WRITE_TAG: */
     /* case NEU_REQ_WRITE_TAGS: */
     /* case NEU_REQ_GET_NODE_STATE: */
     /* case NEU_REQ_GET_TAG: */
     /* case NEU_REQ_GET_NDRIVER_TAGS: */
-    /* case NEU_REQ_NODE_CTL: */
-    /* case NEU_REQ_ADD_GROUP: { */
-    /*     if (neu_node_manager_find(manager->node_manager, header->receiver) == */
-    /*         NULL) { */
-    /*         neu_resp_error_t e = { .error = NEU_ERR_NODE_NOT_EXIST }; */
-    /*         header->type       = NEU_RESP_ERROR; */
-    /*         neu_msg_exchange(header); */
-    /*         reply(manager, header, &e); */
-    /*     } else { */
-    /*         forward_msg(manager, msg, header->receiver); */
-    /*     } */
+    case NEU_REQ_NODE_CTL:
+    /* case NEU_REQ_ADD_GROUP: */ 
+						   {
+        if (neu_node_manager_find(manager->node_manager, header->receiver) ==
+            NULL) {
+            neu_resp_error_t e = { .error = NEU_ERR_NODE_NOT_EXIST };
+            header->type       = NEU_RESP_ERROR;
+            neu_msg_exchange(header);
+            reply(manager, header, &e);
+        } else {
+            forward_msg(manager, msg, header->receiver);
+        }
 
-    /*     break; */
-    /* } */
+        break;
+    }
 
     /* case NEU_RESP_NODE_RENAME: { */
     /*     neu_resp_node_rename_t *resp = (neu_resp_node_rename_t *) &header[1]; */
@@ -939,19 +940,20 @@ static int manager_loop(enum neu_event_io_type type, int fd, void *usr_data)
 
     /* case NEU_REQ_ADD_NODE_EVENT: */
     /* case NEU_REQ_DEL_NODE_EVENT: */
-    /* case NEU_REQ_NODE_CTL_EVENT: */
+    case NEU_REQ_NODE_CTL_EVENT:
     /* case NEU_REQ_ADD_GROUP_EVENT: */
     /* case NEU_REQ_DEL_GROUP_EVENT: */
     /* case NEU_REQ_UPDATE_GROUP_EVENT: */
     /* case NEU_REQ_ADD_TAG_EVENT: */
     /* case NEU_REQ_DEL_TAG_EVENT: */
-    /* case NEU_REQ_UPDATE_TAG_EVENT: { */
-    /*     if (neu_node_manager_find(manager->node_manager, header->receiver)) { */
-    /*         forward_msg(manager, msg, header->receiver); */
-    /*     } */
+    /* case NEU_REQ_UPDATE_TAG_EVENT: */ 
+						   {
+        if (neu_node_manager_find(manager->node_manager, header->receiver)) {
+            forward_msg(manager, msg, header->receiver);
+        }
 
-    /*     break; */
-    /* } */
+        break;
+    }
 
     /* case NEU_REQ_UPDATE_GROUP: { */
     /*     neu_resp_error_t e = { 0 }; */
@@ -1031,22 +1033,23 @@ static int manager_loop(enum neu_event_io_type type, int fd, void *usr_data)
 
     /*     break; */
     /* } */
-    /* case NEU_REQ_NODE_SETTING: */
-    /* case NEU_REQ_NODE_SETTING_EVENT: { */
-    /*     neu_req_node_setting_t *cmd = (neu_req_node_setting_t *) &header[1]; */
+    case NEU_REQ_NODE_SETTING:
+    /* case NEU_REQ_NODE_SETTING_EVENT: */ 
+						   {
+        neu_req_node_setting_t *cmd = (neu_req_node_setting_t *) &header[1];
 
-    /*     if (neu_node_manager_find(manager->node_manager, header->receiver) == */
-    /*         NULL) { */
-    /*         neu_resp_error_t e = { .error = NEU_ERR_NODE_NOT_EXIST }; */
-    /*         header->type       = NEU_RESP_ERROR; */
-    /*         neu_msg_exchange(header); */
-    /*         reply(manager, header, &e); */
-    /*         free(cmd->setting); */
-    /*     } else { */
-    /*         forward_msg(manager, msg, header->receiver); */
-    /*     } */
-    /*     break; */
-    /* } */
+        if (neu_node_manager_find(manager->node_manager, header->receiver) ==
+            NULL) {
+            neu_resp_error_t e = { .error = NEU_ERR_NODE_NOT_EXIST };
+            header->type       = NEU_RESP_ERROR;
+            neu_msg_exchange(header);
+            reply(manager, header, &e);
+            free(cmd->setting);
+        } else {
+            forward_msg(manager, msg, header->receiver);
+        }
+        break;
+    }
 
     /* case NEU_RESP_ADD_TAG: */
     /* case NEU_RESP_ADD_TEMPLATE_TAG: */
@@ -1056,12 +1059,14 @@ static int manager_loop(enum neu_event_io_type type, int fd, void *usr_data)
     /* case NEU_RESP_GET_TEMPLATE_TAG: */
     /* case NEU_RESP_GET_NDRIVER_TAGS: */
     /* case NEU_RESP_GET_GROUP: */
-    /* case NEU_RESP_GET_NODE_SETTING: */
+    case NEU_RESP_GET_NODE_SETTING:
     /* case NEU_RESP_GET_NODE_STATE: */
-    /* case NEU_RESP_ERROR: */
+    case NEU_RESP_ERROR:
     /* case NEU_RESP_READ_GROUP: */
-    /*     forward_msg(manager, msg, header->receiver); */
-    /*     break; */
+						   {
+        forward_msg(manager, msg, header->receiver);
+        break;
+	}
 
     /* case NEU_REQ_ADD_NDRIVER_MAP: { */
     /*     neu_req_ndriver_map_t *cmd   = (neu_req_ndriver_map_t *) &header[1]; */

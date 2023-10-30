@@ -22,6 +22,8 @@
 
 #include "utils/utextend.h"
 
+#include "persist/persist.h"
+
 #include "manager_internal.h"
 
 neu_manager_t *neu_manager_create();

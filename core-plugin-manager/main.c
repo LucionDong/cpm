@@ -49,8 +49,8 @@ static int neuron_run(const neu_cli_args_t *args)
         nlog_warn("neuron process failed enable core dump, ignore");
     }
 
-    /* rv = neu_persister_create(args->config_dir); */
-    /* assert(rv == 0); */
+    rv = neu_persister_create(args->config_dir);
+    assert(rv == 0);
 
     zlog_notice(neuron, "neuron start, daemon: %d, version: %s (%s %s)",
                 args->daemonized, "1.0",
