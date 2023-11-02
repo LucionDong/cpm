@@ -29,7 +29,7 @@ else()
 endif()
 
 set(LNX-DMX_SRC
-	lnx-dmx_plugin.c
+	src/lnx-dmx_plugin.c
 	)
 
 add_library(${MY_PROJECT_NAME} SHARED
@@ -39,7 +39,7 @@ target_include_directories(${MY_PROJECT_NAME} PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}/../../include/core-plugin-manager
 	)
 
-message(STATUS include: ${CMAKE_CURRENT_SOURCE_DIR}/../../include/core-plugin-manager)
+# message(STATUS include: ${CMAKE_CURRENT_SOURCE_DIR}/../../include/core-plugin-manager)
 
 find_library(DL_LIB NAMES dl REQUIRED)
 find_library(MATH_LIB NAMES m REQUIRED)
