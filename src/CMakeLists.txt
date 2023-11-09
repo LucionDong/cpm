@@ -47,43 +47,44 @@ else()
 endif()
 
 set(MANG_SOURCE
-    ${MY_PROJECT_NAME}/main.c
-	${MY_PROJECT_NAME}/argparse.c
-	${MY_PROJECT_NAME}/daemon.c
-	${MY_PROJECT_NAME}/core/manager.c
-	${MY_PROJECT_NAME}/core/manager_internal.c
-	${MY_PROJECT_NAME}/core/plugin_manager.c
-	${MY_PROJECT_NAME}/core/node_manager.c
-	${MY_PROJECT_NAME}/core/storage.c
-	${MY_PROJECT_NAME}/event/event_linux.c
-	${MY_PROJECT_NAME}/adapter/adapter.c
-	${MY_PROJECT_NAME}/adapter/storage.c
-	${MY_PROJECT_NAME}/adapter/driver/cache.c
-	${MY_PROJECT_NAME}/adapter/driver/driver.c
-	${MY_PROJECT_NAME}/base/neu_plugin_common.c
-	${MY_PROJECT_NAME}/base/tag.c
-	${MY_PROJECT_NAME}/base/group.c
-	${MY_PROJECT_NAME}/parser/neu_json_error.c
-	${MY_PROJECT_NAME}/parser/neu_json_fn.c
-	${MY_PROJECT_NAME}/parser/neu_json_global_config.c
-	${MY_PROJECT_NAME}/parser/neu_json_group_config.c
-	${MY_PROJECT_NAME}/parser/neu_json_tag.c
-	${MY_PROJECT_NAME}/parser/neu_json_node.c
-	${MY_PROJECT_NAME}/parser/neu_json_plugin.c
-	${MY_PROJECT_NAME}/parser/neu_json_rw.c
-	${MY_PROJECT_NAME}/parser/neu_json_login.c
-	${MY_PROJECT_NAME}/parser/neu_json_log.c
-	${MY_PROJECT_NAME}/parser/neu_json_file.c
-	${MY_PROJECT_NAME}/parser/neu_json_ndriver.c
-	${MY_PROJECT_NAME}/utils/json.c
-	${MY_PROJECT_NAME}/utils/log.c
-	${MY_PROJECT_NAME}/utils/http_handler.c
-	${MY_PROJECT_NAME}/utils/http_proxy.c
-	${MY_PROJECT_NAME}/utils/http.c
-	${MY_PROJECT_NAME}/utils/neu_jwt.c
-	${MY_PROJECT_NAME}/utils/asprintf.c
-	${MY_PROJECT_NAME}/persist/persist.c
-	${MY_PROJECT_NAME}/persist/json/persist_json_plugin.c
+    src/main.c
+	src/argparse.c
+	src/daemon.c
+	src/core/manager.c
+	src/core/manager_internal.c
+	src/core/plugin_manager.c
+	src/core/node_manager.c
+	src/core/storage.c
+	src/event/event_linux.c
+	src/adapter/adapter.c
+	src/adapter/storage.c
+	src/adapter/driver/cache.c
+	src/adapter/driver/driver.c
+	src/adapter/driver/device.c
+	src/base/neu_plugin_common.c
+	src/base/tag.c
+	src/base/group.c
+	src/parser/neu_json_error.c
+	src/parser/neu_json_fn.c
+	src/parser/neu_json_global_config.c
+	src/parser/neu_json_group_config.c
+	src/parser/neu_json_tag.c
+	src/parser/neu_json_node.c
+	src/parser/neu_json_plugin.c
+	src/parser/neu_json_rw.c
+	src/parser/neu_json_login.c
+	src/parser/neu_json_log.c
+	src/parser/neu_json_file.c
+	src/parser/neu_json_ndriver.c
+	src/utils/json.c
+	src/utils/log.c
+	src/utils/http_handler.c
+	src/utils/http_proxy.c
+	src/utils/http.c
+	src/utils/neu_jwt.c
+	src/utils/asprintf.c
+	src/persist/persist.c
+	src/persist/json/persist_json_plugin.c
 	)
 
 set(PLUGIN_RESTFUL_SOURCE
@@ -113,7 +114,7 @@ target_sources(${MY_PROJECT_NAME} PRIVATE
 	)
 target_include_directories(${MY_PROJECT_NAME} PRIVATE 
 	${CMAKE_CURRENT_SOURCE_DIR}/include/${MY_PROJECT_NAME}
-	${CMAKE_CURRENT_SOURCE_DIR}/${MY_PROJECT_NAME}
+	${CMAKE_CURRENT_SOURCE_DIR}/src
 	${CMAKE_CURRENT_SOURCE_DIR}/plugins
 	)
 
@@ -161,7 +162,7 @@ target_sources(cpm-base PRIVATE
 	)
 target_include_directories(cpm-base PRIVATE 
 	${CMAKE_CURRENT_SOURCE_DIR}/include/${MY_PROJECT_NAME}
-	${CMAKE_CURRENT_SOURCE_DIR}/${MY_PROJECT_NAME}
+	${CMAKE_CURRENT_SOURCE_DIR}/src
 	${CMAKE_CURRENT_SOURCE_DIR}/plugins
 	)
 

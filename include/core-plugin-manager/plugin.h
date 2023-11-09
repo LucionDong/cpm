@@ -101,7 +101,6 @@ typedef struct neu_plugin_intf_funs {
             int (*del_tags)(neu_plugin_t *plugin, int n_tag);
         } driver;
     };
-
 } neu_plugin_intf_funs_t;
 
 typedef struct neu_plugin_module {

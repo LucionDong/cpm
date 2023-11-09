@@ -20,10 +20,12 @@
 #include <math.h>
 #include <netinet/in.h>
 #include <pthread.h>
+#include <stdint.h>
 #include <stdlib.h>
 
 #include <nng/nng.h>
 #include <nng/supplemental/util/platform.h>
+#include <string.h>
 
 #include "event/event.h"
 #include "utils/log.h"
@@ -37,6 +39,7 @@
 #include "driver_internal.h"
 #include "errcodes.h"
 #include "tag.h"
+#include "device.h"
 
 typedef struct to_be_write_tag {
     bool           single;
@@ -73,6 +76,9 @@ struct neu_adapter_driver {
 
     size_t        tag_cnt;
     struct group *groups;
+
+	uint16_t device_cnt;
+	esv_device_info_t *devices;
 };
 
 static int  report_callback(void *usr_data);
@@ -89,6 +95,15 @@ static void update(neu_adapter_t *adapter, const char *group, const char *tag,
 static void update_im(neu_adapter_t *adapter, const char *group,
                       const char *tag, neu_dvalue_t value,
                       neu_tag_meta_t *metas, int n_meta);
+
+/* easeview start */
+/* struct esv_driver_devices { */
+/* 	uint16_t n_device; */
+/* 	esv_device_property_t *device_properties; */
+/* } ; */
+/* easeview end */
+
+
 static void update_with_meta(neu_adapter_t *adapter, const char *group,
                              const char *tag, neu_dvalue_t value,
                              neu_tag_meta_t *metas, int n_meta);
@@ -1645,4 +1660,19 @@ static void store_write_tag(group_t *group, to_be_write_tag_t *tag)
     pthread_mutex_lock(&group->wt_mtx);
     utarray_push_back(group->wt_tags, tag);
     pthread_mutex_unlock(&group->wt_mtx);
+}
+
+/* easeview */
+int esv_adapter_driver_set_devices(neu_adapter_driver_t *driver, const uint16_t device_cnt, const esv_device_info_t *device_infos) {
+	if (NULL == device_infos) {
+		driver->device_cnt = 0;
+		return 0;
+	}
+
+	driver->device_cnt = device_cnt;
+	driver->devices = calloc(device_cnt, sizeof(esv_device_info_t));
+	for (int i = 0; i < device_cnt; i++) {
+		esv_device_info_cpy(&driver->devices[i], &device_infos[i]);
+	}
+	return 0;
 }

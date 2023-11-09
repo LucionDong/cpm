@@ -45,4 +45,7 @@ void adapter_storage_setting(const char *node, const char *setting);
 int adapter_load_setting(const char *node, char **setting);
 /* int adapter_load_group_and_tag(neu_adapter_driver_t *driver); */
 
+/* easeview */
+int adapter_load_device(neu_adapter_driver_t *driver);
+
 #endif

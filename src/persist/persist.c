@@ -53,7 +53,9 @@
 static const char *default_plugin_file       = "config/default_plugins.json";
 static const char *plugin_file       = "persistence/plugins.json";
 static const char *db_file           = "persistence/sqlite.db";
+static const char *thing_db_file     = "persistence/thing.db";
 static sqlite3 *   global_db         = NULL;
+static sqlite3 *   thing_db         = NULL;
 pthread_rwlock_t   global_rwlock     = PTHREAD_RWLOCK_INITIALIZER;
 static int         global_node_count = 0;
 static int         global_tag_count  = 0;
@@ -1744,3 +1746,118 @@ int neu_persister_delete_node_setting(const char *node_name)
 /*     sqlite3_finalize(stmt); */
 /*     return NEU_ERR_EINTERNAL; */
 /* } */
+
+/* easeview */
+int esv_persister_create(const char *schema_dir)
+{
+    int rv = sqlite3_open(thing_db_file, &thing_db);
+
+    if (SQLITE_OK != rv) {
+        nlog_fatal("db `%s` fail: %s", thing_db_file, sqlite3_errstr(rv));
+        return -1;
+    }
+    sqlite3_busy_timeout(thing_db, 100 * 1000);
+
+    rv = sqlite3_exec(thing_db, "PRAGMA foreign_keys=ON", NULL, NULL, NULL);
+    if (rv != SQLITE_OK) {
+        nlog_fatal("db foreign key support fail: %s",
+                   sqlite3_errmsg(thing_db));
+        sqlite3_close(thing_db);
+        return -1;
+    }
+
+    rv = sqlite3_exec(thing_db, "PRAGMA journal_mode=WAL", NULL, NULL, NULL);
+    if (rv != SQLITE_OK) {
+        nlog_fatal("db journal_mode WAL fail: %s", sqlite3_errmsg(thing_db));
+        sqlite3_close(thing_db);
+        return -1;
+    }
+
+    /* rv = apply_schemas(thing_db, schema_dir); */
+    /* if (rv != 0) { */
+    /*     nlog_fatal("db apply schemas fail"); */
+    /*     sqlite3_close(thing_db); */
+    /*     return -1; */
+    /* } */
+
+    return 0;
+}
+
+void esv_persister_destroy()
+{
+    sqlite3_close(thing_db);
+}
+
+
+static UT_icd device_info_icd = {
+    sizeof(esv_persist_device_info_t),
+    NULL,
+    NULL,
+    (dtor_f *) esv_presist_device_info_fini,
+};
+
+static int collect_device_info(sqlite3_stmt *stmt, UT_array **device_infos) {
+	int step = sqlite3_step(stmt);
+    while (SQLITE_ROW == step) {
+        esv_persist_device_info_t info = {};
+        char *product_key = strdup((char *) sqlite3_column_text(stmt, 0));
+        char *device_name = strdup((char *) sqlite3_column_text(stmt, 1));
+        char *device_secret = strdup((char *) sqlite3_column_text(stmt, 2));
+        char *driver_name = strdup((char *) sqlite3_column_text(stmt, 3));
+        char *device_nick_name = strdup((char *) sqlite3_column_text(stmt, 4));
+        char *thing_model_function_block_id = strdup((char *) sqlite3_column_text(stmt, 5));
+        char *device_config = strdup((char *) sqlite3_column_text(stmt, 6));
+
+        info.product_key     = product_key;
+        info.device_name     = device_name;
+        info.device_secret     = device_secret;
+        info.driver_name     = driver_name;
+        info.device_nick_name     = device_nick_name;
+		info.thing_model_function_block_id = thing_model_function_block_id;
+        info.device_config     = device_config;
+
+        utarray_push_back(*device_infos, &info);
+
+        step = sqlite3_step(stmt);
+    }
+
+    if (SQLITE_DONE != step) {
+        return -1;
+    }
+
+    return 0;
+}
+
+int esv_persister_load_devices(const char *driver_name, UT_array **device_infos) {
+	sqlite3_stmt *stmt = NULL;
+	const char *query ="SELECT \
+						product_key, device_name, device_secret, driver_name, device_nick_name, thing_model_function_block_id, device_config \
+						FROM device WHERE driver_name=?";
+
+	utarray_new(*device_infos, &device_info_icd);
+	
+	if (SQLITE_OK != sqlite3_prepare_v2(thing_db, query, -1, &stmt, NULL)) {
+        nlog_error("prepare `%s` fail: %s", query, sqlite3_errmsg(thing_db));
+        goto error;
+    }
+
+    if (SQLITE_OK != sqlite3_bind_text(stmt, 1, driver_name, -1, NULL)) {
+        nlog_error("bind `%s` with `%s` fail: %s", query, driver_name,
+                   sqlite3_errmsg(thing_db));
+        goto error;
+    }
+
+	if (0 != collect_device_info(stmt, device_infos)) {
+        nlog_warn("query `%s` fail: %s", query, sqlite3_errmsg(thing_db));
+        // do not set return code, return partial or empty result
+    }
+
+    sqlite3_finalize(stmt);
+    return 0;
+
+error:
+    utarray_free(*device_infos);
+    *device_infos = NULL;
+    return NEU_ERR_EINTERNAL;
+
+}

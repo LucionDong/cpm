@@ -27,6 +27,8 @@
 #include <sys/time.h>
 #include <unistd.h>
 
+#include <jansson.h>
+
 #include <nng/nng.h>
 #include <nng/protocol/pair1/pair.h>
 #include <nng/supplemental/util/platform.h>
@@ -40,6 +42,8 @@
 /* #include "persist/persist.h" */
 #include "plugin.h"
 #include "storage.h"
+
+static const char *const MANAGER_RECEIVER = "manager";
 
 static int adapter_loop(enum neu_event_io_type type, int fd, void *usr_data);
 static int adapter_command(neu_adapter_t *adapter, neu_reqresp_head_t header,
@@ -196,9 +200,10 @@ neu_adapter_t *neu_adapter_create(neu_adapter_info_t *info, bool load)
         }
     }
 
-    /* if (info->module->type == NEU_NA_TYPE_DRIVER) { */
-    /*     adapter_load_group_and_tag((neu_adapter_driver_t *) adapter); */
-    /* } */
+    if (info->module->type == NEU_NA_TYPE_DRIVER) {
+        /* adapter_load_group_and_tag((neu_adapter_driver_t *) adapter); */
+		adapter_load_device((neu_adapter_driver_t *) adapter);
+    }
 
     param.fd       = adapter->recv_fd;
     param.usr_data = (void *) adapter;
@@ -423,7 +428,7 @@ static int adapter_command(neu_adapter_t *adapter, neu_reqresp_head_t header,
     }
     case NEU_REQ_GET_DRIVER_GROUP:
     case NEU_REQ_GET_SUB_DRIVER_TAGS: {
-        strcpy(header.receiver, "manager");
+        strcpy(header.receiver, MANAGER_RECEIVER);
         break;
     }
     case NEU_REQRESP_NODE_DELETED: {
@@ -443,6 +448,14 @@ static int adapter_command(neu_adapter_t *adapter, neu_reqresp_head_t header,
         strcpy(header.receiver, cmd->node);
         break;
     }
+	
+	/* easeview */
+	case ESV_REQ_THING_PROPERTY_POST:
+	case ESV_RESP_THING_PROPERTY_SET:
+	case ESV_RESP_THING_PROPERTY_GET: {
+        strcpy(header.receiver, MANAGER_RECEIVER);
+		break;
+	}
     default:
         break;
     }
@@ -1127,12 +1140,12 @@ int neu_adapter_stop(neu_adapter_t *adapter)
 
     switch (adapter->state) {
     case NEU_NODE_RUNNING_STATE_INIT:
-    case NEU_NODE_RUNNING_STATE_READY:
-        error = NEU_ERR_NODE_NOT_RUNNING;
+        error = NEU_ERR_NODE_NOT_READY;
         break;
     case NEU_NODE_RUNNING_STATE_STOPPED:
         error = NEU_ERR_NODE_IS_STOPED;
         break;
+    case NEU_NODE_RUNNING_STATE_READY:
     case NEU_NODE_RUNNING_STATE_RUNNING:
         break;
     }
@@ -1144,7 +1157,7 @@ int neu_adapter_stop(neu_adapter_t *adapter)
     error = intf_funs->stop(adapter->plugin);
     if (error == NEU_ERR_SUCCESS) {
         adapter->state = NEU_NODE_RUNNING_STATE_STOPPED;
-        /* adapter_storage_state(adapter->name, adapter->state); */
+        adapter_storage_state(adapter->name, adapter->state);
         /* adapter_reset_metrics(adapter); */
     }
 
@@ -1634,6 +1647,28 @@ void *neu_msg_gen(neu_reqresp_head_t *header, void *data)
     case NEU_REQ_UPDATE_LOG_LEVEL:
         data_size = sizeof(neu_req_update_log_level_t);
         break;
+	
+	/* easeview */
+	case ESV_REQ_THING_PROPERTY_POST:
+	case ESV_RESP_THING_PROPERTY_SET:
+	case ESV_RESP_THING_PROPERTY_GET: {
+		esv_reeqresp_thing_model_trans_data_t *trans = (esv_reeqresp_thing_model_trans_data_t *)data;
+		json_t *copied_data_root = NULL;
+		if (NULL != trans->data_root) {
+			copied_data_root = json_deep_copy(trans->data_root);	
+		}
+
+		data_size = sizeof(esv_reeqresp_thing_model_trans_data_t);
+
+		nng_msg_alloc(&msg, sizeof(neu_reqresp_head_t) + data_size);
+		body = nng_msg_body(msg);
+		memcpy(body, header, sizeof(neu_reqresp_head_t));
+		memcpy((uint8_t *) body + sizeof(neu_reqresp_head_t), data, data_size - sizeof(json_t *));
+		neu_reqresp_head_t *header = (neu_reqresp_head_t *)body;
+		esv_reeqresp_thing_model_trans_data_t *trans_data = (esv_reeqresp_thing_model_trans_data_t *) &header[1];
+		trans_data->data_root = copied_data_root;
+		return msg;
+	}
     default:
         assert(false);
         break;

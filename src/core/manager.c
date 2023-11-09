@@ -280,10 +280,10 @@ static int manager_loop(enum neu_event_io_type type, int fd, void *usr_data)
 
         if (init->state == NEU_NODE_RUNNING_STATE_RUNNING ||
             init->state == NEU_NODE_RUNNING_STATE_STOPPED) {
-            neu_adapter_t *adapter =
-                neu_node_manager_find(manager->node_manager, init->node);
-            neu_adapter_start(adapter);
-            if (init->state == NEU_NODE_RUNNING_STATE_STOPPED) {
+            neu_adapter_t *adapter = neu_node_manager_find(manager->node_manager, init->node);
+			if (init->state == NEU_NODE_RUNNING_STATE_RUNNING) {
+				neu_adapter_start(adapter);
+			} else if (init->state == NEU_NODE_RUNNING_STATE_STOPPED) {
                 neu_adapter_stop(adapter);
             }
         }
@@ -875,7 +875,7 @@ static int manager_loop(enum neu_event_io_type type, int fd, void *usr_data)
             neu_resp_error_t e = { .error = NEU_ERR_NODE_NOT_EXIST };
             header->type       = NEU_RESP_ERROR;
             neu_msg_exchange(header);
-            reply(manager, header, &e);
+            /* reply(manager, header, &e); */
         } else {
             forward_msg(manager, msg, header->receiver);
         }
@@ -1160,6 +1160,23 @@ static int manager_loop(enum neu_event_io_type type, int fd, void *usr_data)
     /*     } */
 
     /*     break; */
+
+	/* easeview */
+	case ESV_REQ_THING_PROPERTY_POST:
+	case ESV_RESP_THING_PROPERTY_SET:
+	case ESV_RESP_THING_PROPERTY_GET: {
+		esv_reeqresp_thing_model_trans_data_t *cmd = (esv_reeqresp_thing_model_trans_data_t *) &header[1];
+		nlog_info("driver: %s, product_key: %s, device_name: %s", cmd->driver, cmd->product_key, cmd->device_name);
+		if (NULL != cmd->data_root) {
+			char *data_root_str = json_dumps(cmd->data_root, 0);
+			if (NULL != data_root_str) {
+				nlog_info("thing model data root: %s", data_root_str);
+				free(data_root_str);
+			}
+			json_decref(cmd->data_root);
+		}
+		break;
+	}
     default:
         assert(false);
         break;

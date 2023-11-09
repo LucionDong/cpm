@@ -38,6 +38,42 @@ typedef struct {
     int   state;
 } neu_persist_node_info_t;
 
+/* easeview start */
+
+typedef struct {
+	char *product_key;
+	char *device_name;
+	char *device_secret;
+	char *driver_name;
+	char *device_nick_name;
+	char *thing_model_function_block_id;
+	char *device_config;
+} esv_persist_device_info_t;
+
+static inline void esv_presist_device_info_fini(esv_persist_device_info_t *info) {
+	free(info->product_key);
+	free(info->device_name);
+	free(info->device_secret);
+	free(info->driver_name);
+	free(info->device_nick_name);
+	free(info->thing_model_function_block_id);
+	free(info->device_config);
+}
+
+/**
+ * Create persister.
+ * @return 0 on success, -1 otherwise.
+ */
+int esv_persister_create(const char *schema_dir);
+/**
+ * Destroy perister.
+ */
+void esv_persister_destroy();
+
+int esv_persister_load_devices(const char *driver_name, UT_array **device_infos);
+
+/* easeview end */
+
 /* typedef struct { */
 /*     uint32_t interval; */
 /*     char *   name; */
@@ -97,7 +133,7 @@ int neu_persister_create(const char *schema_dir);
 /**
  * Destroy perister.
  */
-/* void neu_persister_destroy(); */
+void neu_persister_destroy();
 
 /* sqlite3 *neu_persister_get_db(); */
 /* int      neu_persister_node_count(); */

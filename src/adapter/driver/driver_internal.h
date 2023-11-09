@@ -21,6 +21,7 @@
 #define _NEU_ADAPTER_DRIVER_INTERNAL_H_
 
 #include "adapter.h"
+#include "device.h"
 
 neu_adapter_driver_t *neu_adapter_driver_create();
 
@@ -79,4 +80,7 @@ void      neu_adapter_driver_get_value_tag(neu_adapter_driver_t *driver,
                                            const char *group, UT_array **tags);
 UT_array *neu_adapter_driver_get_read_tag(neu_adapter_driver_t *driver,
                                           const char *          group);
+/* easeview */
+int esv_adapter_driver_set_devices(neu_adapter_driver_t *driver, const uint16_t device_cnt, const esv_device_info_t *device_infos);
+
 #endif
