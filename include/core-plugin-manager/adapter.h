@@ -32,6 +32,7 @@ extern "C" {
 #include "metrics.h"
 #include "tag.h"
 #include "type.h"
+#include "device.h"
 
 typedef struct {
     neu_node_running_state_e running;
@@ -144,15 +145,6 @@ typedef enum neu_reqresp_type {
     NEU_REQ_DEL_TAG_EVENT,
     NEU_REQ_UPDATE_TAG_EVENT,
 
-	/* easeview */
-
-	ESV_REQ_THING_PROPERTY_POST,
-	ESV_RESP_THING_PROPERTY_SET,
-	ESV_RESP_THING_PROPERTY_GET,
-
-
-	
-
 } neu_reqresp_type_e;
 
 static const char *neu_reqresp_type_string_t[] = {
@@ -260,12 +252,6 @@ static const char *neu_reqresp_type_string_t[] = {
     [NEU_REQ_ADD_TAG_EVENT]      = "NEU_REQ_ADD_TAG_EVENT",
     [NEU_REQ_DEL_TAG_EVENT]      = "NEU_REQ_DEL_TAG_EVENT",
     [NEU_REQ_UPDATE_TAG_EVENT]   = "NEU_REQ_UPDATE_TAG_EVENT",
-
-	/* easeviewg */
-
-    [ESV_REQ_THING_PROPERTY_POST]   = "ESV_REQ_THING_PROPERTY_POST",
-    [ESV_RESP_THING_PROPERTY_SET]   = "ESV_RESP_THING_PROPERTY_SET",
-    [ESV_RESP_THING_PROPERTY_GET]   = "ESV_RESP_THING_PROPERTY_GET",
 
 };
 
@@ -867,17 +853,6 @@ typedef struct neu_adapter        neu_adapter_t;
 typedef struct neu_adapter_driver neu_adapter_driver_t;
 typedef struct neu_adapter_app    neu_adapter_app_t;
 
-/* easeview start*/
-typedef struct {
-	char                    driver[ESV_DRIVER_NAME_LEN];
-    char                    product_key[ESV_PRODUCT_KEY_LEN];
-    char                    device_name[ESV_DEVICE_NAME_LEN];
-    json_t *                data_root;
-} esv_reeqresp_thing_model_trans_data_t;
-
-
-/* easeview end*/
-
 typedef int (*neu_adapter_update_metric_cb_t)(neu_adapter_t *adapter,
                                               const char *   metric_name,
                                               uint64_t n, const char *group);
@@ -907,6 +882,12 @@ typedef struct adapter_callbacks {
                               const char *tag, neu_dvalue_t value,
                               neu_tag_meta_t *metas, int n_meta);
         } driver;
+        struct {
+            void (*thing_model_msg_arrived)(neu_adapter_t *adapter, void *msg);
+            void (*reserved_func2)(neu_adapter_t *adapter, void *msg);
+            void (*func3)(neu_adapter_t *adapter);
+            void (*func4)(neu_adapter_t *adapter);
+        } esvdriver;
     };
 } adapter_callbacks_t;
 

@@ -64,6 +64,8 @@ typedef enum {
     NEU_NA_TYPE_DRIVER  = 1,
     NEU_NA_TYPE_APP     = 2,
     NEU_NA_TYPE_NDRIVER = 4,
+	/* 为了兼容web南向驱动获取设置为8+1 */
+	NEU_NA_TYPE_ESVDRIVER = 9,
 } neu_adapter_type_e,
     neu_node_type_e;
 

@@ -100,6 +100,16 @@ typedef struct neu_plugin_intf_funs {
                             int            n_tag); // create tags by API
             int (*del_tags)(neu_plugin_t *plugin, int n_tag);
         } driver;
+        struct {
+            int (*add_devices)(neu_plugin_t *plugin, const int device_cnt, const esv_device_info_t *device_infos);
+            int (*remove_devices)(neu_plugin_t *plugin, const int device_cnt, const esv_device_info_t *device_infos);
+            int (*thing_model_msg_arrived)(neu_plugin_t *plugin, void *msg);
+            int (*reserved_fucnc4)(neu_plugin_t *plugin, void *msg); 
+            int (*func5)(neu_plugin_t *plugin); 
+            int (*func6)(neu_plugin_t *plugin);
+            int (*func7)(neu_plugin_t *plugin);
+            int (*func8)(neu_plugin_t *plugin);
+        } esvdriver;
     };
 } neu_plugin_intf_funs_t;
 

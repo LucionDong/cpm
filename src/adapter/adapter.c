@@ -140,6 +140,9 @@ neu_adapter_t *neu_adapter_create(neu_adapter_info_t *info, bool load)
     case NEU_NA_TYPE_APP:
         adapter = calloc(1, sizeof(neu_adapter_t));
         break;
+	case NEU_NA_TYPE_ESVDRIVER:
+        adapter = (neu_adapter_t *) neu_adapter_esvdriver_create();
+		break;
     }
 
     adapter->name                    = strdup(info->name);
@@ -174,6 +177,9 @@ neu_adapter_t *neu_adapter_create(neu_adapter_info_t *info, bool load)
             REGISTER_APP_METRICS(adapter);
         }
         break;
+	case NEU_NA_TYPE_ESVDRIVER:
+		neu_adapter_esvdriver_init((neu_adapter_driver_t *)adapter);
+		break;
     }
 
     adapter->plugin = adapter->module->intf_funs->open();
@@ -200,8 +206,12 @@ neu_adapter_t *neu_adapter_create(neu_adapter_info_t *info, bool load)
         }
     }
 
-    if (info->module->type == NEU_NA_TYPE_DRIVER) {
-        /* adapter_load_group_and_tag((neu_adapter_driver_t *) adapter); */
+    /* if (info->module->type == NEU_NA_TYPE_DRIVER) { */
+    /*     adapter_load_group_and_tag((neu_adapter_driver_t *) adapter); */
+    /* } */
+
+
+    if (info->module->type == NEU_NA_TYPE_ESVDRIVER) {
 		adapter_load_device((neu_adapter_driver_t *) adapter);
     }
 
@@ -224,7 +234,9 @@ neu_adapter_t *neu_adapter_create(neu_adapter_info_t *info, bool load)
         neu_adapter_set_error(init_rv);
 
         if (adapter->module->type == NEU_NA_TYPE_DRIVER) {
-            neu_adapter_driver_destroy((neu_adapter_driver_t *) adapter);
+			neu_adapter_driver_destroy((neu_adapter_driver_t *) adapter);
+		} else if (adapter->module->type == NEU_NA_TYPE_ESVDRIVER) {
+			neu_adapter_esvdriver_destroy((neu_adapter_driver_t *)adapter);
         }
         stop_log_level_timer(adapter);
         neu_event_del_io(adapter->events, adapter->nng_io);
@@ -449,13 +461,6 @@ static int adapter_command(neu_adapter_t *adapter, neu_reqresp_head_t header,
         break;
     }
 	
-	/* easeview */
-	case ESV_REQ_THING_PROPERTY_POST:
-	case ESV_RESP_THING_PROPERTY_SET:
-	case ESV_RESP_THING_PROPERTY_GET: {
-        strcpy(header.receiver, MANAGER_RECEIVER);
-		break;
-	}
     default:
         break;
     }
@@ -1080,6 +1085,8 @@ int neu_adapter_uninit(neu_adapter_t *adapter)
 {
     if (adapter->module->type == NEU_NA_TYPE_DRIVER) {
         neu_adapter_driver_uninit((neu_adapter_driver_t *) adapter);
+    } else if (adapter->module->type == NEU_NA_TYPE_ESVDRIVER) {
+        neu_adapter_esvdriver_uninit((neu_adapter_driver_t *) adapter);
     }
     adapter->module->intf_funs->uninit(adapter->plugin);
 
@@ -1087,6 +1094,8 @@ int neu_adapter_uninit(neu_adapter_t *adapter)
 
     if (adapter->module->type == NEU_NA_TYPE_DRIVER) {
         neu_adapter_driver_destroy((neu_adapter_driver_t *) adapter);
+    } else if (adapter->module->type == NEU_NA_TYPE_ESVDRIVER) {
+        neu_adapter_esvdriver_destroy((neu_adapter_driver_t *) adapter);
     }
 
     stop_log_level_timer(adapter);
@@ -1648,27 +1657,6 @@ void *neu_msg_gen(neu_reqresp_head_t *header, void *data)
         data_size = sizeof(neu_req_update_log_level_t);
         break;
 	
-	/* easeview */
-	case ESV_REQ_THING_PROPERTY_POST:
-	case ESV_RESP_THING_PROPERTY_SET:
-	case ESV_RESP_THING_PROPERTY_GET: {
-		esv_reeqresp_thing_model_trans_data_t *trans = (esv_reeqresp_thing_model_trans_data_t *)data;
-		json_t *copied_data_root = NULL;
-		if (NULL != trans->data_root) {
-			copied_data_root = json_deep_copy(trans->data_root);	
-		}
-
-		data_size = sizeof(esv_reeqresp_thing_model_trans_data_t);
-
-		nng_msg_alloc(&msg, sizeof(neu_reqresp_head_t) + data_size);
-		body = nng_msg_body(msg);
-		memcpy(body, header, sizeof(neu_reqresp_head_t));
-		memcpy((uint8_t *) body + sizeof(neu_reqresp_head_t), data, data_size - sizeof(json_t *));
-		neu_reqresp_head_t *header = (neu_reqresp_head_t *)body;
-		esv_reeqresp_thing_model_trans_data_t *trans_data = (esv_reeqresp_thing_model_trans_data_t *) &header[1];
-		trans_data->data_root = copied_data_root;
-		return msg;
-	}
     default:
         assert(false);
         break;

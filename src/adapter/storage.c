@@ -51,7 +51,7 @@ int adapter_load_device(neu_adapter_driver_t *driver) {
 		index++;
 	}
 
-	esv_adapter_driver_set_devices(driver, device_cnt, device_infos);
+	esv_adapter_driver_load_devices(driver, device_cnt, device_infos);
 	
 end:
 	for (int i = 0; i < device_cnt; i++) {

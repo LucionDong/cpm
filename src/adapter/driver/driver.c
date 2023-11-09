@@ -1663,16 +1663,88 @@ static void store_write_tag(group_t *group, to_be_write_tag_t *tag)
 }
 
 /* easeview */
-int esv_adapter_driver_set_devices(neu_adapter_driver_t *driver, const uint16_t device_cnt, const esv_device_info_t *device_infos) {
-	if (NULL == device_infos) {
-		driver->device_cnt = 0;
-		return 0;
+
+static void thing_model_msg_arrived(neu_adapter_t *adapter, void *msg) {
+	nlog_info("thing_model_msg_arrived from driver %s", adapter->name);		
+}
+
+
+static void esv_func2(neu_adapter_t *adapter, void *msg) {
+	nlog_info("esv_func2");		
+}
+
+
+static void esv_func3(neu_adapter_t *adapter) {
+	nlog_info("esv_func3");		
+}
+
+static void esv_func4(neu_adapter_t *adapter) {
+	nlog_info("esv_func4");		
+}
+
+neu_adapter_driver_t *neu_adapter_esvdriver_create()
+{
+    neu_adapter_driver_t *driver = calloc(1, sizeof(neu_adapter_driver_t));
+
+    /* driver->cache                                   = neu_driver_cache_new(); */
+    driver->driver_events                   = neu_event_new();
+    driver->adapter.cb_funs.esvdriver.thing_model_msg_arrived = thing_model_msg_arrived;
+    driver->adapter.cb_funs.esvdriver.reserved_func2 = esv_func2;
+    driver->adapter.cb_funs.esvdriver.func3 = esv_func3;
+    driver->adapter.cb_funs.esvdriver.func4 = esv_func4;
+
+    return driver;
+}
+
+void neu_adapter_esvdriver_destroy(neu_adapter_driver_t *driver)
+{
+    neu_event_close(driver->driver_events);
+    /* neu_driver_cache_destroy(driver->cache); */
+}
+
+int neu_adapter_esvdriver_start(neu_adapter_driver_t *driver)
+{
+    (void) driver;
+    return 0;
+}
+
+int neu_adapter_esvdriver_stop(neu_adapter_driver_t *driver)
+{
+    (void) driver;
+    return 0;
+}
+
+int neu_adapter_esvdriver_init(neu_adapter_driver_t *driver)
+{
+    (void) driver;
+
+    return 0;
+}
+
+int neu_adapter_esvdriver_uninit(neu_adapter_driver_t *driver)
+{
+    group_t *el = NULL, *tmp = NULL;
+
+    return 0;
+}
+
+int esv_adapter_driver_load_devices(neu_adapter_driver_t *driver, const uint16_t device_cnt, const esv_device_info_t *device_infos) {
+	/* if (NULL == device_infos) { */
+	/* 	driver->device_cnt = 0; */
+	/* 	return 0; */
+	/* } */
+
+	/* driver->device_cnt = device_cnt; */
+	/* driver->devices = calloc(device_cnt, sizeof(esv_device_info_t)); */
+	/* for (int i = 0; i < device_cnt; i++) { */
+	/* 	esv_device_info_cpy(&driver->devices[i], &device_infos[i]); */
+	/* } */
+
+	if (driver->adapter.module->type == NEU_NA_TYPE_ESVDRIVER) {
+		if (driver->adapter.module->intf_funs->esvdriver.add_devices != NULL) {
+			driver->adapter.module->intf_funs->esvdriver.add_devices(driver->adapter.plugin, 0, NULL);
+		}
 	}
 
-	driver->device_cnt = device_cnt;
-	driver->devices = calloc(device_cnt, sizeof(esv_device_info_t));
-	for (int i = 0; i < device_cnt; i++) {
-		esv_device_info_cpy(&driver->devices[i], &device_infos[i]);
-	}
 	return 0;
 }

@@ -7,6 +7,7 @@
 #include "plugin.h"
 #include "errcodes.h"
 
+static int add_devices(neu_plugin_t *plugin, const int device_cnt, const esv_device_info_t *device_infos);
 
 const neu_plugin_module_t neu_plugin_module;
 
@@ -52,40 +53,13 @@ static int dmx_plugin_start(neu_plugin_t *plugin)
     int         rv          = 0;
     const char *plugin_name = neu_plugin_module.module_name;
 
-	/* plugin->common.adapter_callbacks->driver.sync_driver_devices(plugin->common.adapter, NULL); */
+	plugin->common.adapter_callbacks->esvdriver.thing_model_msg_arrived(plugin->common.adapter, NULL);
 
-	neu_reqresp_head_t header = { 0 };
-    header.type               = ESV_REQ_THING_PROPERTY_POST;
-	esv_reeqresp_thing_model_trans_data_t *data = calloc(1, sizeof(esv_reeqresp_thing_model_trans_data_t));
-	
-	
-    plog_notice(plugin, "to copy data");
-	strcpy(data->driver, plugin_name);
-	strcpy(data->product_key, "pk_^*^%$dfa");
-	strcpy(data->device_name, "dn_^*^%$dfa");
-
-	json_t *data_root = json_object();
-	json_t *id_str = json_string("thing_model_id_str");
-	json_object_set_new(data_root, "id", id_str);
-
-	data->data_root = data_root;
-
-    plog_notice(plugin, "to do plugin op");
-	if (0 != neu_plugin_op(plugin, header, data)) {
-		plog_error(plugin, "neu_plugin_op(ESV_REQ_THING_PROPERTY_POST) fail");
-    }
-
-	if (NULL != data_root) {
-		json_decref(data_root);
-	}
     plog_notice(plugin, "start plugin `%s` success",
                 neu_plugin_module.module_name);
 
     return rv;
 error:
-	if (NULL != data_root) {
-		json_decref(data_root);
-	}
 	return -1;
 }
 
@@ -125,6 +99,8 @@ static const neu_plugin_intf_funs_t plugin_intf_funs = {
     .stop    = dmx_plugin_stop,
     .setting = dmx_plugin_config,
     .request = dmx_plugin_request,
+
+	.esvdriver.add_devices = add_devices,
 };
 
 #define DESCRIPTION "LNX-900M LED Driver plugin bases on NanoSDK."
@@ -138,7 +114,12 @@ const neu_plugin_module_t neu_plugin_module = {
     .module_descr_zh = DESCRIPTION_ZH,
     .intf_funs       = &plugin_intf_funs,
     .kind            = NEU_PLUGIN_KIND_SYSTEM,
-    .type            = NEU_NA_TYPE_DRIVER,
+    .type            = NEU_NA_TYPE_ESVDRIVER,
     .display         = true,
     .single          = false,
 };
+
+static int add_devices(neu_plugin_t *plugin, const int device_cnt, const esv_device_info_t *device_infos) {
+	plog_info(plugin, "plugin '%s' add_devices", neu_plugin_module.module_name);	
+	return 0;
+}
