@@ -22,6 +22,7 @@
 
 #include "adapter.h"
 #include "device.h"
+#include "device_internal.h"
 
 neu_adapter_driver_t *neu_adapter_driver_create();
 

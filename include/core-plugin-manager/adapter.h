@@ -145,6 +145,9 @@ typedef enum neu_reqresp_type {
     NEU_REQ_DEL_TAG_EVENT,
     NEU_REQ_UPDATE_TAG_EVENT,
 
+	/* easeview */
+	ESV_THING_MODEL_TRANS_DATA,
+
 } neu_reqresp_type_e;
 
 static const char *neu_reqresp_type_string_t[] = {
@@ -252,6 +255,9 @@ static const char *neu_reqresp_type_string_t[] = {
     [NEU_REQ_ADD_TAG_EVENT]      = "NEU_REQ_ADD_TAG_EVENT",
     [NEU_REQ_DEL_TAG_EVENT]      = "NEU_REQ_DEL_TAG_EVENT",
     [NEU_REQ_UPDATE_TAG_EVENT]   = "NEU_REQ_UPDATE_TAG_EVENT",
+
+	/* easeview */
+    [ESV_THING_MODEL_TRANS_DATA]   = "ESV_THING_MODEL_TRANS_DATA",
 
 };
 
@@ -877,13 +883,15 @@ typedef struct adapter_callbacks {
             void (*update_im)(neu_adapter_t *adapter, const char *group, const char *tag, neu_dvalue_t value, neu_tag_meta_t *metas, int n_meta);
         } driver;
         struct {
-            void (*thing_model_msg_arrived)(neu_adapter_t *adapter, const esv_thing_model_msg_type_e msg_type, const void *msg);
+            /* int (*thing_model_msg_arrived)(neu_adapter_t *adapter, const char *product_key, const char *device_name, const esv_thing_model_msg_type_e msg_type, const void *msg); */
+            int (*thing_model_msg_arrived)(neu_adapter_t *adapter, const esv_thing_model_msg_t msg);
             void (*reserved_func2)(neu_adapter_t *adapter, void *msg);
             void (*func3)(neu_adapter_t *adapter);
             void (*func4)(neu_adapter_t *adapter);
         } esvdriver;
     };
 } adapter_callbacks_t;
+
 
 #ifdef __cplusplus
 }

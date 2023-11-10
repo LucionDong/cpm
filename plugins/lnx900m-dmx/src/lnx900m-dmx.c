@@ -53,14 +53,34 @@ static int dmx_plugin_start(neu_plugin_t *plugin)
     int         rv          = 0;
     const char *plugin_name = neu_plugin_module.module_name;
 
-	plugin->common.adapter_callbacks->esvdriver.thing_model_msg_arrived(plugin->common.adapter, ESV_TMM_JSON_OBJECT, NULL);
+	/* plugin->common.adapter_callbacks->esvdriver.thing_model_msg_arrived(plugin->common.adapter, ESV_TMM_JSON_OBJECT, "test json"); */
+	/* plugin->common.adapter_callbacks->esvdriver.thing_model_msg_arrived(plugin->common.adapter, ESV_TMM_JSON_OBJECT, &rv); */
 
+	json_t *data_root = json_object();
+	json_t *id_str = json_string("thing_model_id_str");
+	json_object_set_new(data_root, "id", id_str);
+
+	esv_thing_model_msg_t thing_modle_msg = {
+		.product_key = "pk_ddfj*&(^^)",
+		.device_name = "dn_ddfj*&(^^)",
+		.msg_type = ESV_TMM_JSON_OBJECT,
+		.msg = data_root
+	};
+
+	/* plugin->common.adapter_callbacks->esvdriver.thing_model_msg_arrived(plugin->common.adapter, "pk_ddfj*&(^^)", "dn_ddfj*&(^^)",  ESV_TMM_JSON_OBJECT, data_root); */
+	plugin->common.adapter_callbacks->esvdriver.thing_model_msg_arrived(plugin->common.adapter, thing_modle_msg);
+	/* if (0 != neu_plugin_op(plugin, header, data)) { */
+	/* 	plog_error(plugin, "neu_plugin_op(ESV_REQ_THING_PROPERTY_POST) fail"); */
+    /* } */
+
+end:
+	if (NULL != data_root) {
+		json_decref(data_root);
+	}
     plog_notice(plugin, "start plugin `%s` success",
                 neu_plugin_module.module_name);
 
     return rv;
-error:
-	return -1;
 }
 
 static int dmx_plugin_request(neu_plugin_t *plugin, neu_reqresp_head_t *head,

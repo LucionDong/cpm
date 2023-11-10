@@ -30,6 +30,8 @@
 #include "adapter_info.h"
 #include "core/manager.h"
 
+#define MANAGER_RECEIVER "manager"
+
 struct neu_adapter {
     char *name;
     char *setting;

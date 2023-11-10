@@ -43,7 +43,6 @@
 #include "plugin.h"
 #include "storage.h"
 
-static const char *const MANAGER_RECEIVER = "manager";
 
 static int adapter_loop(enum neu_event_io_type type, int fd, void *usr_data);
 static int adapter_command(neu_adapter_t *adapter, neu_reqresp_head_t header,

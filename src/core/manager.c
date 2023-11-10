@@ -1160,6 +1160,22 @@ static int manager_loop(enum neu_event_io_type type, int fd, void *usr_data)
     /*     } */
 
     /*     break; */
+	case ESV_THING_MODEL_TRANS_DATA: {
+		 esv_thing_model_trans_data_t *cmd = (esv_thing_model_trans_data_t *) &header[1];
+		 nlog_info("ESV_THING_MODEL_TRANS_DATA driver: %s, product_key: %s, device_name: %s", cmd->driver, cmd->product_key, cmd->device_name);
+		 if (NULL != cmd->data_root) {
+			 char *data_root_str = json_dumps(cmd->data_root, 0);
+			 if (NULL != data_root_str) {
+				 nlog_info("thing model data root: %s", data_root_str);
+				 free(data_root_str);
+			 }
+			 free(cmd->driver);
+			 free(cmd->product_key);
+			 free(cmd->device_name);
+			 json_decref(cmd->data_root);
+		 }
+		 break;
+	 }
 
     default:
         assert(false);
