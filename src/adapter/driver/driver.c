@@ -1665,12 +1665,12 @@ static void store_write_tag(group_t *group, to_be_write_tag_t *tag)
 
 /* easeview */
 
-static int thing_model_msg_arrived(neu_adapter_t *adapter, const esv_thing_model_msg_t thing_model_msg) {
-	nlog_info("thing_model_msg_arrived from driver: %s product_key: %s, device_name: %s, msg_type: %d", adapter->name, thing_model_msg.product_key, thing_model_msg.device_name, thing_model_msg.msg_type);		
-	switch (thing_model_msg.msg_type) {
+static int thing_model_msg_arrived(neu_adapter_t *adapter, const esv_thing_model_msg_t *thing_model_msg) {
+	nlog_info("thing_model_msg_arrived from driver: %s product_key: %s, device_name: %s, msg_type: %d", adapter->name, thing_model_msg->product_key, thing_model_msg->device_name, thing_model_msg->msg_type);		
+	switch (thing_model_msg->msg_type) {
 		case ESV_TMM_JSON_OBJECT: {
 			/* json_t *root = (json_t *)msg; */
-			if (!json_is_object((json_t *)thing_model_msg.msg)) {
+			if (!json_is_object((json_t *)thing_model_msg->msg)) {
 				nlog_warn("received msg not json object");
 				break;
 			} 
@@ -1681,9 +1681,9 @@ static int thing_model_msg_arrived(neu_adapter_t *adapter, const esv_thing_model
 			strcpy(header.receiver,MANAGER_RECEIVER);
 			esv_thing_model_trans_data_t *data = calloc(1, sizeof(esv_thing_model_trans_data_t));
 			data->driver = strdup(adapter->name);
-			data->product_key = strdup(thing_model_msg.product_key);
-			data->device_name = strdup(thing_model_msg.device_name);
-			data->data_root = json_deep_copy((json_t *)thing_model_msg.msg);
+			data->product_key = strdup(thing_model_msg->product_key);
+			data->device_name = strdup(thing_model_msg->device_name);
+			data->data_root = json_deep_copy((json_t *)thing_model_msg->msg);
 
 			/* neu_plugin_op(adapter->plugin, header, data); */ 
 			/* send to manager */

@@ -68,7 +68,7 @@ static int dmx_plugin_start(neu_plugin_t *plugin)
 	};
 
 	/* plugin->common.adapter_callbacks->esvdriver.thing_model_msg_arrived(plugin->common.adapter, "pk_ddfj*&(^^)", "dn_ddfj*&(^^)",  ESV_TMM_JSON_OBJECT, data_root); */
-	plugin->common.adapter_callbacks->esvdriver.thing_model_msg_arrived(plugin->common.adapter, thing_modle_msg);
+	plugin->common.adapter_callbacks->esvdriver.thing_model_msg_arrived(plugin->common.adapter, &thing_modle_msg);
 	/* if (0 != neu_plugin_op(plugin, header, data)) { */
 	/* 	plog_error(plugin, "neu_plugin_op(ESV_REQ_THING_PROPERTY_POST) fail"); */
     /* } */
