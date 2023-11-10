@@ -36,28 +36,10 @@ int adapter_load_device(neu_adapter_driver_t *driver) {
 		nlog_warn("load %s device fail", adapter->name);
 		return rv;
 	}
-	
-	/* nlog_info("load %s %d device success", adapter->name, utarray_len(persist_device_infos)); */
-	/* uint16_t device_cnt = utarray_len(persist_device_infos); */
-	/* esv_device_info_t *device_infos = (esv_device_info_t *)calloc(device_cnt, sizeof(esv_device_info_t)); */
-
-	/* int index = 0; */
-	/* utarray_foreach(persist_device_infos, esv_persist_device_info_t *, p) { */
-	/* 	device_infos[index].product_key = strdup(p->product_key); */
-	/* 	device_infos[index].device_name = strdup(p->device_name); */
-	/* 	device_infos[index].driver_name = strdup(p->driver_name); */
-	/* 	device_infos[index].thing_model_function_block_id = strdup(p->thing_model_function_block_id); */
-	/* 	device_infos[index].device_config = strdup(p->device_config); */
-	/* 	index++; */
-	/* } */
 
 	esv_adapter_driver_load_devices(driver, persist_device_infos);
 	
 end:
-	/* for (int i = 0; i < device_cnt; i++) { */
-	/* 	esv_device_info_free(&device_infos[i]); */
-	/* } */
-	/* free(device_infos); */
 	utarray_free(persist_device_infos);
 	return rv;
 }

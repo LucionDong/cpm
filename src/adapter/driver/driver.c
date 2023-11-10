@@ -1729,17 +1729,6 @@ int neu_adapter_esvdriver_uninit(neu_adapter_driver_t *driver)
 }
 
 int esv_adapter_driver_load_devices(neu_adapter_driver_t *driver, const UT_array *device_infos) {
-	/* if (NULL == device_infos) { */
-	/* 	driver->device_cnt = 0; */
-	/* 	return 0; */
-	/* } */
-
-	/* driver->device_cnt = device_cnt; */
-	/* driver->devices = calloc(device_cnt, sizeof(esv_device_info_t)); */
-	/* for (int i = 0; i < device_cnt; i++) { */
-	/* 	esv_device_info_cpy(&driver->devices[i], &device_infos[i]); */
-	/* } */
-
 
 	uint16_t device_cnt = utarray_len(device_infos);
 	esv_device_info_t *device_infos_unpacked = (esv_device_info_t *)calloc(device_cnt, sizeof(esv_device_info_t));
