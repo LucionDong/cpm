@@ -12,6 +12,10 @@
 /* 	char *device_config; */
 /* } esv_device_info_t; */
 
+typedef enum esv_thing_model_msg_type {
+	ESV_TMM_JSON_OBJECT,
+} esv_thing_model_msg_type_e;
+
 typedef struct {
     char *product_key;
     char *device_name;

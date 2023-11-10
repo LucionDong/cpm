@@ -871,19 +871,13 @@ typedef struct adapter_callbacks {
 
     union {
         struct {
-            void (*update)(neu_adapter_t *adapter, const char *group,
-                           const char *tag, neu_dvalue_t value);
-            void (*update_with_meta)(neu_adapter_t *adapter, const char *group,
-                                     const char *tag, neu_dvalue_t value,
-                                     neu_tag_meta_t *metas, int n_meta);
-            void (*write_response)(neu_adapter_t *adapter, void *req,
-                                   int error);
-            void (*update_im)(neu_adapter_t *adapter, const char *group,
-                              const char *tag, neu_dvalue_t value,
-                              neu_tag_meta_t *metas, int n_meta);
+            void (*update)(neu_adapter_t *adapter, const char *group, const char *tag, neu_dvalue_t value);
+            void (*update_with_meta)(neu_adapter_t *adapter, const char *group, const char *tag, neu_dvalue_t value, neu_tag_meta_t *metas, int n_meta);
+            void (*write_response)(neu_adapter_t *adapter, void *req, int error);
+            void (*update_im)(neu_adapter_t *adapter, const char *group, const char *tag, neu_dvalue_t value, neu_tag_meta_t *metas, int n_meta);
         } driver;
         struct {
-            void (*thing_model_msg_arrived)(neu_adapter_t *adapter, void *msg);
+            void (*thing_model_msg_arrived)(neu_adapter_t *adapter, const esv_thing_model_msg_type_e msg_type, const void *msg);
             void (*reserved_func2)(neu_adapter_t *adapter, void *msg);
             void (*func3)(neu_adapter_t *adapter);
             void (*func4)(neu_adapter_t *adapter);

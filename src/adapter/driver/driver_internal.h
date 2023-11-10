@@ -83,7 +83,7 @@ UT_array *neu_adapter_driver_get_read_tag(neu_adapter_driver_t *driver,
 /* easeview */
 neu_adapter_driver_t *neu_adapter_esvdriver_create();
 void neu_adapter_esvdriver_destroy(neu_adapter_driver_t *driver);
-int esv_adapter_driver_load_devices(neu_adapter_driver_t *driver, const uint16_t device_cnt, const esv_device_info_t *device_infos);
+int esv_adapter_driver_load_devices(neu_adapter_driver_t *driver, const UT_array *device_infos);
 
 int  neu_adapter_esvdriver_start(neu_adapter_driver_t *driver);
 int  neu_adapter_esvdriver_stop(neu_adapter_driver_t *driver);

@@ -1728,7 +1728,7 @@ int neu_adapter_esvdriver_uninit(neu_adapter_driver_t *driver)
     return 0;
 }
 
-int esv_adapter_driver_load_devices(neu_adapter_driver_t *driver, const uint16_t device_cnt, const esv_device_info_t *device_infos) {
+int esv_adapter_driver_load_devices(neu_adapter_driver_t *driver, const UT_array *device_infos) {
 	/* if (NULL == device_infos) { */
 	/* 	driver->device_cnt = 0; */
 	/* 	return 0; */
@@ -1740,11 +1740,30 @@ int esv_adapter_driver_load_devices(neu_adapter_driver_t *driver, const uint16_t
 	/* 	esv_device_info_cpy(&driver->devices[i], &device_infos[i]); */
 	/* } */
 
+
+	uint16_t device_cnt = utarray_len(device_infos);
+	esv_device_info_t *device_infos_unpacked = (esv_device_info_t *)calloc(device_cnt, sizeof(esv_device_info_t));
+
+	int index = 0;
+	utarray_foreach(device_infos, esv_persist_device_info_t *, p) {
+		device_infos_unpacked[index].product_key = strdup(p->product_key);
+		device_infos_unpacked[index].device_name = strdup(p->device_name);
+		device_infos_unpacked[index].driver_name = strdup(p->driver_name);
+		device_infos_unpacked[index].thing_model_function_block_id = strdup(p->thing_model_function_block_id);
+		device_infos_unpacked[index].device_config = strdup(p->device_config);
+		index++;
+	}
+
 	if (driver->adapter.module->type == NEU_NA_TYPE_ESVDRIVER) {
 		if (driver->adapter.module->intf_funs->esvdriver.add_devices != NULL) {
-			driver->adapter.module->intf_funs->esvdriver.add_devices(driver->adapter.plugin, 0, NULL);
+			driver->adapter.module->intf_funs->esvdriver.add_devices(driver->adapter.plugin, device_cnt, device_infos_unpacked);
 		}
 	}
 
+end:
+	for (int i = 0; i < device_cnt; i++) {
+		esv_device_info_free(&device_infos_unpacked[i]);
+	}
+	free(device_infos_unpacked);
 	return 0;
 }

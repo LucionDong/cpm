@@ -85,25 +85,17 @@ typedef struct neu_plugin_intf_funs {
         struct {
             int (*validate_tag)(neu_plugin_t *plugin, neu_datatag_t *tag);
             int (*group_timer)(neu_plugin_t *plugin, neu_plugin_group_t *group);
-            int (*write_tag)(neu_plugin_t *plugin, void *req,
-                             neu_datatag_t *tag, neu_value_u value);
-            int (*write_tags)(
-                neu_plugin_t *plugin, void *req,
-                UT_array *tag_values); // UT_array {neu_datatag_t, neu_value_u}
+            int (*write_tag)(neu_plugin_t *plugin, void *req, neu_datatag_t *tag, neu_value_u value);
+            int (*write_tags)( neu_plugin_t *plugin, void *req, UT_array *tag_values); // UT_array {neu_datatag_t, neu_value_u}
             neu_plugin_tag_validator_t tag_validator;
-
-            int (*load_tags)(
-                neu_plugin_t *plugin, const char *group, neu_datatag_t *tags,
-                int n_tag); // create tags using data from the database
-            int (*add_tags)(neu_plugin_t *plugin, const char *group,
-                            neu_datatag_t *tags,
-                            int            n_tag); // create tags by API
+            int (*load_tags)( neu_plugin_t *plugin, const char *group, neu_datatag_t *tags, int n_tag); // create tags using data from the database
+            int (*add_tags)(neu_plugin_t *plugin, const char *group, neu_datatag_t *tags, int            n_tag); // create tags by API
             int (*del_tags)(neu_plugin_t *plugin, int n_tag);
         } driver;
         struct {
             int (*add_devices)(neu_plugin_t *plugin, const int device_cnt, const esv_device_info_t *device_infos);
             int (*remove_devices)(neu_plugin_t *plugin, const int device_cnt, const esv_device_info_t *device_infos);
-            int (*thing_model_msg_arrived)(neu_plugin_t *plugin, void *msg);
+            int (*thing_model_msg_arrived)(neu_plugin_t *plugin, const esv_thing_model_msg_type_e msg_type, const void *msg);
             int (*reserved_fucnc4)(neu_plugin_t *plugin, void *msg); 
             int (*func5)(neu_plugin_t *plugin); 
             int (*func6)(neu_plugin_t *plugin);

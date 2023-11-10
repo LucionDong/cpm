@@ -53,7 +53,7 @@ static int dmx_plugin_start(neu_plugin_t *plugin)
     int         rv          = 0;
     const char *plugin_name = neu_plugin_module.module_name;
 
-	plugin->common.adapter_callbacks->esvdriver.thing_model_msg_arrived(plugin->common.adapter, NULL);
+	plugin->common.adapter_callbacks->esvdriver.thing_model_msg_arrived(plugin->common.adapter, ESV_TMM_JSON_OBJECT, NULL);
 
     plog_notice(plugin, "start plugin `%s` success",
                 neu_plugin_module.module_name);
@@ -120,6 +120,14 @@ const neu_plugin_module_t neu_plugin_module = {
 };
 
 static int add_devices(neu_plugin_t *plugin, const int device_cnt, const esv_device_info_t *device_infos) {
-	plog_info(plugin, "plugin '%s' add_devices", neu_plugin_module.module_name);	
+	plog_info(plugin, "plugin '%s' add_devices[%d]", neu_plugin_module.module_name, device_cnt);	
+	for (int i = 0; i < device_cnt; i++) {
+		plog_info(plugin, "============device [%d]============", i);
+		plog_info(plugin, "product_key:%s", device_infos[i].product_key);
+		plog_info(plugin, "device_name:%s", device_infos[i].device_name);
+		plog_info(plugin, "driver_name:%s", device_infos[i].driver_name);
+		plog_info(plugin, "thing_model_function_block_id:%s", device_infos[i].thing_model_function_block_id);
+		plog_info(plugin, "device_config:%s", device_infos[i].device_config);
+	}
 	return 0;
 }
