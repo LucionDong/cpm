@@ -1,5 +1,5 @@
-#ifndef ESV_DEVICE_H
-#define ESV_DEVICE_H
+#ifndef _ESV_DEVICE_H_
+#define _ESV_DEVICE_H_
 
 #include <jansson.h>
 
@@ -7,7 +7,7 @@
 
 
 typedef enum esv_thing_model_msg_type {
-	ESV_TMM_JSON_OBJECT = 0,
+	ESV_TMM_JSON_OBJECT_PTR = 0,
 } esv_thing_model_msg_type_e;
 
 typedef struct {
@@ -17,6 +17,15 @@ typedef struct {
 	char *thing_model_function_block_id;
 	char *device_config;
 } esv_device_info_t;
+
+
+typedef struct esv_thing_model_trans_data_ipc {
+	char                    driver[ESV_DRIVER_NAME_LEN];
+	char                    product_key[ESV_PRODUCT_KEY_LEN];
+	char                    device_name[ESV_DEVICE_NAME_LEN];
+	char					json_str[];
+} esv_thing_model_trans_data_ipc_t;
+
 
 typedef struct {
 	char                       *product_key;

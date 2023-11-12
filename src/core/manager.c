@@ -45,7 +45,8 @@
 // definition for adapter names
 #define DEFAULT_DASHBOARD_ADAPTER_NAME DEFAULT_DASHBOARD_PLUGIN_NAME
 
-static const char *const url = "inproc://neu_manager";
+/* static const char *const url = "inproc://neu_manager"; */
+static const char *const url = "ipc:///tmp/nng/cpm/esv_core_plugin_manager";
 
 static int manager_loop(enum neu_event_io_type type, int fd, void *usr_data);
 static int manager_level_check(void *usr_data);
@@ -99,6 +100,7 @@ neu_manager_t *neu_manager_create()
 
     rv = nng_listen(manager->socket, url, NULL, 0);
     assert(rv == 0);
+	nlog_info("manager listen url:%s", url);
 
     nng_socket_set_int(manager->socket, NNG_OPT_RECVBUF, 8192);
     nng_socket_set_int(manager->socket, NNG_OPT_SENDBUF, 8292);
@@ -1160,20 +1162,32 @@ static int manager_loop(enum neu_event_io_type type, int fd, void *usr_data)
     /*     } */
 
     /*     break; */
-	case ESV_THING_MODEL_TRANS_DATA: {
-		 esv_thing_model_trans_data_t *cmd = (esv_thing_model_trans_data_t *) &header[1];
-		 nlog_info("ESV_THING_MODEL_TRANS_DATA driver: %s, product_key: %s, device_name: %s", cmd->driver, cmd->product_key, cmd->device_name);
+	case ESV_THING_MODEL_TRANS_DATA_INPROC: {
+		 esv_thing_model_trans_data_inproc_t *cmd = (esv_thing_model_trans_data_inproc_t *) &header[1];
+		 nlog_info("ESV_THING_MODEL_TRANS_DATA_INPROC driver: %s, product_key: %s, device_name: %s", cmd->driver, cmd->product_key, cmd->device_name);
 		 if (NULL != cmd->data_root) {
 			 char *data_root_str = json_dumps(cmd->data_root, 0);
 			 if (NULL != data_root_str) {
 				 nlog_info("thing model data root: %s", data_root_str);
 				 free(data_root_str);
 			 }
-			 free(cmd->driver);
-			 free(cmd->product_key);
-			 free(cmd->device_name);
 			 json_decref(cmd->data_root);
 		 }
+		 free(cmd->driver);
+		 free(cmd->product_key);
+		 free(cmd->device_name);
+		 break;
+	 }
+	case ESV_THING_MODEL_TRANS_DATA_IPC: {
+		 esv_thing_model_trans_data_ipc_t *cmd = (esv_thing_model_trans_data_ipc_t *) &header[1];
+		 nlog_info("ESV_THING_MODEL_TRANS_DATA_IPC driver: %s, product_key: %s, device_name: %s", cmd->driver, cmd->product_key, cmd->device_name);
+		 /* if (NULL != cmd->json_str) { */
+		 nlog_info("thing model json str: %s", cmd->json_str);
+		 /* } */
+		 /* free(cmd->driver); */
+		 /* free(cmd->product_key); */
+		 /* free(cmd->device_name); */
+		 /* free(cmd->json_str); */
 		 break;
 	 }
 

@@ -57,13 +57,13 @@ static int dmx_plugin_start(neu_plugin_t *plugin)
 	/* plugin->common.adapter_callbacks->esvdriver.thing_model_msg_arrived(plugin->common.adapter, ESV_TMM_JSON_OBJECT, &rv); */
 
 	json_t *data_root = json_object();
-	json_t *id_str = json_string("thing_model_id_str");
+	json_t *id_str = json_string("thing_model_id_str_组列表");
 	json_object_set_new(data_root, "id", id_str);
 
 	esv_thing_model_msg_t thing_modle_msg = {
 		.product_key = "pk_ddfj*&(^^)",
 		.device_name = "dn_ddfj*&(^^)",
-		.msg_type = ESV_TMM_JSON_OBJECT,
+		.msg_type = ESV_TMM_JSON_OBJECT_PTR,
 		.msg = data_root
 	};
 

@@ -45,10 +45,10 @@
 
 /* easeview */
 
-/* #define ESV_DRIVER_NAME_LEN 64 */
-/* #define ESV_PRODUCT_KEY_LEN 64 */
-/* #define ESV_DEVICE_NAME_LEN 64 */
-/* #define ESV_THING_MODEL_FUNC_BLOCK_ID_LEN 64 */
+#define ESV_DRIVER_NAME_LEN 64
+#define ESV_PRODUCT_KEY_LEN 64
+#define ESV_DEVICE_NAME_LEN 64
+#define ESV_THING_MODEL_FUNC_BLOCK_ID_LEN 64
 
 extern int  default_log_level;
 extern bool disable_jwt;

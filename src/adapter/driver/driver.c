@@ -40,6 +40,7 @@
 #include "errcodes.h"
 #include "tag.h"
 #include "device.h"
+#include "driver.h"
 
 typedef struct to_be_write_tag {
     bool           single;
@@ -97,7 +98,6 @@ static void update_im(neu_adapter_t *adapter, const char *group,
                       neu_tag_meta_t *metas, int n_meta);
 
 /* easeview start */
-static nng_msg *esv_nng_msg_gen(neu_reqresp_head_t *header, void *data);
 /* struct esv_driver_devices { */
 /* 	uint16_t n_device; */
 /* 	esv_device_property_t *device_properties; */
@@ -1668,7 +1668,7 @@ static void store_write_tag(group_t *group, to_be_write_tag_t *tag)
 static int thing_model_msg_arrived(neu_adapter_t *adapter, const esv_thing_model_msg_t *thing_model_msg) {
 	nlog_info("thing_model_msg_arrived from driver: %s product_key: %s, device_name: %s, msg_type: %d", adapter->name, thing_model_msg->product_key, thing_model_msg->device_name, thing_model_msg->msg_type);		
 	switch (thing_model_msg->msg_type) {
-		case ESV_TMM_JSON_OBJECT: {
+		case ESV_TMM_JSON_OBJECT_PTR: {
 			/* json_t *root = (json_t *)msg; */
 			if (!json_is_object((json_t *)thing_model_msg->msg)) {
 				nlog_warn("received msg not json object");
@@ -1676,10 +1676,10 @@ static int thing_model_msg_arrived(neu_adapter_t *adapter, const esv_thing_model
 			} 
 			nlog_info("check msg json object passed");
 			neu_reqresp_head_t header = { 0 };
-			header.type               = ESV_THING_MODEL_TRANS_DATA;
+			header.type               = ESV_THING_MODEL_TRANS_DATA_INPROC;
 			strcpy(header.sender,adapter->name);
 			strcpy(header.receiver,MANAGER_RECEIVER);
-			esv_thing_model_trans_data_t *data = calloc(1, sizeof(esv_thing_model_trans_data_t));
+			esv_thing_model_trans_data_inproc_t *data = calloc(1, sizeof(esv_thing_model_trans_data_inproc_t));
 			data->driver = strdup(adapter->name);
 			data->product_key = strdup(thing_model_msg->product_key);
 			data->device_name = strdup(thing_model_msg->device_name);
@@ -1710,30 +1710,41 @@ static int thing_model_msg_arrived(neu_adapter_t *adapter, const esv_thing_model
 	return -1;
 }
 
-static nng_msg *esv_nng_msg_gen(neu_reqresp_head_t *header, void *data) {
+nng_msg *esv_nng_msg_gen(neu_reqresp_head_t *header, const void *data) {
     nng_msg *msg       = NULL;
     void *   body      = NULL;
 	json_t *data_to_send = NULL;
     size_t   data_size = 0;
 
     switch (header->type) {
-		case ESV_THING_MODEL_TRANS_DATA: {
-			esv_thing_model_trans_data_t *trans = (esv_thing_model_trans_data_t *)data;
+		case ESV_THING_MODEL_TRANS_DATA_INPROC: {
+			esv_thing_model_trans_data_inproc_t *trans = (esv_thing_model_trans_data_inproc_t *)data;
 			if (NULL != trans->data_root) {
 				data_to_send = json_deep_copy(trans->data_root);	
 			}
 
-			data_size = sizeof(esv_thing_model_trans_data_t);
+			data_size = sizeof(esv_thing_model_trans_data_inproc_t);
 
 			nng_msg_alloc(&msg, sizeof(neu_reqresp_head_t) + data_size);
 			body = nng_msg_body(msg);
 			memcpy(body, header, sizeof(neu_reqresp_head_t));
 			neu_reqresp_head_t *msg_header = (neu_reqresp_head_t *)body;
-			esv_thing_model_trans_data_t *trans_data = (esv_thing_model_trans_data_t *) &msg_header[1];
+			esv_thing_model_trans_data_inproc_t *trans_data = (esv_thing_model_trans_data_inproc_t *) &msg_header[1];
 			trans_data->driver = strdup(trans->driver);
 			trans_data->product_key = strdup(trans->product_key);
 			trans_data->device_name = strdup(trans->device_name);
 			trans_data->data_root = data_to_send;
+			return msg;
+		 }
+		case ESV_THING_MODEL_TRANS_DATA_IPC: {
+			esv_thing_model_trans_data_ipc_t *trans = (esv_thing_model_trans_data_ipc_t *)data;
+
+			nng_msg_alloc(&msg, sizeof(neu_reqresp_head_t) + sizeof(esv_thing_model_trans_data_ipc_t) + strlen(trans->json_str) + 1);
+			body = nng_msg_body(msg);
+			memcpy(body, header, sizeof(neu_reqresp_head_t));
+			memcpy((uint8_t *)body + sizeof(neu_reqresp_head_t), data, sizeof(esv_thing_model_trans_data_ipc_t));
+			/* memcpy((uint8_t *)body + sizeof(neu_reqresp_head_t) + sizeof(esv_thing_model_trans_data_ipc_t), (uint8_t *)data + sizeof(esv_thing_model_trans_data_ipc_t), strlen(trans->json_str)); */
+			strcpy((char *)body + sizeof(neu_reqresp_head_t) + sizeof(esv_thing_model_trans_data_ipc_t), trans->json_str);
 			return msg;
 		 }
 		default: {

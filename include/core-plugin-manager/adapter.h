@@ -146,7 +146,8 @@ typedef enum neu_reqresp_type {
     NEU_REQ_UPDATE_TAG_EVENT,
 
 	/* easeview */
-	ESV_THING_MODEL_TRANS_DATA,
+	ESV_THING_MODEL_TRANS_DATA_INPROC,
+	ESV_THING_MODEL_TRANS_DATA_IPC,
 
 } neu_reqresp_type_e;
 
@@ -257,7 +258,8 @@ static const char *neu_reqresp_type_string_t[] = {
     [NEU_REQ_UPDATE_TAG_EVENT]   = "NEU_REQ_UPDATE_TAG_EVENT",
 
 	/* easeview */
-    [ESV_THING_MODEL_TRANS_DATA]   = "ESV_THING_MODEL_TRANS_DATA",
+    [ESV_THING_MODEL_TRANS_DATA_INPROC]   = "ESV_THING_MODEL_TRANS_DATA_INPROC",
+    [ESV_THING_MODEL_TRANS_DATA_IPC]   = "ESV_THING_MODEL_TRANS_DATA_IPC",
 
 };
 
