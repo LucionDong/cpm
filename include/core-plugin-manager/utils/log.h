@@ -46,6 +46,11 @@ extern zlog_category_t *neuron;
     zlog(neuron, __FILE__, sizeof(__FILE__) - 1, __func__, \
          sizeof(__func__) - 1, __LINE__, ZLOG_LEVEL_DEBUG, __VA_ARGS__)
 
+
+#define hnlog_notice(buf,buf_len)                                   \
+    hzlog(neuron, __FILE__, sizeof(__FILE__) - 1, __func__, \
+         sizeof(__func__) - 1, __LINE__, ZLOG_LEVEL_NOTICE, buf, buf_len)
+
 #define plog_fatal(plugin, ...)                                          \
     zlog((plugin)->common.log, __FILE__, sizeof(__FILE__) - 1, __func__, \
          sizeof(__func__) - 1, __LINE__, ZLOG_LEVEL_FATAL, __VA_ARGS__)

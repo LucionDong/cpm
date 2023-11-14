@@ -236,7 +236,7 @@ static int manager_loop(enum neu_event_io_type type, int fd, void *usr_data)
         nlog_warn("manager recv msg error: %d", rv);
         return 0;
     }
-
+	/* hnlog_notice(nng_msg_body(msg), nng_msg_capacity(msg)); */
     header = (neu_reqresp_head_t *) nng_msg_body(msg);
 
     nlog_info("manager recv msg from: %s to %s, type: %s", header->sender,
