@@ -20,7 +20,7 @@ typedef struct {
 
 
 typedef struct esv_thing_model_trans_data_ipc {
-	char                    driver[ESV_DRIVER_NAME_LEN];
+	/* char                    driver[ESV_DRIVER_NAME_LEN]; */
 	char                    product_key[ESV_PRODUCT_KEY_LEN];
 	char                    device_name[ESV_DEVICE_NAME_LEN];
 	char					json_str[];

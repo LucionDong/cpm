@@ -55,6 +55,8 @@ set(MANG_SOURCE
 	src/core/plugin_manager.c
 	src/core/node_manager.c
 	src/core/storage.c
+	src/core/manager_thing_model.c
+	src/core/outside_service_manager.c
 	src/event/event_linux.c
 	src/adapter/adapter.c
 	src/adapter/storage.c

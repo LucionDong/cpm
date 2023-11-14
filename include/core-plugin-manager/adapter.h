@@ -147,7 +147,7 @@ typedef enum neu_reqresp_type {
 
 	/* easeview */
 	ESV_THING_MODEL_TRANS_DATA_INPROC,
-	ESV_THING_MODEL_TRANS_DATA_IPC,
+	/* ESV_THING_MODEL_TRANS_DATA_IPC, */
 
 } neu_reqresp_type_e;
 
@@ -259,7 +259,7 @@ static const char *neu_reqresp_type_string_t[] = {
 
 	/* easeview */
     [ESV_THING_MODEL_TRANS_DATA_INPROC]   = "ESV_THING_MODEL_TRANS_DATA_INPROC",
-    [ESV_THING_MODEL_TRANS_DATA_IPC]   = "ESV_THING_MODEL_TRANS_DATA_IPC",
+    /* [ESV_THING_MODEL_TRANS_DATA_IPC]   = "ESV_THING_MODEL_TRANS_DATA_IPC", */
 
 };
 

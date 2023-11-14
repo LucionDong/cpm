@@ -95,7 +95,7 @@ typedef struct neu_plugin_intf_funs {
         struct {
             int (*add_devices)(neu_plugin_t *plugin, const int device_cnt, const esv_device_info_t *device_infos);
             int (*remove_devices)(neu_plugin_t *plugin, const int device_cnt, const esv_device_info_t *device_infos);
-            int (*thing_model_msg_arrived)(neu_plugin_t *plugin, const esv_thing_model_msg_type_e msg_type, const void *msg);
+            int (*thing_model_msg_arrived)(neu_plugin_t *plugin, const esv_thing_model_msg_t *msg);
             int (*reserved_fucnc4)(neu_plugin_t *plugin, void *msg); 
             int (*func5)(neu_plugin_t *plugin); 
             int (*func6)(neu_plugin_t *plugin);

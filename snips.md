@@ -86,5 +86,17 @@ error:
 
 
 
+	case ESV_THING_MODEL_TRANS_DATA_IPC: {
+		 esv_thing_model_trans_data_ipc_t *cmd = (esv_thing_model_trans_data_ipc_t *) &header[1];
+		 nlog_info("ESV_THING_MODEL_TRANS_DATA_IPC driver: %s, product_key: %s, device_name: %s", cmd->driver, cmd->product_key, cmd->device_name);
+		 /* if (NULL != cmd->json_str) { */
+		 nlog_info("thing model json str: %s", cmd->json_str);
+		 /* } */
+		 /* free(cmd->driver); */
+		 /* free(cmd->product_key); */
+		 /* free(cmd->device_name); */
+		 /* free(cmd->json_str); */
+		 break;
+	 }
 
 ```

@@ -1736,17 +1736,17 @@ nng_msg *esv_nng_msg_gen(neu_reqresp_head_t *header, const void *data) {
 			trans_data->data_root = data_to_send;
 			return msg;
 		 }
-		case ESV_THING_MODEL_TRANS_DATA_IPC: {
-			esv_thing_model_trans_data_ipc_t *trans = (esv_thing_model_trans_data_ipc_t *)data;
+		/* case ESV_THING_MODEL_TRANS_DATA_IPC: { */
+		/* 	esv_thing_model_trans_data_ipc_t *trans = (esv_thing_model_trans_data_ipc_t *)data; */
 
-			nng_msg_alloc(&msg, sizeof(neu_reqresp_head_t) + sizeof(esv_thing_model_trans_data_ipc_t) + strlen(trans->json_str) + 1);
-			body = nng_msg_body(msg);
-			memcpy(body, header, sizeof(neu_reqresp_head_t));
-			memcpy((uint8_t *)body + sizeof(neu_reqresp_head_t), data, sizeof(esv_thing_model_trans_data_ipc_t));
-			/* memcpy((uint8_t *)body + sizeof(neu_reqresp_head_t) + sizeof(esv_thing_model_trans_data_ipc_t), (uint8_t *)data + sizeof(esv_thing_model_trans_data_ipc_t), strlen(trans->json_str)); */
-			strcpy((char *)body + sizeof(neu_reqresp_head_t) + sizeof(esv_thing_model_trans_data_ipc_t), trans->json_str);
-			return msg;
-		 }
+		/* 	nng_msg_alloc(&msg, sizeof(neu_reqresp_head_t) + sizeof(esv_thing_model_trans_data_ipc_t) + strlen(trans->json_str) + 1); */
+		/* 	body = nng_msg_body(msg); */
+		/* 	memcpy(body, header, sizeof(neu_reqresp_head_t)); */
+		/* 	memcpy((uint8_t *)body + sizeof(neu_reqresp_head_t), data, sizeof(esv_thing_model_trans_data_ipc_t)); */
+		/* 	/1* memcpy((uint8_t *)body + sizeof(neu_reqresp_head_t) + sizeof(esv_thing_model_trans_data_ipc_t), (uint8_t *)data + sizeof(esv_thing_model_trans_data_ipc_t), strlen(trans->json_str)); *1/ */
+		/* 	strcpy((char *)body + sizeof(neu_reqresp_head_t) + sizeof(esv_thing_model_trans_data_ipc_t), trans->json_str); */
+		/* 	return msg; */
+		/*  } */
 		default: {
 			 return NULL;
 		 }

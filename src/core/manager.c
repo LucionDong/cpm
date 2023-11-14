@@ -38,6 +38,7 @@
 #include "plugin_manager.h"
 #include "storage.h"
 /* #include "subscribe.h" */
+#include "outside_service_manager.h"
 
 #include "manager.h"
 #include "manager_internal.h"
@@ -45,8 +46,8 @@
 // definition for adapter names
 #define DEFAULT_DASHBOARD_ADAPTER_NAME DEFAULT_DASHBOARD_PLUGIN_NAME
 
-/* static const char *const url = "inproc://neu_manager"; */
-static const char *const url = "ipc:///tmp/nng/cpm/esv_core_plugin_manager";
+static const char *const url = "inproc://neu_manager";
+/* static const char *const url = "ipc:///tmp/nng/cpm/esv_core_plugin_manager"; */
 
 static int manager_loop(enum neu_event_io_type type, int fd, void *usr_data);
 static int manager_level_check(void *usr_data);
@@ -92,6 +93,9 @@ neu_manager_t *neu_manager_create()
     manager->events            = neu_event_new();
     manager->plugin_manager    = neu_plugin_manager_create();
     manager->node_manager      = neu_node_manager_create();
+	manager->esv_outside_service_manager = esv_outside_service_manager_create();
+
+	esv_outside_service_set_neu_manager(manager->esv_outside_service_manager, manager);
     /* manager->subscribe_manager = neu_subscribe_manager_create(); */
     /* manager->template_manager  = neu_template_manager_create(); */
 
@@ -182,6 +186,7 @@ void neu_manager_destroy(neu_manager_t *manager)
     neu_node_manager_destroy(manager->node_manager);
     neu_plugin_manager_destroy(manager->plugin_manager);
     /* neu_template_manager_destroy(manager->template_manager); */
+	esv_outside_service_manager_destory(manager->esv_outside_service_manager);
 
     nng_close(manager->socket);
     neu_event_del_io(manager->events, manager->loop);
@@ -1176,18 +1181,6 @@ static int manager_loop(enum neu_event_io_type type, int fd, void *usr_data)
 		 free(cmd->driver);
 		 free(cmd->product_key);
 		 free(cmd->device_name);
-		 break;
-	 }
-	case ESV_THING_MODEL_TRANS_DATA_IPC: {
-		 esv_thing_model_trans_data_ipc_t *cmd = (esv_thing_model_trans_data_ipc_t *) &header[1];
-		 nlog_info("ESV_THING_MODEL_TRANS_DATA_IPC driver: %s, product_key: %s, device_name: %s", cmd->driver, cmd->product_key, cmd->device_name);
-		 /* if (NULL != cmd->json_str) { */
-		 nlog_info("thing model json str: %s", cmd->json_str);
-		 /* } */
-		 /* free(cmd->driver); */
-		 /* free(cmd->product_key); */
-		 /* free(cmd->device_name); */
-		 /* free(cmd->json_str); */
 		 break;
 	 }
 

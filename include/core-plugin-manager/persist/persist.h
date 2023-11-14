@@ -72,6 +72,7 @@ void esv_persister_destroy();
 
 int esv_persister_load_devices(const char *driver_name, UT_array **device_infos);
 
+int esv_persister_query_device_driver(const char *product_key, const char *device_name, char **driver_name);
 /* easeview end */
 
 /* typedef struct { */

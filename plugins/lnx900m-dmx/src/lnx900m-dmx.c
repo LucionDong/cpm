@@ -8,6 +8,7 @@
 #include "errcodes.h"
 
 static int add_devices(neu_plugin_t *plugin, const int device_cnt, const esv_device_info_t *device_infos);
+static int thing_model_msg_arrived(neu_plugin_t *plugin, const esv_thing_model_msg_t *msg);
 
 const neu_plugin_module_t neu_plugin_module;
 
@@ -121,6 +122,7 @@ static const neu_plugin_intf_funs_t plugin_intf_funs = {
     .request = dmx_plugin_request,
 
 	.esvdriver.add_devices = add_devices,
+	.esvdriver.thing_model_msg_arrived = thing_model_msg_arrived,
 };
 
 #define DESCRIPTION "LNX-900M LED Driver plugin bases on NanoSDK."
@@ -151,3 +153,15 @@ static int add_devices(neu_plugin_t *plugin, const int device_cnt, const esv_dev
 	}
 	return 0;
 }
+
+static int thing_model_msg_arrived(neu_plugin_t *plugin, const esv_thing_model_msg_t *msg) {
+	plog_notice(plugin, "pk:%s dn:%s msg type:%d", msg->product_key, msg->device_name, msg->msg_type);
+	if (msg->msg_type == ESV_TMM_JSON_OBJECT_PTR) {
+		char *msg_str = json_dumps((json_t *)msg->msg, 0);
+		plog_notice(plugin, "msg:\n%s", msg_str);
+		free(msg_str);
+	}
+	return 0;
+}
+
+

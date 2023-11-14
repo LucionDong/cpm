@@ -24,11 +24,13 @@
 #include <nng/supplemental/util/platform.h>
 
 #include "event/event.h"
+#include "persist/persist.h"
 
 #include "node_manager.h"
 #include "plugin_manager.h"
 #include "subscribe.h"
 #include "template_manager.h"
+#include "outside_service_manager_internal.h"
 
 typedef struct neu_manager {
     nng_socket      socket;
@@ -39,6 +41,7 @@ typedef struct neu_manager {
     neu_node_manager_t *    node_manager;
     neu_subscribe_mgr_t *   subscribe_manager;
     neu_template_manager_t *template_manager;
+	esv_outside_service_manager_t *esv_outside_service_manager;
 
     neu_event_timer_t *timer_timestamp;
 

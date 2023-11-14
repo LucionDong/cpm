@@ -1,0 +1,6 @@
+#ifndef _ESV_OUTSIDE_SERVICE_MANAGER_INTERNAL_H_
+#define _ESV_OUTSIDE_SERVICE_MANAGER_INTERNAL_H_
+
+typedef struct esv_outside_service_manager_s esv_outside_service_manager_t;
+
+#endif /* ifndef _OUTSIDE_SERVICE_MANAGER_INTERNAL_H_ */

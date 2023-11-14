@@ -1861,3 +1861,44 @@ error:
     return NEU_ERR_EINTERNAL;
 
 }
+
+int esv_persister_query_device_driver(const char *product_key, const char *device_name, char **driver_name) {
+	sqlite3_stmt *stmt = NULL;
+	const char *query ="SELECT \
+						driver_name \
+						FROM device WHERE product_key=? and device_name=? LIMIT 1";
+	
+	if (SQLITE_OK != sqlite3_prepare_v2(thing_db, query, -1, &stmt, NULL)) {
+        nlog_error("prepare `%s` fail: %s", query, sqlite3_errmsg(thing_db));
+        goto error;
+    }
+
+    if (SQLITE_OK != sqlite3_bind_text(stmt, 1, product_key, -1, NULL)) {
+        nlog_error("bind `%s` with `%s` fail: %s", query, product_key,
+                   sqlite3_errmsg(thing_db));
+        goto error;
+    }
+
+
+    if (SQLITE_OK != sqlite3_bind_text(stmt, 2, device_name, -1, NULL)) {
+        nlog_error("bind `%s` with `%s` fail: %s", query, device_name,
+                   sqlite3_errmsg(thing_db));
+        goto error;
+    }
+
+	int step = sqlite3_step(stmt);
+	if (SQLITE_ROW == step) {
+		*driver_name = strdup((char *) sqlite3_column_text(stmt, 0));
+        step = sqlite3_step(stmt);
+    }
+    if (SQLITE_DONE != step) {
+        nlog_warn("query `%s` fail: %s", query, sqlite3_errmsg(thing_db));
+    }
+
+    sqlite3_finalize(stmt);
+    return 0;
+
+error:
+    return NEU_ERR_EINTERNAL;
+
+}
