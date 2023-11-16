@@ -30,7 +30,7 @@ int forward_thing_model_msg(neu_manager_t *manager, esv_thing_model_trans_data_i
 	}
 
 	json_error_t error;
-	json_t *msg_root = json_loads(msg->json_str, 0, &error);
+	json_t *msg_root = json_loads(msg->json_bytes, 0, &error);
 	if (!msg_root) {
 		nlog_warn("decode msg json string is null!");
 		return -5;

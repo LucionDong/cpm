@@ -17,7 +17,7 @@ if(NOT CMAKE_SYSTEM_NAME)
   set(CMAKE_SYSTEM_NAME "Linux")
 endif()
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fdiagnostics-color=always -Wall -Wextra -g ")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fdiagnostics-color=always -Wall -Wextra -g -Wno-missing-braces")
 # set(CMAKE_C_FLAGS "-Wall -Wextra -g")
 # set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS} -O1")
 set(CMAKE_C_FLAGS_RELEASE "-O1")

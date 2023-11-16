@@ -62,6 +62,7 @@ static int dmx_plugin_start(neu_plugin_t *plugin)
 	json_object_set_new(data_root, "id", id_str);
 
 	esv_thing_model_msg_t thing_modle_msg = {
+		.method = ESV_TMM_MTD_THING_EVENT_PROPERTY_POST,
 		.product_key = "pk_ddfj*&(^^)",
 		.device_name = "dn_ddfj*&(^^)",
 		.msg_type = ESV_TMM_JSON_OBJECT_PTR,

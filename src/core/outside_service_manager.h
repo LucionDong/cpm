@@ -1,8 +1,9 @@
 #ifndef _ESV_OUTSIDE_SERVICE_MANAGER_H_
 #define _ESV_OUTSIDE_SERVICE_MANAGER_H_ 
 
-#include "outside_service_manager_internal.h"
 #include "manager_internal.h"
+#include "adapter/driver/device_internal.h"
+#include "outside_service_manager_internal.h"
 
 typedef enum esv_outside_service_reqresp_type {
 	ESV_OUTSIDE_SERVICE_THING_MODEL_TRANS_DATA = 0,
@@ -26,5 +27,6 @@ typedef struct esv_outside_service_reqresp_head {
 
 esv_outside_service_manager_t *esv_outside_service_manager_create();
 void esv_outside_service_manager_destory(esv_outside_service_manager_t *manager);
-void esv_outside_service_set_neu_manager(esv_outside_service_manager_t *outside_service_manager, neu_manager_t *manager);
+void esv_outside_service_manager_set_neu_manager(esv_outside_service_manager_t *outside_service_manager, neu_manager_t *manager);
+int esv_outside_service_manager_thing_model_msg_send(esv_outside_service_manager_t *outside_service_manager, const esv_thing_model_trans_data_inproc_t *msg);
 #endif /* ifndef _OUTSIDE_SERVICE_MANAGER_H_ */

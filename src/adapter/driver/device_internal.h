@@ -3,7 +3,10 @@
 
 #include <jansson.h>
 
+#include "device.h"
+
 typedef struct esv_thing_model_trans_data_inproc {
+	esv_thing_model_msg_method_e method;
 	char                    *driver;
 	char                    *product_key;
 	char                    *device_name;

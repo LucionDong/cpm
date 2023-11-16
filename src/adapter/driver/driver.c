@@ -1680,6 +1680,7 @@ static int thing_model_msg_arrived(neu_adapter_t *adapter, const esv_thing_model
 			strcpy(header.sender,adapter->name);
 			strcpy(header.receiver,MANAGER_RECEIVER);
 			esv_thing_model_trans_data_inproc_t *data = calloc(1, sizeof(esv_thing_model_trans_data_inproc_t));
+			data->method = thing_model_msg->method;
 			data->driver = strdup(adapter->name);
 			data->product_key = strdup(thing_model_msg->product_key);
 			data->device_name = strdup(thing_model_msg->device_name);
@@ -1730,6 +1731,7 @@ nng_msg *esv_nng_msg_gen(neu_reqresp_head_t *header, const void *data) {
 			memcpy(body, header, sizeof(neu_reqresp_head_t));
 			neu_reqresp_head_t *msg_header = (neu_reqresp_head_t *)body;
 			esv_thing_model_trans_data_inproc_t *trans_data = (esv_thing_model_trans_data_inproc_t *) &msg_header[1];
+			trans_data->method = trans->method;
 			trans_data->driver = strdup(trans->driver);
 			trans_data->product_key = strdup(trans->product_key);
 			trans_data->device_name = strdup(trans->device_name);
