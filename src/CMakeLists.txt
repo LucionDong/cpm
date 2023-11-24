@@ -46,38 +46,19 @@ else()
   # link_directories(/usr/local/lib)
 endif()
 
-set(MANG_SOURCE
-    src/main.c
-	src/argparse.c
-	src/daemon.c
-	src/core/manager.c
-	src/core/manager_internal.c
-	src/core/plugin_manager.c
-	src/core/node_manager.c
-	src/core/storage.c
-	src/core/manager_thing_model.c
-	src/core/outside_service_manager.c
-	src/event/event_linux.c
-	src/adapter/adapter.c
-	src/adapter/storage.c
-	src/adapter/driver/cache.c
-	src/adapter/driver/driver.c
-	src/adapter/driver/device.c
+
+aux_source_directory(src/parser ESV_SRC_PARSE)
+
+set(PERSIST_SOURCES
+	src/persist/persist.c
+	src/persist/json/persist_json_plugin.c
+	)
+
+set(ESVCPM_BASE_SOURCE
 	src/base/neu_plugin_common.c
 	src/base/tag.c
 	src/base/group.c
-	src/parser/neu_json_error.c
-	src/parser/neu_json_fn.c
-	src/parser/neu_json_global_config.c
-	src/parser/neu_json_group_config.c
-	src/parser/neu_json_tag.c
-	src/parser/neu_json_node.c
-	src/parser/neu_json_plugin.c
-	src/parser/neu_json_rw.c
-	src/parser/neu_json_login.c
-	src/parser/neu_json_log.c
-	src/parser/neu_json_file.c
-	src/parser/neu_json_ndriver.c
+	src/event/event_linux.c
 	src/utils/json.c
 	src/utils/log.c
 	src/utils/http_handler.c
@@ -85,9 +66,42 @@ set(MANG_SOURCE
 	src/utils/http.c
 	src/utils/neu_jwt.c
 	src/utils/asprintf.c
-	src/persist/persist.c
-	src/persist/json/persist_json_plugin.c
+	${PERSIST_SOURCES}
 	)
+
+add_library(esvcpm-base SHARED)
+target_sources(esvcpm-base PRIVATE 
+	${ESVCPM_BASE_SOURCE}
+	${ESV_SRC_PARSE}
+	)
+target_include_directories(esvcpm-base PRIVATE 
+	include/${PROJECT_NAME}
+	src
+	)
+
+find_library(DL_LIB NAMES dl REQUIRED)
+find_library(MATH_LIB NAMES m REQUIRED)
+find_library(PTHREAD_LIB NAMES pthread REQUIRED)
+find_library(ZLOG_LIB NAMES zlog REQUIRED)
+find_library(JANSSON_LIB NAMES jansson REQUIRED)
+find_library(NNG_LIB NAMES nng REQUIRED)
+find_library(JWT_LIB NAMES jwt REQUIRED)
+find_library(CRYPTO_LIB NAMES crypto REQUIRED)
+find_library(SSL_LIB NAMES ssl REQUIRED)
+find_library(SQLITE3_LIB NAMES sqlite3 REQUIRED)
+
+target_link_libraries(esvcpm-base PRIVATE 
+	# ${PTHREAD_LIB}
+	# ${SSL_LIB}
+	# ${CRYPTO_LIB}
+	# ${NNG_LIB}
+	# ${ZLOG_LIB}
+	# ${JANSSON_LIB}
+	# ${JWT_LIB}
+	)
+
+
+
 
 set(PLUGIN_RESTFUL_SOURCE
 	plugins/restful/rest.c
@@ -106,35 +120,43 @@ set(PLUGIN_RESTFUL_SOURCE
 	plugins/restful/user.c
 	)
 
+set(ESVCPM_SOURCE
+    src/main.c
+	src/argparse.c
+	src/daemon.c
+	src/core/manager.c
+	src/core/manager_internal.c
+	src/core/plugin_manager.c
+	src/core/node_manager.c
+	src/core/storage.c
+	src/core/manager_thing_model.c
+	src/core/outside_service_manager.c
+	src/adapter/adapter.c
+	src/adapter/storage.c
+	src/adapter/driver/cache.c
+	src/adapter/driver/driver.c
+	src/adapter/driver/device.c
+	)
+
 # set(CMAKE_BUILD_RPATH ./)
-# add_executable(${MY_PROJECT_NAME} ${MANG_SOURCE})
+# add_executable(${PROJECT_NAME} ${ESVCPM_SOURCE})
 message(STATUS CMAKE_FIND_ROOT_PATH:${CMAKE_FIND_ROOT_PATH})
-add_executable(${MY_PROJECT_NAME})
-target_sources(${MY_PROJECT_NAME} PRIVATE 
-	${MANG_SOURCE}
+add_executable(${PROJECT_NAME})
+target_sources(${PROJECT_NAME} PRIVATE 
+	${ESVCPM_SOURCE}
 	${PLUGIN_RESTFUL_SOURCE}
 	)
-target_include_directories(${MY_PROJECT_NAME} PRIVATE 
-	${CMAKE_CURRENT_SOURCE_DIR}/include/${MY_PROJECT_NAME}
+target_include_directories(${PROJECT_NAME} PRIVATE 
+	${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/src
 	${CMAKE_CURRENT_SOURCE_DIR}/plugins
 	)
 
-find_library(DL_LIB NAMES dl REQUIRED)
-find_library(MATH_LIB NAMES m REQUIRED)
-find_library(PTHREAD_LIB NAMES pthread REQUIRED)
-find_library(ZLOG_LIB NAMES zlog REQUIRED)
-find_library( JANSSON_LIB NAMES jansson REQUIRED)
-find_library(NNG_LIB NAMES nng REQUIRED)
-find_library(JWT_LIB NAMES jwt REQUIRED)
-find_library(CRYPTO_LIB NAMES crypto REQUIRED)
-find_library(SSL_LIB NAMES ssl REQUIRED)
-find_library(SQLITE3_LIB NAMES sqlite3 REQUIRED)
 
-target_link_libraries(${MY_PROJECT_NAME} PRIVATE 
+target_link_libraries(${PROJECT_NAME} PRIVATE 
+	esvcpm-base
 	${DL_LIB}
 	${MATH_LIB}
-	${PTHREAD_LIB}
 	${ZLOG_LIB}
 	${JANSSON_LIB}
 	${NNG_LIB}
@@ -147,7 +169,7 @@ target_link_libraries(${MY_PROJECT_NAME} PRIVATE
 # add_executable(nngtest)
 
 # set(NNGTEST_SRC
-# 	${MY_PROJECT_NAME}/c_pair.c
+# 	${PROJECT_NAME}/c_pair.c
 # 	)
 # target_sources(nngtest PRIVATE
 # 	${NNGTEST_SRC}
@@ -157,26 +179,15 @@ target_link_libraries(${MY_PROJECT_NAME} PRIVATE
 # 	${NNG_LIB}
 # 	)
 
-add_library(cpm-base SHARED)
-target_sources(cpm-base PRIVATE 
-	${MANG_SOURCE}
-	${PLUGIN_RESTFUL_SOURCE}
-	)
-target_include_directories(cpm-base PRIVATE 
-	${CMAKE_CURRENT_SOURCE_DIR}/include/${MY_PROJECT_NAME}
-	${CMAKE_CURRENT_SOURCE_DIR}/src
-	${CMAKE_CURRENT_SOURCE_DIR}/plugins
-	)
 
-target_link_libraries(cpm-base PRIVATE 
-	${DL_LIB}
-	${MATH_LIB}
-	${PTHREAD_LIB}
-	${ZLOG_LIB}
-	${JANSSON_LIB}
-	${NNG_LIB}
-	${JWT_LIB}
-	${CRYPTO_LIB}
-	${SSL_LIB}
-	${SQLITE3_LIB}
-	)
+# set(CMAKE_INSTALL_PREFIX "/home/winston/Works/mac_work/dev/3rdparty/c/build_armv5l/easemore/easeview/esvcpm")
+message(STATUS ${CMAKE_INSTALL_PREFIX})
+message(STATUS ${CMAKE_CURRENT_SOURCE_DIR}/include/)
+install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include/"
+        DESTINATION include
+        FILES_MATCHING
+        PATTERN "*.h")
+
+install(TARGETS esvcpm esvcpm-base
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin)

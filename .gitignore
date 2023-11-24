@@ -53,3 +53,7 @@ dkms.conf
 
 # cmake build
 build/
+
+.DS_Store
+
+deploy/

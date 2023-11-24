@@ -68,27 +68,27 @@ static struct neu_http_handler cors_handler[] = {
     {
         .url = "/api/v2/tty",
     },
-    {
-        .url = "/api/v2/read",
-    },
-    {
-        .url = "/api/v2/write",
-    },
-    {
-        .url = "/api/v2/write/tags",
-    },
-    {
-        .url = "/api/v2/subscribe",
-    },
-    {
-        .url = "/api/v2/subscribes",
-    },
-    {
-        .url = "/api/v2/schema",
-    },
-    {
-        .url = "/api/v2/node/setting",
-    },
+    /* { */
+    /*     .url = "/api/v2/read", */
+    /* }, */
+    /* { */
+    /*     .url = "/api/v2/write", */
+    /* }, */
+    /* { */
+    /*     .url = "/api/v2/write/tags", */
+    /* }, */
+    /* { */
+    /*     .url = "/api/v2/subscribe", */
+    /* }, */
+    /* { */
+    /*     .url = "/api/v2/subscribes", */
+    /* }, */
+    /* { */
+    /*     .url = "/api/v2/schema", */
+    /* }, */
+    /* { */
+    /*     .url = "/api/v2/node/setting", */
+    /* }, */
     {
         .url = "/api/v2/node/ctl",
     },
@@ -176,56 +176,56 @@ static struct neu_http_handler rest_handlers[] = {
         .url           = "/api/v2/password",
         .value.handler = handle_password,
     },
-    {
-        .method        = NEU_HTTP_METHOD_POST,
-        .type          = NEU_HTTP_HANDLER_FUNCTION,
-        .url           = "/api/v2/tags",
-        .value.handler = handle_add_tags,
+    /* { */
+    /*     .method        = NEU_HTTP_METHOD_POST, */
+    /*     .type          = NEU_HTTP_HANDLER_FUNCTION, */
+    /*     .url           = "/api/v2/tags", */
+    /*     .value.handler = handle_add_tags, */
 
-    },
-    {
-        .method        = NEU_HTTP_METHOD_PUT,
-        .type          = NEU_HTTP_HANDLER_FUNCTION,
-        .url           = "/api/v2/tags",
-        .value.handler = handle_update_tags,
+    /* }, */
+    /* { */
+    /*     .method        = NEU_HTTP_METHOD_PUT, */
+    /*     .type          = NEU_HTTP_HANDLER_FUNCTION, */
+    /*     .url           = "/api/v2/tags", */
+    /*     .value.handler = handle_update_tags, */
 
-    },
-    {
-        .method        = NEU_HTTP_METHOD_GET,
-        .type          = NEU_HTTP_HANDLER_FUNCTION,
-        .url           = "/api/v2/tags",
-        .value.handler = handle_get_tags,
-    },
-    {
-        .method        = NEU_HTTP_METHOD_DELETE,
-        .type          = NEU_HTTP_HANDLER_FUNCTION,
-        .url           = "/api/v2/tags",
-        .value.handler = handle_del_tags,
-    },
-    {
-        .method        = NEU_HTTP_METHOD_POST,
-        .type          = NEU_HTTP_HANDLER_FUNCTION,
-        .url           = "/api/v2/group",
-        .value.handler = handle_add_group_config,
-    },
-    {
-        .method        = NEU_HTTP_METHOD_PUT,
-        .type          = NEU_HTTP_HANDLER_FUNCTION,
-        .url           = "/api/v2/group",
-        .value.handler = handle_update_group,
-    },
-    {
-        .method        = NEU_HTTP_METHOD_DELETE,
-        .type          = NEU_HTTP_HANDLER_FUNCTION,
-        .url           = "/api/v2/group",
-        .value.handler = handle_del_group_config,
-    },
-    {
-        .method        = NEU_HTTP_METHOD_GET,
-        .type          = NEU_HTTP_HANDLER_FUNCTION,
-        .url           = "/api/v2/group",
-        .value.handler = handle_get_group_config,
-    },
+    /* }, */
+    /* { */
+    /*     .method        = NEU_HTTP_METHOD_GET, */
+    /*     .type          = NEU_HTTP_HANDLER_FUNCTION, */
+    /*     .url           = "/api/v2/tags", */
+    /*     .value.handler = handle_get_tags, */
+    /* }, */
+    /* { */
+    /*     .method        = NEU_HTTP_METHOD_DELETE, */
+    /*     .type          = NEU_HTTP_HANDLER_FUNCTION, */
+    /*     .url           = "/api/v2/tags", */
+    /*     .value.handler = handle_del_tags, */
+    /* }, */
+    /* { */
+    /*     .method        = NEU_HTTP_METHOD_POST, */
+    /*     .type          = NEU_HTTP_HANDLER_FUNCTION, */
+    /*     .url           = "/api/v2/group", */
+    /*     .value.handler = handle_add_group_config, */
+    /* }, */
+    /* { */
+    /*     .method        = NEU_HTTP_METHOD_PUT, */
+    /*     .type          = NEU_HTTP_HANDLER_FUNCTION, */
+    /*     .url           = "/api/v2/group", */
+    /*     .value.handler = handle_update_group, */
+    /* }, */
+    /* { */
+    /*     .method        = NEU_HTTP_METHOD_DELETE, */
+    /*     .type          = NEU_HTTP_HANDLER_FUNCTION, */
+    /*     .url           = "/api/v2/group", */
+    /*     .value.handler = handle_del_group_config, */
+    /* }, */
+    /* { */
+    /*     .method        = NEU_HTTP_METHOD_GET, */
+    /*     .type          = NEU_HTTP_HANDLER_FUNCTION, */
+    /*     .url           = "/api/v2/group", */
+    /*     .value.handler = handle_get_group_config, */
+    /* }, */
     {
         .method        = NEU_HTTP_METHOD_POST,
         .type          = NEU_HTTP_HANDLER_FUNCTION,
@@ -268,72 +268,72 @@ static struct neu_http_handler rest_handlers[] = {
         .url           = "/api/v2/plugin",
         .value.handler = handle_del_plugin,
     },
-    {
-        .method        = NEU_HTTP_METHOD_POST,
-        .type          = NEU_HTTP_HANDLER_FUNCTION,
-        .url           = "/api/v2/read",
-        .value.handler = handle_read,
-    },
-    {
-        .method        = NEU_HTTP_METHOD_POST,
-        .type          = NEU_HTTP_HANDLER_FUNCTION,
-        .url           = "/api/v2/write",
-        .value.handler = handle_write,
-    },
-    {
-        .method        = NEU_HTTP_METHOD_POST,
-        .type          = NEU_HTTP_HANDLER_FUNCTION,
-        .url           = "/api/v2/write/tags",
-        .value.handler = handle_write_tags,
-    },
-    {
-        .method        = NEU_HTTP_METHOD_POST,
-        .type          = NEU_HTTP_HANDLER_FUNCTION,
-        .url           = "/api/v2/subscribe",
-        .value.handler = handle_grp_subscribe,
-    },
-    {
-        .method        = NEU_HTTP_METHOD_PUT,
-        .type          = NEU_HTTP_HANDLER_FUNCTION,
-        .url           = "/api/v2/subscribe",
-        .value.handler = handle_grp_update_subscribe,
-    },
-    {
-        .method        = NEU_HTTP_METHOD_DELETE,
-        .type          = NEU_HTTP_HANDLER_FUNCTION,
-        .url           = "/api/v2/subscribe",
-        .value.handler = handle_grp_unsubscribe,
-    },
-    {
-        .method        = NEU_HTTP_METHOD_GET,
-        .type          = NEU_HTTP_HANDLER_FUNCTION,
-        .url           = "/api/v2/subscribe",
-        .value.handler = handle_grp_get_subscribe,
-    },
-    {
-        .method        = NEU_HTTP_METHOD_POST,
-        .type          = NEU_HTTP_HANDLER_FUNCTION,
-        .url           = "/api/v2/subscribes",
-        .value.handler = handle_grp_subscribes,
-    },
-    {
-        .method        = NEU_HTTP_METHOD_GET,
-        .type          = NEU_HTTP_HANDLER_FUNCTION,
-        .url           = "/api/v2/schema",
-        .value.handler = handle_get_plugin_schema,
-    },
-    {
-        .method        = NEU_HTTP_METHOD_POST,
-        .type          = NEU_HTTP_HANDLER_FUNCTION,
-        .url           = "/api/v2/node/setting",
-        .value.handler = handle_set_node_setting,
-    },
-    {
-        .method        = NEU_HTTP_METHOD_GET,
-        .type          = NEU_HTTP_HANDLER_FUNCTION,
-        .url           = "/api/v2/node/setting",
-        .value.handler = handle_get_node_setting,
-    },
+    /* { */
+    /*     .method        = NEU_HTTP_METHOD_POST, */
+    /*     .type          = NEU_HTTP_HANDLER_FUNCTION, */
+    /*     .url           = "/api/v2/read", */
+    /*     .value.handler = handle_read, */
+    /* }, */
+    /* { */
+    /*     .method        = NEU_HTTP_METHOD_POST, */
+    /*     .type          = NEU_HTTP_HANDLER_FUNCTION, */
+    /*     .url           = "/api/v2/write", */
+    /*     .value.handler = handle_write, */
+    /* }, */
+    /* { */
+    /*     .method        = NEU_HTTP_METHOD_POST, */
+    /*     .type          = NEU_HTTP_HANDLER_FUNCTION, */
+    /*     .url           = "/api/v2/write/tags", */
+    /*     .value.handler = handle_write_tags, */
+    /* }, */
+    /* { */
+    /*     .method        = NEU_HTTP_METHOD_POST, */
+    /*     .type          = NEU_HTTP_HANDLER_FUNCTION, */
+    /*     .url           = "/api/v2/subscribe", */
+    /*     .value.handler = handle_grp_subscribe, */
+    /* }, */
+    /* { */
+    /*     .method        = NEU_HTTP_METHOD_PUT, */
+    /*     .type          = NEU_HTTP_HANDLER_FUNCTION, */
+    /*     .url           = "/api/v2/subscribe", */
+    /*     .value.handler = handle_grp_update_subscribe, */
+    /* }, */
+    /* { */
+    /*     .method        = NEU_HTTP_METHOD_DELETE, */
+    /*     .type          = NEU_HTTP_HANDLER_FUNCTION, */
+    /*     .url           = "/api/v2/subscribe", */
+    /*     .value.handler = handle_grp_unsubscribe, */
+    /* }, */
+    /* { */
+    /*     .method        = NEU_HTTP_METHOD_GET, */
+    /*     .type          = NEU_HTTP_HANDLER_FUNCTION, */
+    /*     .url           = "/api/v2/subscribe", */
+    /*     .value.handler = handle_grp_get_subscribe, */
+    /* }, */
+    /* { */
+    /*     .method        = NEU_HTTP_METHOD_POST, */
+    /*     .type          = NEU_HTTP_HANDLER_FUNCTION, */
+    /*     .url           = "/api/v2/subscribes", */
+    /*     .value.handler = handle_grp_subscribes, */
+    /* }, */
+    /* { */
+    /*     .method        = NEU_HTTP_METHOD_GET, */
+    /*     .type          = NEU_HTTP_HANDLER_FUNCTION, */
+    /*     .url           = "/api/v2/schema", */
+    /*     .value.handler = handle_get_plugin_schema, */
+    /* }, */
+    /* { */
+    /*     .method        = NEU_HTTP_METHOD_POST, */
+    /*     .type          = NEU_HTTP_HANDLER_FUNCTION, */
+    /*     .url           = "/api/v2/node/setting", */
+    /*     .value.handler = handle_set_node_setting, */
+    /* }, */
+    /* { */
+    /*     .method        = NEU_HTTP_METHOD_GET, */
+    /*     .type          = NEU_HTTP_HANDLER_FUNCTION, */
+    /*     .url           = "/api/v2/node/setting", */
+    /*     .value.handler = handle_get_node_setting, */
+    /* }, */
     {
         .method        = NEU_HTTP_METHOD_POST,
         .type          = NEU_HTTP_HANDLER_FUNCTION,
@@ -466,42 +466,42 @@ static struct neu_http_handler rest_handlers[] = {
     /*     .url           = "/api/v2/template/group", */
     /*     .value.handler = handle_get_template_group, */
     /* }, */
-    {
-        .method        = NEU_HTTP_METHOD_POST,
-        .type          = NEU_HTTP_HANDLER_FUNCTION,
-        .url           = "/api/v2/ndriver/map",
-        .value.handler = handle_add_ndriver_map,
-    },
-    {
-        .method        = NEU_HTTP_METHOD_DELETE,
-        .type          = NEU_HTTP_HANDLER_FUNCTION,
-        .url           = "/api/v2/ndriver/map",
-        .value.handler = handle_del_ndriver_map,
-    },
-    {
-        .method        = NEU_HTTP_METHOD_GET,
-        .type          = NEU_HTTP_HANDLER_FUNCTION,
-        .url           = "/api/v2/ndriver/map",
-        .value.handler = handle_get_ndriver_maps,
-    },
-    {
-        .method        = NEU_HTTP_METHOD_PUT,
-        .type          = NEU_HTTP_HANDLER_FUNCTION,
-        .url           = "/api/v2/ndriver/tag/param",
-        .value.handler = handle_put_ndriver_tag_param,
-    },
-    {
-        .method        = NEU_HTTP_METHOD_PUT,
-        .type          = NEU_HTTP_HANDLER_FUNCTION,
-        .url           = "/api/v2/ndriver/tag/info",
-        .value.handler = handle_put_ndriver_tag_info,
-    },
-    {
-        .method        = NEU_HTTP_METHOD_GET,
-        .type          = NEU_HTTP_HANDLER_FUNCTION,
-        .url           = "/api/v2/ndriver/tag",
-        .value.handler = handle_get_ndriver_tags,
-    },
+    /* { */
+    /*     .method        = NEU_HTTP_METHOD_POST, */
+    /*     .type          = NEU_HTTP_HANDLER_FUNCTION, */
+    /*     .url           = "/api/v2/ndriver/map", */
+    /*     .value.handler = handle_add_ndriver_map, */
+    /* }, */
+    /* { */
+    /*     .method        = NEU_HTTP_METHOD_DELETE, */
+    /*     .type          = NEU_HTTP_HANDLER_FUNCTION, */
+    /*     .url           = "/api/v2/ndriver/map", */
+    /*     .value.handler = handle_del_ndriver_map, */
+    /* }, */
+    /* { */
+    /*     .method        = NEU_HTTP_METHOD_GET, */
+    /*     .type          = NEU_HTTP_HANDLER_FUNCTION, */
+    /*     .url           = "/api/v2/ndriver/map", */
+    /*     .value.handler = handle_get_ndriver_maps, */
+    /* }, */
+    /* { */
+    /*     .method        = NEU_HTTP_METHOD_PUT, */
+    /*     .type          = NEU_HTTP_HANDLER_FUNCTION, */
+    /*     .url           = "/api/v2/ndriver/tag/param", */
+    /*     .value.handler = handle_put_ndriver_tag_param, */
+    /* }, */
+    /* { */
+    /*     .method        = NEU_HTTP_METHOD_PUT, */
+    /*     .type          = NEU_HTTP_HANDLER_FUNCTION, */
+    /*     .url           = "/api/v2/ndriver/tag/info", */
+    /*     .value.handler = handle_put_ndriver_tag_info, */
+    /* }, */
+    /* { */
+    /*     .method        = NEU_HTTP_METHOD_GET, */
+    /*     .type          = NEU_HTTP_HANDLER_FUNCTION, */
+    /*     .url           = "/api/v2/ndriver/tag", */
+    /*     .value.handler = handle_get_ndriver_tags, */
+    /* }, */
 };
 
 void neu_rest_handler(const struct neu_http_handler **handlers, uint32_t *size)
