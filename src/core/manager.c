@@ -395,23 +395,23 @@ static int manager_loop(enum neu_event_io_type type, int fd, void *usr_data)
         break;
 	}
 
-	case ESV_THING_MODEL_TRANS_DATA_INPROC: {
-		 esv_thing_model_trans_data_inproc_t *cmd = (esv_thing_model_trans_data_inproc_t *) &header[1];
-		 nlog_info("ESV_THING_MODEL_TRANS_DATA_INPROC method: %d driver: %s, product_key: %s, device_name: %s", cmd->method, cmd->driver, cmd->product_key, cmd->device_name);
-		 if (NULL != cmd->data_root) {
-			 esv_outside_service_manager_thing_model_msg_send(manager->esv_outside_service_manager, cmd);
-			 char *data_root_str = json_dumps(cmd->data_root, 0);
-			 if (NULL != data_root_str) {
-				 nlog_info("thing model data root: %s", data_root_str);
-				 free(data_root_str);
-			 }
-			 json_decref(cmd->data_root);
-		 }
-		 free(cmd->driver);
-		 free(cmd->product_key);
-		 free(cmd->device_name);
-		 break;
-	 }
+	/* case ESV_THING_MODEL_TRANS_DATA_INPROC: { */
+	/* 	 esv_thing_model_trans_data_inproc_t *cmd = (esv_thing_model_trans_data_inproc_t *) &header[1]; */
+	/* 	 nlog_info("ESV_THING_MODEL_TRANS_DATA_INPROC method: %d driver: %s, product_key: %s, device_name: %s", cmd->method, cmd->driver, cmd->product_key, cmd->device_name); */
+	/* 	 if (NULL != cmd->data_root) { */
+	/* 		 esv_outside_service_manager_thing_model_msg_send(manager->esv_outside_service_manager, cmd); */
+	/* 		 char *data_root_str = json_dumps(cmd->data_root, 0); */
+	/* 		 if (NULL != data_root_str) { */
+	/* 			 nlog_info("thing model data root: %s", data_root_str); */
+	/* 			 free(data_root_str); */
+	/* 		 } */
+	/* 		 json_decref(cmd->data_root); */
+	/* 	 } */
+	/* 	 free(cmd->driver); */
+	/* 	 free(cmd->product_key); */
+	/* 	 free(cmd->device_name); */
+	/* 	 break; */
+	/*  } */
 
     default:
         assert(false);
@@ -525,7 +525,7 @@ static void start_static_adapter(neu_manager_t *manager, const char *name)
     adapter_info.handle = instance.handle;
     adapter_info.module = instance.module;
 
-    adapter = neu_adapter_create(&adapter_info, true);
+    adapter = neu_adapter_create(manager->esv_outside_service_manager, &adapter_info, true);
     neu_node_manager_add_static(manager->node_manager, adapter);
     neu_adapter_init(adapter, false);
     neu_adapter_start(adapter);

@@ -129,7 +129,8 @@ set(ESVCPM_SOURCE
 	src/core/plugin_manager.c
 	src/core/node_manager.c
 	src/core/storage.c
-	src/core/manager_thing_model.c
+	src/core/manager_adapter_msg.c
+	# src/core/manager_thing_model.c
 	src/core/outside_service_manager.c
 	src/adapter/adapter.c
 	src/adapter/storage.c

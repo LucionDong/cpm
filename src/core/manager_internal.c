@@ -77,7 +77,7 @@ int neu_manager_add_node(neu_manager_t *manager, const char *node_name,
     adapter_info.handle = instance.handle;
     adapter_info.module = instance.module;
 
-    adapter = neu_adapter_create(&adapter_info, load);
+    adapter = neu_adapter_create(manager->esv_outside_service_manager, &adapter_info, load);
     if (adapter == NULL) {
         return neu_adapter_error();
     }

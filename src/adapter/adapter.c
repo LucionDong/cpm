@@ -124,7 +124,7 @@ void neu_adapter_set_error(int error)
     create_adapter_error = error;
 }
 
-neu_adapter_t *neu_adapter_create(neu_adapter_info_t *info, bool load)
+neu_adapter_t *neu_adapter_create(esv_outside_service_manager_t *outside_service_manager, neu_adapter_info_t *info, bool load)
 {
     int                  rv      = 0;
     int                  init_rv = 0;
@@ -155,6 +155,8 @@ neu_adapter_t *neu_adapter_create(neu_adapter_info_t *info, bool load)
     adapter->module                  = info->module;
 
     adapter->timestamp_lev = 0;
+
+	adapter->outside_service_manager = outside_service_manager;
 
     rv = nng_pair1_open(&adapter->sock);
     assert(rv == 0);
@@ -210,9 +212,9 @@ neu_adapter_t *neu_adapter_create(neu_adapter_info_t *info, bool load)
     /* } */
 
 
-    if (info->module->type == NEU_NA_TYPE_ESVDRIVER) {
-		adapter_load_device((neu_adapter_driver_t *) adapter);
-    }
+    /* if (info->module->type == NEU_NA_TYPE_ESVDRIVER) { */
+		/* adapter_load_device((neu_adapter_driver_t *) adapter); */
+    /* } */
 
     param.fd       = adapter->recv_fd;
     param.usr_data = (void *) adapter;

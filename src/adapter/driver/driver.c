@@ -41,6 +41,7 @@
 #include "tag.h"
 #include "device.h"
 #include "driver.h"
+#include "core/outside_service_manager.h"
 
 typedef struct to_be_write_tag {
     bool           single;
@@ -1666,49 +1667,50 @@ static void store_write_tag(group_t *group, to_be_write_tag_t *tag)
 /* easeview */
 
 static int thing_model_msg_arrived(neu_adapter_t *adapter, const esv_thing_model_msg_t *thing_model_msg) {
-	nlog_info("thing_model_msg_arrived from driver: %s product_key: %s, device_name: %s, msg_type: %d", adapter->name, thing_model_msg->product_key, thing_model_msg->device_name, thing_model_msg->msg_type);		
-	switch (thing_model_msg->msg_type) {
-		case ESV_TMM_JSON_OBJECT_PTR: {
-			/* json_t *root = (json_t *)msg; */
-			if (!json_is_object((json_t *)thing_model_msg->msg)) {
-				nlog_warn("received msg not json object");
-				break;
-			} 
-			nlog_info("check msg json object passed");
-			neu_reqresp_head_t header = { 0 };
-			header.type               = ESV_THING_MODEL_TRANS_DATA_INPROC;
-			strcpy(header.sender,adapter->name);
-			strcpy(header.receiver,MANAGER_RECEIVER);
-			esv_thing_model_trans_data_inproc_t *data = calloc(1, sizeof(esv_thing_model_trans_data_inproc_t));
-			data->method = thing_model_msg->method;
-			data->driver = strdup(adapter->name);
-			data->product_key = strdup(thing_model_msg->product_key);
-			data->device_name = strdup(thing_model_msg->device_name);
-			data->data_root = json_deep_copy((json_t *)thing_model_msg->msg);
+	/* nlog_info("thing_model_msg_arrived from driver: %s product_key: %s, device_name: %s, msg_type: %d", adapter->name, thing_model_msg->product_key, thing_model_msg->device_name, thing_model_msg->msg_type); */		
+	/* switch (thing_model_msg->msg_type) { */
+	/* 	case ESV_TMM_JSON_OBJECT_PTR: { */
+	/* 		/1* json_t *root = (json_t *)msg; *1/ */
+	/* 		if (!json_is_object((json_t *)thing_model_msg->msg)) { */
+	/* 			nlog_warn("received msg not json object"); */
+	/* 			break; */
+	/* 		} */ 
+	/* 		nlog_info("check msg json object passed"); */
+	/* 		neu_reqresp_head_t header = { 0 }; */
+	/* 		header.type               = ESV_THING_MODEL_TRANS_DATA_INPROC; */
+	/* 		strcpy(header.sender,adapter->name); */
+	/* 		strcpy(header.receiver,MANAGER_RECEIVER); */
+	/* 		esv_thing_model_trans_data_inproc_t *data = calloc(1, sizeof(esv_thing_model_trans_data_inproc_t)); */
+	/* 		data->method = thing_model_msg->method; */
+	/* 		data->driver = strdup(adapter->name); */
+	/* 		data->product_key = strdup(thing_model_msg->product_key); */
+	/* 		data->device_name = strdup(thing_model_msg->device_name); */
+	/* 		data->data_root = json_deep_copy((json_t *)thing_model_msg->msg); */
 
-			/* neu_plugin_op(adapter->plugin, header, data); */ 
-			/* send to manager */
-			nng_msg *nngmsg = esv_nng_msg_gen(&header, data);
-			int ret = nng_sendmsg(adapter->sock, nngmsg, 0);
-			if (ret != 0) {
-				nng_msg_free(nngmsg);
-			}
+	/* 		/1* neu_plugin_op(adapter->plugin, header, data); *1/ */ 
+	/* 		/1* send to manager *1/ */
+	/* 		nng_msg *nngmsg = esv_nng_msg_gen(&header, data); */
+	/* 		int ret = nng_sendmsg(adapter->sock, nngmsg, 0); */
+	/* 		if (ret != 0) { */
+	/* 			nng_msg_free(nngmsg); */
+	/* 		} */
 
-			free(data->driver);
-			free(data->product_key);
-			free(data->device_name);
-			json_decref(data->data_root);
-			free(data);
-			return 0;
-			break;
-		 }
-		default:{
-			nlog_info("at default");
-			break;
-		}
-	}
+	/* 		free(data->driver); */
+	/* 		free(data->product_key); */
+	/* 		free(data->device_name); */
+	/* 		json_decref(data->data_root); */
+	/* 		free(data); */
+	/* 		return 0; */
+	/* 		break; */
+	/* 	 } */
+	/* 	default:{ */
+	/* 		nlog_info("at default"); */
+	/* 		break; */
+	/* 	} */
+	/* } */
 
-	return -1;
+	/* return -1; */
+	return 0;
 }
 
 nng_msg *esv_nng_msg_gen(neu_reqresp_head_t *header, const void *data) {
@@ -1738,17 +1740,6 @@ nng_msg *esv_nng_msg_gen(neu_reqresp_head_t *header, const void *data) {
 			trans_data->data_root = data_to_send;
 			return msg;
 		 }
-		/* case ESV_THING_MODEL_TRANS_DATA_IPC: { */
-		/* 	esv_thing_model_trans_data_ipc_t *trans = (esv_thing_model_trans_data_ipc_t *)data; */
-
-		/* 	nng_msg_alloc(&msg, sizeof(neu_reqresp_head_t) + sizeof(esv_thing_model_trans_data_ipc_t) + strlen(trans->json_str) + 1); */
-		/* 	body = nng_msg_body(msg); */
-		/* 	memcpy(body, header, sizeof(neu_reqresp_head_t)); */
-		/* 	memcpy((uint8_t *)body + sizeof(neu_reqresp_head_t), data, sizeof(esv_thing_model_trans_data_ipc_t)); */
-		/* 	/1* memcpy((uint8_t *)body + sizeof(neu_reqresp_head_t) + sizeof(esv_thing_model_trans_data_ipc_t), (uint8_t *)data + sizeof(esv_thing_model_trans_data_ipc_t), strlen(trans->json_str)); *1/ */
-		/* 	strcpy((char *)body + sizeof(neu_reqresp_head_t) + sizeof(esv_thing_model_trans_data_ipc_t), trans->json_str); */
-		/* 	return msg; */
-		/*  } */
 		default: {
 			 return NULL;
 		 }
@@ -1757,8 +1748,11 @@ nng_msg *esv_nng_msg_gen(neu_reqresp_head_t *header, const void *data) {
     return NULL;
 }
 
-static void esv_func2(neu_adapter_t *adapter, void *msg) {
-	nlog_info("esv_func2");		
+static void esv_msg_to_adapter(neu_adapter_t *adapter, const esv_between_adapter_driver_msg_t *msg) {
+	nlog_info("esv_msg_to_adapter");		
+	/*! TODO: send msg to mqtt or mcurs232
+	*/
+	esv_outside_service_manager_dispatch_msg(adapter->outside_service_manager, msg);
 }
 
 
@@ -1777,7 +1771,7 @@ neu_adapter_driver_t *neu_adapter_esvdriver_create()
     /* driver->cache                                   = neu_driver_cache_new(); */
     driver->driver_events                   = neu_event_new();
     driver->adapter.cb_funs.esvdriver.thing_model_msg_arrived = thing_model_msg_arrived;
-    driver->adapter.cb_funs.esvdriver.reserved_func2 = esv_func2;
+    driver->adapter.cb_funs.esvdriver.msg_to_adapter = esv_msg_to_adapter;
     driver->adapter.cb_funs.esvdriver.func3 = esv_func3;
     driver->adapter.cb_funs.esvdriver.func4 = esv_func4;
 

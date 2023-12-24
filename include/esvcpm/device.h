@@ -17,6 +17,17 @@ typedef enum esv_thing_model_msg_type {
 	ESV_TMM_JSON_OBJECT_PTR = 0,
 } esv_thing_model_msg_type_e;
 
+typedef enum esv_between_adapter_driver_msg_method {
+	ESV_TO_ADAPTER_MCURS_POST = 0,
+	ESV_TO_ADAPTER_MQTT_PROPERTY_POST,
+	ESV_TO_ADAPTER_MQTT_PROPERTY_POST_ACK,
+} esv_between_adapter_driver_msg_method_e;
+
+typedef enum esv_between_adapter_driver_msg_type {
+	ESV_TAM_JSON_OBJECT_PTR = 0,
+	ESV_TAM_BYTES_PTR,
+} esv_between_adapter_driver_msg_type_e;
+
 typedef struct {
     char *product_key;
     char *device_name;
@@ -41,6 +52,12 @@ typedef struct {
 	esv_thing_model_msg_type_e msg_type;
 	void		*msg;
 } esv_thing_model_msg_t;
+
+typedef struct {
+	esv_between_adapter_driver_msg_method_e method;
+	esv_between_adapter_driver_msg_type_e msg_type;
+	void		*msg;
+} esv_between_adapter_driver_msg_t;
 
 int esv_device_info_cpy(esv_device_info_t *dest, const esv_device_info_t *src);
 int esv_device_info_free(esv_device_info_t *device_info);
