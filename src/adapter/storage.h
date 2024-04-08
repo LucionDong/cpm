@@ -46,6 +46,7 @@ int adapter_load_setting(const char *node, char **setting);
 /* int adapter_load_group_and_tag(neu_adapter_driver_t *driver); */
 
 /* easeview */
+int esv_adapter_load_config(const char *node, char **config);
 int adapter_load_device(neu_adapter_driver_t *driver);
 
 #endif

@@ -197,7 +197,8 @@ neu_adapter_t *neu_adapter_create(esv_outside_service_manager_t *outside_service
 
     init_rv = adapter->module->intf_funs->init(adapter->plugin, load);
 
-    if (adapter_load_setting(adapter->name, &adapter->setting) == 0) {
+    /* if (adapter_load_setting(adapter->name, &adapter->setting) == 0) { */
+    if (esv_adapter_load_config(adapter->name, &adapter->setting) == 0) {
         if (adapter->module->intf_funs->setting(adapter->plugin,
                                                 adapter->setting) == 0) {
             adapter->state = NEU_NODE_RUNNING_STATE_READY;
@@ -212,9 +213,9 @@ neu_adapter_t *neu_adapter_create(esv_outside_service_manager_t *outside_service
     /* } */
 
 
-    /* if (info->module->type == NEU_NA_TYPE_ESVDRIVER) { */
-		/* adapter_load_device((neu_adapter_driver_t *) adapter); */
-    /* } */
+    if (info->module->type == NEU_NA_TYPE_ESVDRIVER) {
+		adapter_load_device((neu_adapter_driver_t *) adapter);
+    }
 
     param.fd       = adapter->recv_fd;
     param.usr_data = (void *) adapter;

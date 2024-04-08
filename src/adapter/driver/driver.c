@@ -1819,8 +1819,7 @@ int esv_adapter_driver_load_devices(neu_adapter_driver_t *driver, const UT_array
 	utarray_foreach(device_infos, esv_persist_device_info_t *, p) {
 		device_infos_unpacked[index].product_key = strdup(p->product_key);
 		device_infos_unpacked[index].device_name = strdup(p->device_name);
-		device_infos_unpacked[index].driver_name = strdup(p->driver_name);
-		device_infos_unpacked[index].thing_model_function_block_id = strdup(p->thing_model_function_block_id);
+		device_infos_unpacked[index].device_secret = strdup(p->device_secret);
 		device_infos_unpacked[index].device_config = strdup(p->device_config);
 		index++;
 	}

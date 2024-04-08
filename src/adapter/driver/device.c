@@ -49,8 +49,7 @@
 int esv_device_info_cpy(esv_device_info_t *dest, const esv_device_info_t * src) {
 	dest->product_key = strdup(src->product_key);
 	dest->device_name = strdup(src->device_name);
-	dest->driver_name = strdup(src->driver_name);
-	dest->thing_model_function_block_id = strdup(src->thing_model_function_block_id);
+	dest->device_secret = strdup(src->device_secret);
 	dest->device_config = strdup(src->device_config);
 	return 0;
 }
@@ -58,8 +57,7 @@ int esv_device_info_cpy(esv_device_info_t *dest, const esv_device_info_t * src) 
 int esv_device_info_free(esv_device_info_t *device_info) {
 	free(device_info->product_key);
 	free(device_info->device_name);
-	free(device_info->driver_name);
-	free(device_info->thing_model_function_block_id);
+	free(device_info->device_secret);
 	free(device_info->device_config);
 	return 0;
 }

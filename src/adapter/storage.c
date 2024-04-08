@@ -6,6 +6,20 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+// easeview
+int esv_adapter_load_config(const char *node, char **config)
+{
+    int rv = esv_persister_load_node_config(node, (const char **) config);
+    if (0 != rv) {
+        nlog_warn("load %s setting fail", node);
+        return -1;
+    }
+
+    return 0;
+}
+// easeview end
+
+
 void adapter_storage_state(const char *node, neu_node_running_state_e state)
 {
     neu_persister_update_node_state(node, state);

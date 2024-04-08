@@ -41,12 +41,22 @@ typedef struct {
 /* easeview start */
 
 typedef struct {
+	char *node_id;
+    char *node_name;
+    char *plugin_name;
+    char *lib_name;
+    int   node_type;
+    int   install_type;
+    char *node_config;
+    int   node_config_index;
+    int   state;
+} esv_persist_node_info_t;
+
+typedef struct {
 	char *product_key;
 	char *device_name;
 	char *device_secret;
-	char *driver_name;
-	char *device_nick_name;
-	char *thing_model_function_block_id;
+	char *plugin_node_name;
 	char *device_config;
 } esv_persist_device_info_t;
 
@@ -54,9 +64,7 @@ static inline void esv_presist_device_info_fini(esv_persist_device_info_t *info)
 	free(info->product_key);
 	free(info->device_name);
 	free(info->device_secret);
-	free(info->driver_name);
-	free(info->device_nick_name);
-	free(info->thing_model_function_block_id);
+	free(info->plugin_node_name);
 	free(info->device_config);
 }
 
@@ -70,9 +78,34 @@ int esv_persister_create(const char *schema_dir);
  */
 void esv_persister_destroy();
 
+/**
+ * Load node infos.
+ * @param[out] node_infos           used to return pointer to heap allocated
+ *                                  vector of neu_persist_node_info_t.
+ * @return 0 on success, none-zero on failure
+ */
+int esv_persister_load_nodes(UT_array **node_infos);
+
+/**
+ * Load node setting.
+ * @param node_name                 name of the node.
+ * @param[out] setting              used to return node setting string.
+ * @return 0 on success, non-zero otherwise
+ */
+int esv_persister_load_node_config(const char *       node_name,
+                                    const char **const config);
 int esv_persister_load_devices(const char *driver_name, UT_array **device_infos);
 
 int esv_persister_query_device_driver(const char *product_key, const char *device_name, char **driver_name);
+
+static inline void esv_persist_node_info_fini(esv_persist_node_info_t *info)
+{
+    free(info->node_id);
+    free(info->node_name);
+    free(info->plugin_name);
+    free(info->lib_name);
+    free(info->node_config);
+}
 /* easeview end */
 
 /* typedef struct { */

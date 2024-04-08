@@ -76,6 +76,6 @@ int manager_load_node(neu_manager_t *manager);
 /* int manager_load_template(neu_manager_t *manager); */
 
 /* easeview */
-
+int esv_manager_load_node(neu_manager_t *manager);
 
 #endif

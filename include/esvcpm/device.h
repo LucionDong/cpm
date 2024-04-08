@@ -31,8 +31,7 @@ typedef enum esv_between_adapter_driver_msg_type {
 typedef struct {
     char *product_key;
     char *device_name;
-    char *driver_name;
-	char *thing_model_function_block_id;
+    char *device_secret;
 	char *device_config;
 } esv_device_info_t;
 
