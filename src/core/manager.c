@@ -38,7 +38,8 @@
 #include "plugin_manager.h"
 #include "storage.h"
 /* #include "subscribe.h" */
-#include "outside_service_manager.h"
+/* #include "outside_service_manager.h" */
+#include "connection/mqtt/lan_mqtt_service.h"
 
 #include "manager.h"
 #include "manager_internal.h"
@@ -93,24 +94,25 @@ neu_manager_t *neu_manager_create()
     manager->events            = neu_event_new();
     manager->plugin_manager    = neu_plugin_manager_create();
     manager->node_manager      = neu_node_manager_create();
-	manager->esv_outside_service_manager = esv_outside_service_manager_create();
+	/* manager->esv_outside_service_manager = esv_outside_service_manager_create(); */
 
-	esv_outside_service_manager_set_neu_manager(manager->esv_outside_service_manager, manager);
+	/* esv_outside_service_manager_set_neu_manager(manager->esv_outside_service_manager, manager); */
     /* manager->subscribe_manager = neu_subscribe_manager_create(); */
     /* manager->template_manager  = neu_template_manager_create(); */
 
-    rv = nng_pair1_open_poly(&manager->socket);
-    assert(rv == 0);
+    /* rv = nng_pair1_open_poly(&manager->socket); */
+    /* assert(rv == 0); */
 
-    rv = nng_listen(manager->socket, url, NULL, 0);
-    assert(rv == 0);
-	nlog_info("manager listen url:%s", url);
+    /* rv = nng_listen(manager->socket, url, NULL, 0); */
+    /* assert(rv == 0); */
+	/* nlog_info("manager listen url:%s", url); */
 
-    nng_socket_set_int(manager->socket, NNG_OPT_RECVBUF, 8192);
-    nng_socket_set_int(manager->socket, NNG_OPT_SENDBUF, 8292);
-    nng_socket_set_ms(manager->socket, NNG_OPT_SENDTIMEO, 1000);
-    nng_socket_get_int(manager->socket, NNG_OPT_RECVFD, &param.fd);
-    manager->loop = neu_event_add_io(manager->events, param);
+    /* nng_socket_set_int(manager->socket, NNG_OPT_RECVBUF, 8192); */
+    /* nng_socket_set_int(manager->socket, NNG_OPT_SENDBUF, 8292); */
+    /* nng_socket_set_ms(manager->socket, NNG_OPT_SENDTIMEO, 1000); */
+    /* nng_socket_get_int(manager->socket, NNG_OPT_RECVFD, &param.fd); */
+    /* manager->loop = neu_event_add_io(manager->events, param); */
+
 
     manager->timestamp_lev_manager = 0;
 
@@ -137,18 +139,24 @@ neu_manager_t *neu_manager_create()
 
     /* manager_load_node(manager); */
     esv_manager_load_node(manager);
-    while (neu_node_manager_exist_uninit(manager->node_manager)) {
-        usleep(1000 * 100);
-    }
+    /* while (neu_node_manager_exist_uninit(manager->node_manager)) { */
+    /*     usleep(1000 * 100); */
+    /* } */
 
+	// mqtt
+	nlog_debug("&manager=%p", manager);
+	esv_lan_mqtt_service_t *esv_lan_mqtt_service = esv_lan_mqtt_service_create(); 
+	esv_lan_mqtt_srvice_set_manager(esv_lan_mqtt_service, manager);
+	manager->esv_lan_mqtt_service = esv_lan_mqtt_service;
+	lan_mqtt_service_start(manager->esv_lan_mqtt_service);
     /* manager_load_subscribe(manager); */
 
-    timer_level.usr_data = (void *) manager;
-    manager->timer_lev   = neu_event_add_timer(manager->events, timer_level);
+    /* timer_level.usr_data = (void *) manager; */
+    /* manager->timer_lev   = neu_event_add_timer(manager->events, timer_level); */
 
-    timestamp_timer_param.usr_data = (void *) manager;
-    manager->timer_timestamp =
-        neu_event_add_timer(manager->events, timestamp_timer_param);
+    /* timestamp_timer_param.usr_data = (void *) manager; */
+    /* manager->timer_timestamp = */
+    /*     neu_event_add_timer(manager->events, timestamp_timer_param); */
 
     nlog_notice("manager start");
     return manager;
@@ -187,11 +195,14 @@ void neu_manager_destroy(neu_manager_t *manager)
     neu_node_manager_destroy(manager->node_manager);
     neu_plugin_manager_destroy(manager->plugin_manager);
     /* neu_template_manager_destroy(manager->template_manager); */
-	esv_outside_service_manager_destory(manager->esv_outside_service_manager);
+	/* esv_outside_service_manager_destory(manager->esv_outside_service_manager); */
 
     nng_close(manager->socket);
     neu_event_del_io(manager->events, manager->loop);
     neu_event_close(manager->events);
+
+	// mqtt
+	lan_mqtt_service_stop(manager->esv_lan_mqtt_service);
 
     free(manager);
     nlog_notice("manager exit");
@@ -526,7 +537,8 @@ static void start_static_adapter(neu_manager_t *manager, const char *name)
     adapter_info.handle = instance.handle;
     adapter_info.module = instance.module;
 
-    adapter = neu_adapter_create(manager->esv_outside_service_manager, &adapter_info, true);
+    /* adapter = neu_adapter_create(manager->esv_outside_service_manager, &adapter_info, true); */
+    adapter = neu_adapter_create(&adapter_info, true);
     neu_node_manager_add_static(manager->node_manager, adapter);
     neu_adapter_init(adapter, false);
     neu_adapter_start(adapter);

@@ -66,6 +66,7 @@ set(ESVCPM_BASE_SOURCE
 	src/utils/http.c
 	src/utils/neu_jwt.c
 	src/utils/asprintf.c
+	src/utils/mqtt.c
 	${PERSIST_SOURCES}
 	)
 
@@ -89,6 +90,7 @@ find_library(JWT_LIB NAMES jwt REQUIRED)
 find_library(CRYPTO_LIB NAMES crypto REQUIRED)
 find_library(SSL_LIB NAMES ssl REQUIRED)
 find_library(SQLITE3_LIB NAMES sqlite3 REQUIRED)
+find_library(PAHO-MQTTA_LIB NAMES paho-mqtt3a REQUIRED)
 
 target_link_libraries(esvcpm-base PRIVATE 
 	# ${PTHREAD_LIB}
@@ -131,12 +133,13 @@ set(ESVCPM_SOURCE
 	src/core/storage.c
 	src/core/manager_adapter_msg.c
 	# src/core/manager_thing_model.c
-	src/core/outside_service_manager.c
+	# src/core/outside_service_manager.c
 	src/adapter/adapter.c
 	src/adapter/storage.c
 	src/adapter/driver/cache.c
 	src/adapter/driver/driver.c
 	src/adapter/driver/device.c
+	src/connection/mqtt/lan_mqtt_service.c
 	)
 
 # set(CMAKE_BUILD_RPATH ./)
@@ -165,6 +168,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
 	${CRYPTO_LIB}
 	${SSL_LIB}
 	${SQLITE3_LIB}
+	${PAHO-MQTTA_LIB}
 	)
 
 # add_executable(nngtest)

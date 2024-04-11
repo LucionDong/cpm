@@ -886,7 +886,8 @@ typedef struct adapter_callbacks {
         } driver;
         struct {
             int (*thing_model_msg_arrived)(neu_adapter_t *adapter, const esv_thing_model_msg_t *msg);
-            void (*msg_to_adapter)(neu_adapter_t *adapter, const esv_between_adapter_driver_msg_t *msg);
+            /* void (*msg_to_adapter)(neu_adapter_t *adapter, const esv_between_adapter_driver_msg_t *msg); */
+            void (*func2)(neu_adapter_t *adapter);
             void (*func3)(neu_adapter_t *adapter);
             void (*func4)(neu_adapter_t *adapter);
         } esvdriver;

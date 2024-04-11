@@ -152,11 +152,11 @@ void esv_outside_service_manager_set_neu_manager(esv_outside_service_manager_t *
 /* } */
 
 
-int esv_outside_service_manager_dispatch_msg(esv_outside_service_manager_t *outside_service_manager, const esv_between_adapter_driver_msg_t *msg) {
-	/* TODO:  <24-12-23, winston> 
-	 * 根据 msg 类型
-	 * 发送给网关 gatewaybroker mqtt broker
-	 * 发送给网关 mcurs232
-	 * */
-	return 0;
-}
+/* int esv_outside_service_manager_dispatch_msg(esv_outside_service_manager_t *outside_service_manager, const esv_between_adapter_driver_msg_t *msg) { */
+/* 	/1* TODO:  <24-12-23, winston> */ 
+/* 	 * 根据 msg 类型 */
+/* 	 * 发送给网关 gatewaybroker mqtt broker */
+/* 	 * 发送给网关 mcurs232 */
+/* 	 * *1/ */
+/* 	return 0; */
+/* } */

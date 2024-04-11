@@ -1978,11 +1978,11 @@ error:
 
 }
 
-int esv_persister_query_device_driver(const char *product_key, const char *device_name, char **driver_name) {
+int esv_persister_query_device_node_name(const char *product_key, const char *device_name, char **node_name) {
 	sqlite3_stmt *stmt = NULL;
 	const char *query ="SELECT \
-						driver_name \
-						FROM device WHERE product_key=? and device_name=? LIMIT 1";
+						plugin_node_name \
+						FROM thing_device WHERE product_key=? and device_name=? LIMIT 1";
 	
 	if (SQLITE_OK != sqlite3_prepare_v2(thing_db, query, -1, &stmt, NULL)) {
         nlog_error("prepare `%s` fail: %s", query, sqlite3_errmsg(thing_db));
@@ -2004,7 +2004,7 @@ int esv_persister_query_device_driver(const char *product_key, const char *devic
 
 	int step = sqlite3_step(stmt);
 	if (SQLITE_ROW == step) {
-		*driver_name = strdup((char *) sqlite3_column_text(stmt, 0));
+		*node_name = strdup((char *) sqlite3_column_text(stmt, 0));
         step = sqlite3_step(stmt);
     }
     if (SQLITE_DONE != step) {
@@ -2012,7 +2012,7 @@ int esv_persister_query_device_driver(const char *product_key, const char *devic
     }
 
     sqlite3_finalize(stmt);
-    return 0;
+    return EXIT_SUCCESS;
 
 error:
     return NEU_ERR_EINTERNAL;

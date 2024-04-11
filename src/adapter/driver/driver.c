@@ -1748,11 +1748,12 @@ nng_msg *esv_nng_msg_gen(neu_reqresp_head_t *header, const void *data) {
     return NULL;
 }
 
-static void esv_msg_to_adapter(neu_adapter_t *adapter, const esv_between_adapter_driver_msg_t *msg) {
+/* static void esv_msg_to_adapter(neu_adapter_t *adapter, const esv_between_adapter_driver_msg_t *msg) { */
+static void esv_msg_to_adapter(neu_adapter_t *adapter) {
 	nlog_info("esv_msg_to_adapter");		
 	/*! TODO: send msg to mqtt or mcurs232
 	*/
-	esv_outside_service_manager_dispatch_msg(adapter->outside_service_manager, msg);
+	/* esv_outside_service_manager_dispatch_msg(adapter->outside_service_manager, msg); */
 }
 
 
@@ -1771,7 +1772,7 @@ neu_adapter_driver_t *neu_adapter_esvdriver_create()
     /* driver->cache                                   = neu_driver_cache_new(); */
     driver->driver_events                   = neu_event_new();
     driver->adapter.cb_funs.esvdriver.thing_model_msg_arrived = thing_model_msg_arrived;
-    driver->adapter.cb_funs.esvdriver.msg_to_adapter = esv_msg_to_adapter;
+    /* driver->adapter.cb_funs.esvdriver.msg_to_adapter = esv_msg_to_adapter; */
     driver->adapter.cb_funs.esvdriver.func3 = esv_func3;
     driver->adapter.cb_funs.esvdriver.func4 = esv_func4;
 

@@ -124,7 +124,7 @@ void neu_adapter_set_error(int error)
     create_adapter_error = error;
 }
 
-neu_adapter_t *neu_adapter_create(esv_outside_service_manager_t *outside_service_manager, neu_adapter_info_t *info, bool load)
+neu_adapter_t *neu_adapter_create(neu_adapter_info_t *info, bool load)
 {
     int                  rv      = 0;
     int                  init_rv = 0;
@@ -156,14 +156,14 @@ neu_adapter_t *neu_adapter_create(esv_outside_service_manager_t *outside_service
 
     adapter->timestamp_lev = 0;
 
-	adapter->outside_service_manager = outside_service_manager;
+	/* adapter->outside_service_manager = outside_service_manager; */
 
-    rv = nng_pair1_open(&adapter->sock);
-    assert(rv == 0);
-    nng_socket_set_int(adapter->sock, NNG_OPT_RECVBUF, 8192);
-    nng_socket_set_int(adapter->sock, NNG_OPT_SENDBUF, 8192);
-    nng_socket_set_ms(adapter->sock, NNG_OPT_SENDTIMEO, 1000);
-    nng_socket_get_int(adapter->sock, NNG_OPT_RECVFD, &adapter->recv_fd);
+    /* rv = nng_pair1_open(&adapter->sock); */
+    /* assert(rv == 0); */
+    /* nng_socket_set_int(adapter->sock, NNG_OPT_RECVBUF, 8192); */
+    /* nng_socket_set_int(adapter->sock, NNG_OPT_SENDBUF, 8192); */
+    /* nng_socket_set_ms(adapter->sock, NNG_OPT_SENDTIMEO, 1000); */
+    /* nng_socket_get_int(adapter->sock, NNG_OPT_RECVFD, &adapter->recv_fd); */
 
     switch (info->module->type) {
     case NEU_NA_TYPE_DRIVER:
@@ -217,19 +217,19 @@ neu_adapter_t *neu_adapter_create(esv_outside_service_manager_t *outside_service
 		adapter_load_device((neu_adapter_driver_t *) adapter);
     }
 
-    param.fd       = adapter->recv_fd;
-    param.usr_data = (void *) adapter;
-    param.cb       = adapter_loop;
+    /* param.fd       = adapter->recv_fd; */
+    /* param.usr_data = (void *) adapter; */
+    /* param.cb       = adapter_loop; */
 
-    adapter->nng_io = neu_event_add_io(adapter->events, param);
-    rv = nng_dial(adapter->sock, neu_manager_get_url(), &adapter->dialer, 0);
-    assert(rv == 0);
+    /* adapter->nng_io = neu_event_add_io(adapter->events, param); */
+    /* rv = nng_dial(adapter->sock, neu_manager_get_url(), &adapter->dialer, 0); */
+    /* assert(rv == 0); */
 
-    start_log_level_timer(adapter);
+    /* start_log_level_timer(adapter); */
 
     nlog_notice("Success to create adapter: %s", adapter->name);
 
-    adapter_storage_state(adapter->name, adapter->state);
+    /* adapter_storage_state(adapter->name, adapter->state); */
 
     if (init_rv != 0) {
         nlog_warn("Failed to init adapter: %s", adapter->name);
@@ -240,8 +240,8 @@ neu_adapter_t *neu_adapter_create(esv_outside_service_manager_t *outside_service
 		} else if (adapter->module->type == NEU_NA_TYPE_ESVDRIVER) {
 			neu_adapter_esvdriver_destroy((neu_adapter_driver_t *)adapter);
         }
-        stop_log_level_timer(adapter);
-        neu_event_del_io(adapter->events, adapter->nng_io);
+        /* stop_log_level_timer(adapter); */
+        /* neu_event_del_io(adapter->events, adapter->nng_io); */
 
         neu_adapter_destroy(adapter);
         return NULL;
@@ -301,18 +301,21 @@ int neu_adapter_rename(neu_adapter_t *adapter, const char *new_name)
 
 void neu_adapter_init(neu_adapter_t *adapter, neu_node_running_state_e state)
 {
-    neu_reqresp_head_t  header   = { .type = NEU_REQ_NODE_INIT };
-    neu_req_node_init_t init     = { 0 };
-    nng_msg *           init_msg = NULL;
+    /* neu_reqresp_head_t  header   = { .type = NEU_REQ_NODE_INIT }; */
+    /* neu_req_node_init_t init     = { 0 }; */
+    /* nng_msg *           init_msg = NULL; */
 
-    strcpy(header.sender, adapter->name);
-    strcpy(header.receiver, "manager");
+    /* strcpy(header.sender, adapter->name); */
+    /* strcpy(header.receiver, "manager"); */
 
-    strcpy(init.node, adapter->name);
-    init.state = state;
-    init_msg   = neu_msg_gen(&header, &init);
+    /* strcpy(init.node, adapter->name); */
+    /* init.state = state; */
+    /* init_msg   = neu_msg_gen(&header, &init); */
 
-    nng_sendmsg(adapter->sock, init_msg, 0);
+    /* nng_sendmsg(adapter->sock, init_msg, 0); */
+	/* TODO:  <11-04-24, winston> 
+	 * 根据数据库中的运行状态调用插件的start或stop函数
+	 * */
 }
 
 neu_node_type_e neu_adapter_get_type(neu_adapter_t *adapter)
