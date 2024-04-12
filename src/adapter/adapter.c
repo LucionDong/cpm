@@ -316,6 +316,8 @@ void neu_adapter_init(neu_adapter_t *adapter, neu_node_running_state_e state)
 	/* TODO:  <11-04-24, winston> 
 	 * 根据数据库中的运行状态调用插件的start或stop函数
 	 * */
+	nlog_debug("node former running state:%d", state);
+
 }
 
 neu_node_type_e neu_adapter_get_type(neu_adapter_t *adapter)
@@ -1133,7 +1135,7 @@ int neu_adapter_start(neu_adapter_t *adapter)
     error = intf_funs->start(adapter->plugin);
     if (error == NEU_ERR_SUCCESS) {
         adapter->state = NEU_NODE_RUNNING_STATE_RUNNING;
-        adapter_storage_state(adapter->name, adapter->state);
+        /* adapter_storage_state(adapter->name, adapter->state); */
     }
 
     return error;
@@ -1672,4 +1674,9 @@ void *neu_msg_gen(neu_reqresp_head_t *header, void *data)
     memcpy(body, header, sizeof(neu_reqresp_head_t));
     memcpy((uint8_t *) body + sizeof(neu_reqresp_head_t), data, data_size);
     return msg;
+}
+
+// easeview
+void esv_adapter_set_lan_mqtt_service(neu_adapter_t *adapter, esv_lan_mqtt_service_t *lan_mqtt_service) {
+	adapter->lan_mqtt_service = lan_mqtt_service;
 }

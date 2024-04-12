@@ -117,7 +117,7 @@ neu_manager_t *neu_manager_create()
     manager->timestamp_lev_manager = 0;
 
     /* neu_metrics_init(); */
-    start_static_adapter(manager, DEFAULT_DASHBOARD_PLUGIN_NAME);
+    /* start_static_adapter(manager, DEFAULT_DASHBOARD_PLUGIN_NAME); */
 
     if (manager_load_plugin(manager) != 0) {
         nlog_warn("load plugin error");
@@ -137,6 +137,10 @@ neu_manager_t *neu_manager_create()
     /*     nlog_warn("load template error"); */
     /* } */
 
+	// mqtt
+	esv_lan_mqtt_service_t *esv_lan_mqtt_service = esv_lan_mqtt_service_create(); 
+	esv_lan_mqtt_srvice_set_manager(esv_lan_mqtt_service, manager);
+	manager->esv_lan_mqtt_service = esv_lan_mqtt_service;
     /* manager_load_node(manager); */
     esv_manager_load_node(manager);
     /* while (neu_node_manager_exist_uninit(manager->node_manager)) { */
@@ -144,10 +148,7 @@ neu_manager_t *neu_manager_create()
     /* } */
 
 	// mqtt
-	nlog_debug("&manager=%p", manager);
-	esv_lan_mqtt_service_t *esv_lan_mqtt_service = esv_lan_mqtt_service_create(); 
-	esv_lan_mqtt_srvice_set_manager(esv_lan_mqtt_service, manager);
-	manager->esv_lan_mqtt_service = esv_lan_mqtt_service;
+	/* nlog_debug("&manager=%p", manager); */
 	lan_mqtt_service_start(manager->esv_lan_mqtt_service);
     /* manager_load_subscribe(manager); */
 

@@ -18,3 +18,9 @@
 - zlog.conf: ./config/zlog.conf
 - plugin: ./plugins/
 - default_plugins.json中填写的是so的全名，cpm启动时会加载这个文件里面的so，根据so中neu_plugin_module中的module_name存储到hash表中，node实例化的时候会根据数据库plugin_node表中的plugin_name字段中的值与hash表中的key匹配从而已对应的value作为so去加载
+
+### useage
+- topic: `lan/pk--/dn--/subthing/se7rnJBXjbeWar2k/ryqS674fDD33kYqH/thing/service/property/set`
+- msg:
+```json
+```

@@ -82,8 +82,12 @@ int neu_manager_add_node(neu_manager_t *manager, const char *node_name,
     if (adapter == NULL) {
         return neu_adapter_error();
     }
+	esv_adapter_set_lan_mqtt_service(adapter, manager->esv_lan_mqtt_service);
     neu_node_manager_add(manager->node_manager, adapter);
-    neu_adapter_init(adapter, state);
+	// winston add 2024-4-12 9:56
+    /* neu_adapter_init(adapter, state); */
+    neu_adapter_init(adapter, false);
+	neu_adapter_start(adapter);
 
     return NEU_ERR_SUCCESS;
 }

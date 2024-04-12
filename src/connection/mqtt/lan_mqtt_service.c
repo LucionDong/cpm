@@ -191,6 +191,26 @@ end:
 	return 1;
 }
 
+int lan_mqtt_service_publish(esv_lan_mqtt_service_t *service, char *topicName, char *msg) {
+	nlog_debug("publish topic:%s", topicName);
+	MQTTAsync_message pubmsg = MQTTAsync_message_initializer;
+	int rc;
+
+	pubmsg.payload = msg;
+    pubmsg.payloadlen = (int)strlen(msg);
+    pubmsg.qos = 1;
+    pubmsg.retained = 0;
+
+	nlog_debug("+++mqtt async send");
+	if ((rc = MQTTAsync_sendMessage(service->client, topicName, &pubmsg, NULL)) != MQTTASYNC_SUCCESS)
+	{
+		nlog_warn("Failed to start sendMessage, return code %d", rc);
+		return EXIT_FAILURE;
+	}
+	nlog_debug("---mqtt async send");
+	return EXIT_SUCCESS;
+}
+
 esv_lan_mqtt_service_t* esv_lan_mqtt_service_create() {
 	esv_lan_mqtt_service_t* service = calloc(1, sizeof(esv_lan_mqtt_service_t));
 	return service;
