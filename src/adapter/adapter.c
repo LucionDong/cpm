@@ -1677,6 +1677,6 @@ void *neu_msg_gen(neu_reqresp_head_t *header, void *data)
 }
 
 // easeview
-void esv_adapter_set_lan_mqtt_service(neu_adapter_t *adapter, esv_lan_mqtt_service_t *lan_mqtt_service) {
-	adapter->lan_mqtt_service = lan_mqtt_service;
+void esv_adapter_set_lan_mqtt5_service(neu_adapter_t *adapter, esv_lan_mqtt5_service_t *lan_mqtt5_service) {
+	adapter->lan_mqtt5_service = lan_mqtt5_service;
 }

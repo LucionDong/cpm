@@ -58,7 +58,8 @@ struct neu_adapter {
     neu_node_metrics_t *metrics;
 
 	// esview
-	esv_lan_mqtt_service_t *lan_mqtt_service;
+	/* esv_lan_mqtt_service_t *lan_mqtt_service; */
+	esv_lan_mqtt5_service_t *lan_mqtt5_service;
 	/* esv_outside_service_manager_t *outside_service_manager; */
 };
 
@@ -110,5 +111,5 @@ int  neu_adapter_metric_update_group_name(neu_adapter_t *adapter,
 void neu_adapter_del_group_metrics(neu_adapter_t *adapter,
                                    const char *   group_name);
 // esview
-void esv_adapter_set_lan_mqtt_service(neu_adapter_t *adapter, esv_lan_mqtt_service_t *lan_mqtt_service);
+void esv_adapter_set_lan_mqtt5_service(neu_adapter_t *adapter, esv_lan_mqtt5_service_t *lan_mqtt5_service);
 #endif

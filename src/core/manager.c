@@ -39,7 +39,7 @@
 #include "storage.h"
 /* #include "subscribe.h" */
 /* #include "outside_service_manager.h" */
-#include "connection/mqtt/lan_mqtt_service.h"
+#include "connection/mqtt/lan_mqtt5_service.h"
 
 #include "manager.h"
 #include "manager_internal.h"
@@ -137,19 +137,27 @@ neu_manager_t *neu_manager_create()
     /*     nlog_warn("load template error"); */
     /* } */
 
-	// mqtt
-	esv_lan_mqtt_service_t *esv_lan_mqtt_service = esv_lan_mqtt_service_create(); 
-	esv_lan_mqtt_srvice_set_manager(esv_lan_mqtt_service, manager);
-	manager->esv_lan_mqtt_service = esv_lan_mqtt_service;
+	// mqtt3
+	/* esv_lan_mqtt_service_t *esv_lan_mqtt_service = esv_lan_mqtt_service_create(); */ 
+	/* esv_lan_mqtt_srvice_set_manager(esv_lan_mqtt_service, manager); */
+	/* manager->esv_lan_mqtt_service = esv_lan_mqtt_service; */
+
+	// mqtt5
+	esv_lan_mqtt5_service_t *esv_lan_mqtt5_service = esv_lan_mqtt5_service_create(); 
+	esv_lan_mqtt5_srvice_set_manager(esv_lan_mqtt5_service, manager);
+	manager->esv_lan_mqtt5_service = esv_lan_mqtt5_service;
+
     /* manager_load_node(manager); */
     esv_manager_load_node(manager);
     /* while (neu_node_manager_exist_uninit(manager->node_manager)) { */
     /*     usleep(1000 * 100); */
     /* } */
 
-	// mqtt
+	// mqtt3
 	/* nlog_debug("&manager=%p", manager); */
-	lan_mqtt_service_start(manager->esv_lan_mqtt_service);
+	/* lan_mqtt_service_start(manager->esv_lan_mqtt_service); */
+	// mqtt5
+	lan_mqtt5_service_start(manager->esv_lan_mqtt5_service);
     /* manager_load_subscribe(manager); */
 
     /* timer_level.usr_data = (void *) manager; */
@@ -202,8 +210,10 @@ void neu_manager_destroy(neu_manager_t *manager)
     neu_event_del_io(manager->events, manager->loop);
     neu_event_close(manager->events);
 
-	// mqtt
-	lan_mqtt_service_stop(manager->esv_lan_mqtt_service);
+	// mqtt3
+	/* lan_mqtt_service_stop(manager->esv_lan_mqtt_service); */
+	// mqtt5
+	lan_mqtt5_service_stop(manager->esv_lan_mqtt5_service);
 
     free(manager);
     nlog_notice("manager exit");
