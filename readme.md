@@ -20,7 +20,38 @@
 - default_plugins.json中填写的是so的全名，cpm启动时会加载这个文件里面的so，根据so中neu_plugin_module中的module_name存储到hash表中，node实例化的时候会根据数据库plugin_node表中的plugin_name字段中的值与hash表中的key匹配从而已对应的value作为so去加载
 
 ### useage
-- topic: `lan/pk--/dn--/subthing/se7rnJBXjbeWar2k/ryqS674fDD33kYqH/thing/service/property/set`
-- msg:
-```json
-```
+#### topic
+##### 设备主动上报属性：
+  - topic: `lan/subthing/${subthingProductKey}/${subthingDeviceName}/thing/event/property/post`
+     - 方向：plugin->plugin_manager
+     - 说明：网关内部插件发送的指令
+##### 查询设备属性
+  - 请求
+    -  topic: `wan/${productKey}/${deviceName}/subthing/${subthingProductKey}/${subthingDeviceName}/thing/service/property/get`
+        - 方向：plugin_manager->plugin
+        - 说明：云端发送的指令
+    - topic: `lan/subthing/${subthingProductKey}/${subthingDeviceName}/thing/service/property/get`
+       - 方向：plugin_manager->plugin
+       - 说明：网关内部发送的指令
+  - 应答
+    -  topic: `wan/${productKey}/${deviceName}/subthing/${subthingProductKey}/${subthingDeviceName}/thing/service/property/getReply`
+        - 方向：plugin->plugin_manager
+        - 说明：返回云端的指令
+    - topic: `lan/subthing/${subthingProductKey}/${subthingDeviceName}/thing/service/property/getReply`
+       - 方向：plugin->plugin_manager
+       - 说明：返回网关内部的指令
+##### 设置设备属性
+  - 请求
+    -  topic: `wan/${productKey}/${deviceName}/subthing/${subthingProductKey}/${subthingDeviceName}/thing/service/property/set`
+        - 方向：plugin_manager->plugin
+        - 说明：云端发送的指令
+    - topic: `lan/subthing/${subthingProductKey}/${subthingDeviceName}/thing/service/property/set`
+       - 方向：plugin_manager->plugin
+       - 说明：网关内部发送的指令
+  - 应答
+    -  topic: `wan/${productKey}/${deviceName}/subthing/${subthingProductKey}/${subthingDeviceName}/thing/service/property/setReply`
+        - 方向：plugin->plugin_manager
+        - 说明：返回云端的指令
+    - topic: `lan/subthing/${subthingProductKey}/${subthingDeviceName}/thing/service/property/setReply`
+       - 方向：plugin->plugin_manager
+       - 说明：返回网关内部的指令

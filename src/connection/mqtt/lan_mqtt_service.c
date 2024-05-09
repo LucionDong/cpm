@@ -14,7 +14,11 @@
 #define TIMEOUT     10000L
 
 // topic
-#define TOPIC_WILDCARD_LAN_SUBTHING_PROPERTY_SET "lan/+/+/subthing/+/+/thing/service/property/set"
+#define TOPIC_WILDCARD_WAN_SUBTHING_PROPERTY_SET "wan/+/+/subthing/+/+/thing/service/property/set"
+#define TOPIC_WILDCARD_WAN_SUBTHING_PROPERTY_GET "wan/+/+/subthing/+/+/thing/service/property/get"
+
+#define TOPIC_WILDCARD_WAN_SUBTHING_SERVICE_PROPERTY "wan/+/+/subthing/+/+/thing/service/property/#"
+#define TOPIC_WILDCARD_LAN_SUBTHING_SERVICE_PROPERTY "lan/+/+/thing/service/property/#"
 
 /* int finished = 0; */
 
@@ -33,10 +37,17 @@ void connected(void *context, char *cause)
 	MQTTAsync client = service->client;
 	MQTTAsync_responseOptions opts = MQTTAsync_responseOptions_initializer;
 	int rc;
-	if ((rc = MQTTAsync_subscribe(client, TOPIC_WILDCARD_LAN_SUBTHING_PROPERTY_SET, QOS, &opts)) != MQTTASYNC_SUCCESS)
+	char *topics_to_subscribe[] = {TOPIC_WILDCARD_WAN_SUBTHING_SERVICE_PROPERTY, TOPIC_WILDCARD_LAN_SUBTHING_SERVICE_PROPERTY}; 
+	const int qos[] = {QOS, QOS};
+	if ((rc = MQTTAsync_subscribeMany(client, 2, topics_to_subscribe, qos, &opts)) != MQTTASYNC_SUCCESS)
 	{
 		nlog_warn("Failed to start subscribe, return code %d", rc);
 	}
+	/* if ((rc = MQTTAsync_subscribe(client, TOPIC_WILDCARD_LAN_SUBTHING_PROPERTY_SET, QOS, &opts)) != MQTTASYNC_SUCCESS) */
+	/* { */
+	/* 	nlog_warn("Failed to start subscribe, return code %d", rc); */
+	/* } */
+
 	/* nlog_notice("Reconnecting"); */
 	/* conn_opts.keepAliveInterval = 20; */
 	/* conn_opts.cleansession = 1; */
@@ -151,7 +162,7 @@ int messageArrived(void* context, char* topicName, int topicLen, MQTTAsync_messa
 {
 	/* not expecting any messages */
 	nlog_info("msg arrived topic: %s", topicName);
-	if (topic_matches_wildcard(topicName, TOPIC_WILDCARD_LAN_SUBTHING_PROPERTY_SET)) {
+	if (topic_matches_wildcard(topicName, TOPIC_WILDCARD_WAN_SUBTHING_PROPERTY_SET)) {
 		/* nlog_info("              msg: \n%.*s", m->payloadlen, (char*)m->payload); */
 		char *topic2 = strdup(topicName);
 		char *token;
@@ -174,13 +185,49 @@ int messageArrived(void* context, char* topicName, int topicLen, MQTTAsync_messa
 		nlog_debug("pk:%s dn:%s", pk, dn);
 		esv_lan_mqtt_service_t *service = (esv_lan_mqtt_service_t *)context;
 		esv_thing_model_msg_t *thing_model_msg = calloc(1, sizeof(esv_thing_model_msg_t));
-		thing_model_msg->method = ESV_TMM_MTD_SUBTHING_THING_SERVICE_PROPERTY_SET;
+		thing_model_msg->method = ESV_TMM_MTD_WAN_SUBTHING_THING_SERVICE_PROPERTY_SET;
 		thing_model_msg->product_key = pk;
 		thing_model_msg->device_name = dn;
 		thing_model_msg->msg_type = ESV_TMM_JSON_STRING_PTR;
 		thing_model_msg->msg = m->payload;
 		forward_thing_model_msg_to_esvdriver(service->manager, thing_model_msg);
-end:		
+end1:		
+		free(topic2);
+		free(pk);
+		free(dn);
+		free(thing_model_msg);
+		MQTTAsync_freeMessage(&m);
+		MQTTAsync_free(topicName);
+	} else if (topic_matches_wildcard(topicName, TOPIC_WILDCARD_WAN_SUBTHING_PROPERTY_GET)) {
+		/* nlog_info("              msg: \n%.*s", m->payloadlen, (char*)m->payload); */
+		char *topic2 = strdup(topicName);
+		char *token;
+		char *pk;
+		char *dn;
+		int token_count = 0;
+		token = strtok(topic2, "/");
+		while (token != NULL) {
+			if (token_count == 4) {
+				pk = strdup(token);
+			} else if (token_count == 5) {
+				dn = strdup(token);
+			}
+			if (token_count == 5) {
+				break;
+			}
+			token_count++;
+			token = strtok(NULL, "/");		
+		}
+		nlog_debug("pk:%s dn:%s", pk, dn);
+		esv_lan_mqtt_service_t *service = (esv_lan_mqtt_service_t *)context;
+		esv_thing_model_msg_t *thing_model_msg = calloc(1, sizeof(esv_thing_model_msg_t));
+		thing_model_msg->method = ESV_TMM_MTD_WAN_SUBTHING_THING_SERVICE_PROPERTY_GET;
+		thing_model_msg->product_key = pk;
+		thing_model_msg->device_name = dn;
+		thing_model_msg->msg_type = ESV_TMM_JSON_STRING_PTR;
+		thing_model_msg->msg = m->payload;
+		forward_thing_model_msg_to_esvdriver(service->manager, thing_model_msg);
+end2:		
 		free(topic2);
 		free(pk);
 		free(dn);
