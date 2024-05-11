@@ -139,7 +139,7 @@ neu_adapter_t *neu_adapter_create(neu_adapter_info_t *info, bool load)
     case NEU_NA_TYPE_APP:
         adapter = calloc(1, sizeof(neu_adapter_t));
         break;
-	case NEU_NA_TYPE_ESVDRIVER:
+	case NEU_NA_TYPE_ESVDEVICEDRIVER:
         adapter = (neu_adapter_t *) neu_adapter_esvdriver_create();
 		break;
     }
@@ -178,7 +178,7 @@ neu_adapter_t *neu_adapter_create(neu_adapter_info_t *info, bool load)
             REGISTER_APP_METRICS(adapter);
         }
         break;
-	case NEU_NA_TYPE_ESVDRIVER:
+	case NEU_NA_TYPE_ESVDEVICEDRIVER:
 		neu_adapter_esvdriver_init((neu_adapter_driver_t *)adapter);
 		break;
     }
@@ -213,7 +213,7 @@ neu_adapter_t *neu_adapter_create(neu_adapter_info_t *info, bool load)
     /* } */
 
 
-    if (info->module->type == NEU_NA_TYPE_ESVDRIVER) {
+    if (info->module->type == NEU_NA_TYPE_ESVDEVICEDRIVER) {
 		adapter_load_device((neu_adapter_driver_t *) adapter);
     }
 
@@ -237,7 +237,7 @@ neu_adapter_t *neu_adapter_create(neu_adapter_info_t *info, bool load)
 
         if (adapter->module->type == NEU_NA_TYPE_DRIVER) {
 			neu_adapter_driver_destroy((neu_adapter_driver_t *) adapter);
-		} else if (adapter->module->type == NEU_NA_TYPE_ESVDRIVER) {
+		} else if (adapter->module->type == NEU_NA_TYPE_ESVDEVICEDRIVER) {
 			neu_adapter_esvdriver_destroy((neu_adapter_driver_t *)adapter);
         }
         /* stop_log_level_timer(adapter); */
@@ -1092,7 +1092,7 @@ int neu_adapter_uninit(neu_adapter_t *adapter)
 {
     if (adapter->module->type == NEU_NA_TYPE_DRIVER) {
         neu_adapter_driver_uninit((neu_adapter_driver_t *) adapter);
-    } else if (adapter->module->type == NEU_NA_TYPE_ESVDRIVER) {
+    } else if (adapter->module->type == NEU_NA_TYPE_ESVDEVICEDRIVER) {
         neu_adapter_esvdriver_uninit((neu_adapter_driver_t *) adapter);
     }
     adapter->module->intf_funs->uninit(adapter->plugin);
@@ -1101,7 +1101,7 @@ int neu_adapter_uninit(neu_adapter_t *adapter)
 
     if (adapter->module->type == NEU_NA_TYPE_DRIVER) {
         neu_adapter_driver_destroy((neu_adapter_driver_t *) adapter);
-    } else if (adapter->module->type == NEU_NA_TYPE_ESVDRIVER) {
+    } else if (adapter->module->type == NEU_NA_TYPE_ESVDEVICEDRIVER) {
         neu_adapter_esvdriver_destroy((neu_adapter_driver_t *) adapter);
     }
 

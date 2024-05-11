@@ -4,6 +4,8 @@
 #include <unistd.h>
 #include "utils/log.h"
 #include "utils/mqtt.h"
+#include "utils/asprintf.h"
+#include "utils/time.h"
 #include "core/manager_adapter_msg.h"
 #include "lan_mqtt5_service.h"
 #include "lan_mqtt5_service_internal.h"
@@ -39,8 +41,8 @@ void error_reporting_onSubscribeSuccess5(void* context, MQTTAsync_successData5* 
 	else if (response->alt.sub.reasonCodeCount > 1)
 	{
 		for (i = 0; i < response->alt.sub.reasonCodeCount; ++i)
-		{
-			nlog_debug("Subscribe reason code %d", response->alt.sub.reasonCodes[i]);
+		{	int code = response->alt.sub.reasonCodes[i];
+			nlog_debug("Subscribe reason code %d -> %s", code , MQTTReasonCode_toString(code));
 		}
 	}
 }
@@ -302,7 +304,11 @@ int lan_mqtt5_service_start(esv_lan_mqtt5_service_t* service) {
 	MQTTAsync_createOptions createOpts = MQTTAsync_createOptions_initializer;
 	createOpts.MQTTVersion = MQTTVERSION_5;
 	/* if ((rc = MQTTAsync_create(&lan_mqtt5_client, ADDRESS, CLIENTID, MQTTCLIENT_PERSISTENCE_NONE, NULL)) != MQTTASYNC_SUCCESS) */
-	if ((rc = MQTTAsync_createWithOptions(&lan_mqtt5_client, ADDRESS, CLIENTID, MQTTCLIENT_PERSISTENCE_NONE, NULL, &createOpts)) != MQTTASYNC_SUCCESS)
+	char *client_id = NULL;
+	long long ct = current_timestamp();
+	nlog_debug("current timestamp = %lld", ct);
+	int ret = neu_asprintf(&client_id, "%s|timestamp=%lld|", CLIENTID, ct);
+	if ((rc = MQTTAsync_createWithOptions(&lan_mqtt5_client, ADDRESS, client_id, MQTTCLIENT_PERSISTENCE_NONE, NULL, &createOpts)) != MQTTASYNC_SUCCESS)
 	{
 		nlog_error("Failed to create client object, return code %d", rc);
 		return rc;
@@ -312,7 +318,8 @@ int lan_mqtt5_service_start(esv_lan_mqtt5_service_t* service) {
 	nlog_info("lan_mqtt5_client=%p, service=%p, client=%p", lan_mqtt5_client, service, service->client);
 
 
-	lan_mqtt5_conn_opts.MQTTVersion = MQTTVERSION_5;
+	nlog_debug("lan_mqtt5_conn_opts.MQTTVersion = %d", lan_mqtt5_conn_opts.MQTTVersion);
+	/* lan_mqtt5_conn_opts.MQTTVersion = MQTTVERSION_5; */
 	lan_mqtt5_conn_opts.keepAliveInterval = 20;
 	lan_mqtt5_conn_opts.cleanstart = 1;
 	lan_mqtt5_conn_opts.automaticReconnect = 1;

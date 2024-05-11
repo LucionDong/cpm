@@ -24,8 +24,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <nng/nng.h>
-#include <nng/supplemental/util/platform.h>
+/* #include <nng/nng.h> */
+/* #include <nng/supplemental/util/platform.h> */
 #include <string.h>
 
 #include "event/event.h"
@@ -72,6 +72,7 @@ typedef struct group {
     UT_hash_handle hh;
 } group_t;
 
+typedef struct esv_device_list esv_device_list_t;
 struct neu_adapter_driver {
     neu_adapter_t adapter;
 
@@ -83,6 +84,7 @@ struct neu_adapter_driver {
 
 	uint16_t device_cnt;
 	esv_device_info_t *devices;
+	esv_device_list_t *device_list;
 };
 
 static int  report_callback(void *usr_data);
@@ -105,6 +107,9 @@ static void update_im(neu_adapter_t *adapter, const char *group,
 /* 	uint16_t n_device; */
 /* 	esv_device_property_t *device_properties; */
 /* } ; */
+
+
+
 /* easeview end */
 
 
@@ -1667,9 +1672,100 @@ static void store_write_tag(group_t *group, to_be_write_tag_t *tag)
 }
 
 /* easeview */
+#define ESV_PK_NAME_LEN 128
+#define ESV_DN_NAME_LEN 128
+
+typedef struct {
+	char pk[ESV_PK_NAME_LEN];
+	char dn[ESV_DN_NAME_LEN];
+} tdevice_list_key_t;
+
+struct device_elem {
+    tdevice_list_key_t         key;
+    UT_hash_handle hh;
+};
+
+struct esv_device_list {
+	struct device_elem *list;	
+};
+
+inline static tdevice_list_key_t to_device_list_key(const char *pk, const char *dn)
+{
+    tdevice_list_key_t key = { 0 };
+
+    strcpy(key.pk, pk);
+    strcpy(key.dn, dn);
+
+    return key;
+}
+
+static esv_device_list_t *esv_device_list_new() {
+	esv_device_list_t *list = calloc(1, sizeof(esv_device_list_t));
+	return list;
+}
+
+static void esv_device_list_destroy(esv_device_list_t *list)
+{
+    struct device_elem *elem = NULL;
+    struct device_elem *tmp  = NULL;
+
+    HASH_ITER(hh, list->list, elem, tmp)
+    {
+        HASH_DEL(list->list, elem);
+        free(elem);
+    }
+    free(list);
+}
+
+static void esv_device_list_add(esv_device_list_t *list, const char *pk, const char *dn) {
+	struct device_elem *elem = NULL;
+	tdevice_list_key_t key = to_device_list_key(pk, dn);
+
+	HASH_FIND(hh, list->list, &key, sizeof(tdevice_list_key_t), elem);
+
+	if (elem == NULL) {
+		elem = calloc(1, sizeof(struct device_elem));
+
+		strcpy(elem->key.pk, pk);
+		strcpy(elem->key.dn, dn);
+
+		HASH_ADD(hh, list->list, key, sizeof(tdevice_list_key_t), elem);
+	}
+}
+
+static void esv_device_list_del(esv_device_list_t *list, const char *pk,
+                          const char *dn)
+{
+    struct device_elem *elem = NULL;
+    tdevice_list_key_t       key  = to_device_list_key(pk, dn);
+
+    HASH_FIND(hh, list->list, &key, sizeof(tdevice_list_key_t), elem);
+
+    if (elem != NULL) {
+        HASH_DEL(list->list, elem);
+        free(elem);
+    }
+}
+
+static bool is_device_in_device_list(esv_device_list_t *list, const char *pk, const char *dn) {
+    struct device_elem *elem = NULL;
+    tdevice_list_key_t       key  = to_device_list_key(pk, dn);
+
+    HASH_FIND(hh, list->list, &key, sizeof(tdevice_list_key_t), elem);
+
+    if (elem != NULL) {
+		return true;
+    }
+
+	return false;
+}
 
 static int thing_model_msg_arrived(neu_adapter_t *adapter, const esv_thing_model_msg_t *thing_model_msg) {
-	nlog_info("thing_model_msg_arrived from driver: %s product_key: %s, device_name: %s, msg_type: %d", adapter->name, thing_model_msg->product_key, thing_model_msg->device_name, thing_model_msg->msg_type);
+	nlog_debug("thing_model_msg_arrived from driver: %s product_key: %s, device_name: %s, msg_type: %d", adapter->name, thing_model_msg->product_key, thing_model_msg->device_name, thing_model_msg->msg_type);
+	if (!is_device_in_device_list(((neu_adapter_driver_t *)adapter)->device_list, thing_model_msg->product_key, thing_model_msg->device_name)) {
+		nlog_warn("illegal device pk: %s dn: %s msg", thing_model_msg->product_key, thing_model_msg->device_name);
+		return 1;
+	}
 	if (ESV_TMM_MTD_LAN_SUBTHING_THING_EVENT_PROPERTY_POST == thing_model_msg->method) {
 		char *topic_formate = "lan/subthing/%s/%s/thing/event/property/post";
 		if (ESV_TMM_JSON_STRING_PTR == thing_model_msg->msg_type) {
@@ -1790,48 +1886,48 @@ static int thing_model_msg_arrived(neu_adapter_t *adapter, const esv_thing_model
 	return 0;
 }
 
-nng_msg *esv_nng_msg_gen(neu_reqresp_head_t *header, const void *data) {
-    nng_msg *msg       = NULL;
-    void *   body      = NULL;
-	json_t *data_to_send = NULL;
-    size_t   data_size = 0;
+/* nng_msg *esv_nng_msg_gen(neu_reqresp_head_t *header, const void *data) { */
+/*     nng_msg *msg       = NULL; */
+/*     void *   body      = NULL; */
+/* 	json_t *data_to_send = NULL; */
+/*     size_t   data_size = 0; */
 
-    switch (header->type) {
-		case ESV_THING_MODEL_TRANS_DATA_INPROC: {
-			esv_thing_model_trans_data_inproc_t *trans = (esv_thing_model_trans_data_inproc_t *)data;
-			if (NULL != trans->data_root) {
-				data_to_send = json_deep_copy(trans->data_root);	
-			}
+/*     switch (header->type) { */
+/* 		case ESV_THING_MODEL_TRANS_DATA_INPROC: { */
+/* 			esv_thing_model_trans_data_inproc_t *trans = (esv_thing_model_trans_data_inproc_t *)data; */
+/* 			if (NULL != trans->data_root) { */
+/* 				data_to_send = json_deep_copy(trans->data_root); */	
+/* 			} */
 
-			data_size = sizeof(esv_thing_model_trans_data_inproc_t);
+/* 			data_size = sizeof(esv_thing_model_trans_data_inproc_t); */
 
-			nng_msg_alloc(&msg, sizeof(neu_reqresp_head_t) + data_size);
-			body = nng_msg_body(msg);
-			memcpy(body, header, sizeof(neu_reqresp_head_t));
-			neu_reqresp_head_t *msg_header = (neu_reqresp_head_t *)body;
-			esv_thing_model_trans_data_inproc_t *trans_data = (esv_thing_model_trans_data_inproc_t *) &msg_header[1];
-			trans_data->method = trans->method;
-			trans_data->driver = strdup(trans->driver);
-			trans_data->product_key = strdup(trans->product_key);
-			trans_data->device_name = strdup(trans->device_name);
-			trans_data->data_root = data_to_send;
-			return msg;
-		 }
-		default: {
-			 return NULL;
-		 }
-	}
+/* 			nng_msg_alloc(&msg, sizeof(neu_reqresp_head_t) + data_size); */
+/* 			body = nng_msg_body(msg); */
+/* 			memcpy(body, header, sizeof(neu_reqresp_head_t)); */
+/* 			neu_reqresp_head_t *msg_header = (neu_reqresp_head_t *)body; */
+/* 			esv_thing_model_trans_data_inproc_t *trans_data = (esv_thing_model_trans_data_inproc_t *) &msg_header[1]; */
+/* 			trans_data->method = trans->method; */
+/* 			trans_data->driver = strdup(trans->driver); */
+/* 			trans_data->product_key = strdup(trans->product_key); */
+/* 			trans_data->device_name = strdup(trans->device_name); */
+/* 			trans_data->data_root = data_to_send; */
+/* 			return msg; */
+/* 		 } */
+/* 		default: { */
+/* 			 return NULL; */
+/* 		 } */
+/* 	} */
 
-    return NULL;
-}
+/*     return NULL; */
+/* } */
 
 /* static void esv_msg_to_adapter(neu_adapter_t *adapter, const esv_between_adapter_driver_msg_t *msg) { */
-static void esv_msg_to_adapter(neu_adapter_t *adapter) {
-	nlog_info("esv_msg_to_adapter");		
-	/*! TODO: send msg to mqtt or mcurs232
-	*/
-	/* esv_outside_service_manager_dispatch_msg(adapter->outside_service_manager, msg); */
-}
+/*static void esv_msg_to_adapter(neu_adapter_t *adapter) { */
+/*	nlog_info("esv_msg_to_adapter"); */		
+/*	/1*! TODO: send msg to mqtt or mcurs232 *1/ */
+
+/*	/1* esv_outside_service_manager_dispatch_msg(adapter->outside_service_manager, msg); *1/ */
+/*} */
 
 
 static void esv_func3(neu_adapter_t *adapter) {
@@ -1853,12 +1949,15 @@ neu_adapter_driver_t *neu_adapter_esvdriver_create()
     driver->adapter.cb_funs.esvdriver.func3 = esv_func3;
     driver->adapter.cb_funs.esvdriver.func4 = esv_func4;
 
+	driver->device_list = esv_device_list_new();
+
     return driver;
 }
 
 void neu_adapter_esvdriver_destroy(neu_adapter_driver_t *driver)
 {
     neu_event_close(driver->driver_events);
+	esv_device_list_destroy(driver->device_list);
     /* neu_driver_cache_destroy(driver->cache); */
 }
 
@@ -1900,9 +1999,11 @@ int esv_adapter_driver_load_devices(neu_adapter_driver_t *driver, const UT_array
 		device_infos_unpacked[index].device_secret = strdup(p->device_secret);
 		device_infos_unpacked[index].device_config = strdup(p->device_config);
 		index++;
-	}
 
-	if (driver->adapter.module->type == NEU_NA_TYPE_ESVDRIVER) {
+		esv_device_list_add(driver->device_list, p->product_key, p->device_name);
+	}
+	
+	if (driver->adapter.module->type == NEU_NA_TYPE_ESVDEVICEDRIVER) {
 		if (driver->adapter.module->intf_funs->esvdriver.add_devices != NULL) {
 			driver->adapter.module->intf_funs->esvdriver.add_devices(driver->adapter.plugin, device_cnt, device_infos_unpacked);
 		}

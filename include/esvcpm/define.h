@@ -65,7 +65,13 @@ typedef enum {
     NEU_NA_TYPE_APP     = 2,
     NEU_NA_TYPE_NDRIVER = 4,
 	/* 为了兼容web南向驱动获取设置为8+1 */
-	NEU_NA_TYPE_ESVDRIVER = 9,
+	/* 设备驱动：cpm只传输对应pk dn的数据给对应驱动 */
+	NEU_NA_TYPE_ESVDEVICEDRIVER = 9,
+	/* 应用驱动：cpm传输所有设备信息给应用驱动 */
+	NEU_NA_TYPE_ESVAPPDRIVER = 10,
+	/* 应用：cpm传输所有设备信息给应用 */
+	NEU_NA_TYPE_ESVAPP = 11,
+
 } neu_adapter_type_e,
     neu_node_type_e;
 

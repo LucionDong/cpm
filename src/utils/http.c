@@ -264,7 +264,8 @@ int neu_http_get_param_node_type(nng_aio *aio, const char *name,
     }
 
     if (val != NEU_NA_TYPE_APP && val != NEU_NA_TYPE_NDRIVER &&
-        val != NEU_NA_TYPE_DRIVER && val != NEU_NA_TYPE_ESVDRIVER) {
+        /* val != NEU_NA_TYPE_DRIVER && val != NEU_NA_TYPE_ESVDEVICEDRIVER) { */
+        val != NEU_NA_TYPE_DRIVER) {
         return -1;
     }
 

@@ -1946,9 +1946,15 @@ static int collect_device_info(sqlite3_stmt *stmt, UT_array **device_infos) {
 
 int esv_persister_load_devices(const char *driver_name, UT_array **device_infos) {
 	sqlite3_stmt *stmt = NULL;
+	/* const char *query ="SELECT \ */
+	/* 					product_key, device_name, device_secret, device_config \ */
+	/* 					FROM thing_device WHERE plugin_node_name=?"; */
+	/*! TODO: 需要替换为通过node id查询
+	*  需要替换为通过node id查询
+	*/
 	const char *query ="SELECT \
-						product_key, device_name, device_secret, device_config \
-						FROM thing_device WHERE plugin_node_name=?";
+						thing_device.product_key, thing_device.device_name, thing_device.device_secret, thing_device.device_config \
+						FROM thing_device INNER JOIN plugin_node ON thing_device.plugin_node_id = plugin_node.node_id WHERE plugin_node.node_name=?";
 
 	utarray_new(*device_infos, &device_info_icd);
 	

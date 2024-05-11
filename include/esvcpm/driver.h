@@ -10,7 +10,7 @@ extern "C" {
 
 #include "adapter.h"
 
-nng_msg *esv_nng_msg_gen(neu_reqresp_head_t *header, const void *data);
+/* nng_msg *esv_nng_msg_gen(neu_reqresp_head_t *header, const void *data); */
 
 #ifdef __cplusplus
 }

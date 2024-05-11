@@ -111,7 +111,7 @@ int neu_plugin_manager_add(neu_plugin_manager_t *mgr,
     }
 
     if (pm->type != NEU_NA_TYPE_APP && pm->type != NEU_NA_TYPE_NDRIVER &&
-        pm->type != NEU_NA_TYPE_DRIVER && pm->type != NEU_NA_TYPE_ESVDRIVER) {
+        pm->type != NEU_NA_TYPE_DRIVER && pm->type != NEU_NA_TYPE_ESVDEVICEDRIVER) {
         dlclose(handle);
         nlog_warn("library: %s, type wrong: %d", lib_path, pm->type);
         return NEU_ERR_LIBRARY_INFO_INVALID;
