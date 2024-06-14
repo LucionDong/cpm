@@ -1949,9 +1949,6 @@ int esv_persister_load_devices(const char *driver_name, UT_array **device_infos)
 	/* const char *query ="SELECT \ */
 	/* 					product_key, device_name, device_secret, device_config \ */
 	/* 					FROM thing_device WHERE plugin_node_name=?"; */
-	/*! TODO: 需要替换为通过node id查询
-	*  需要替换为通过node id查询
-	*/
 	const char *query ="SELECT \
 						thing_device.product_key, thing_device.device_name, thing_device.device_secret, thing_device.device_config \
 						FROM thing_device INNER JOIN plugin_node ON thing_device.plugin_node_id = plugin_node.node_id WHERE plugin_node.node_name=?";
@@ -1986,9 +1983,12 @@ error:
 
 int esv_persister_query_device_node_name(const char *product_key, const char *device_name, char **node_name) {
 	sqlite3_stmt *stmt = NULL;
+	/* const char *query ="SELECT \ */
+	/* 					plugin_node_name \ */
+	/* 					FROM thing_device WHERE product_key=? and device_name=? LIMIT 1"; */
 	const char *query ="SELECT \
-						plugin_node_name \
-						FROM thing_device WHERE product_key=? and device_name=? LIMIT 1";
+						plugin_node.node_name \
+						FROM thing_device INNER JOIN plugin_node ON thing_device.plugin_node_id = plugin_node.node_id WHERE thing_device.product_key=? and thing_device.device_name=? LIMIT 1";
 	
 	if (SQLITE_OK != sqlite3_prepare_v2(thing_db, query, -1, &stmt, NULL)) {
         nlog_error("prepare `%s` fail: %s", query, sqlite3_errmsg(thing_db));

@@ -31,6 +31,7 @@
 #include "event/event.h"
 #include "utils/log.h"
 #include "utils/utextend.h"
+#include "utils/asprintf.h"
 
 #include "adapter.h"
 #include "adapter/adapter_internal.h"
@@ -1767,74 +1768,96 @@ static int thing_model_msg_arrived(neu_adapter_t *adapter, const esv_thing_model
 		return 1;
 	}
 	if (ESV_TMM_MTD_LAN_SUBTHING_THING_EVENT_PROPERTY_POST == thing_model_msg->method) {
-		char *topic_formate = "lan/subthing/%s/%s/thing/event/property/post";
+		char *topic_formate = "lan/thing/sub/%s/%s/thing/event/property/post";
 		if (ESV_TMM_JSON_STRING_PTR == thing_model_msg->msg_type) {
-			char *topic = calloc(1, strlen(topic_formate) + strlen(thing_model_msg->product_key) + strlen(thing_model_msg->device_name) - 4 + 1);
-			sprintf(topic, topic_formate, thing_model_msg->product_key, thing_model_msg->device_name);
+			/* char *topic = calloc(1, strlen(topic_formate) + strlen(thing_model_msg->product_key) + strlen(thing_model_msg->device_name) - 4 + 1); */
+			/* sprintf(topic, topic_formate, thing_model_msg->product_key, thing_model_msg->device_name); */
+			char *topic = NULL;
+			neu_asprintf(&topic, topic_formate, thing_model_msg->product_key, thing_model_msg->device_name);
 			lan_mqtt5_service_publish(adapter->lan_mqtt5_service, topic, thing_model_msg->msg);
 			free(topic);
 		}
 	} else if (ESV_TMM_MTD_LAN_SUBTHING_THING_SERVICE_PROPERTY_SET == thing_model_msg->method) {
-		char *topic_formate = "lan/subthing/%s/%s/thing/service/property/set";
+		char *topic_formate = "lan/thing/sub/%s/%s/thing/service/property/set";
 		if (ESV_TMM_JSON_STRING_PTR == thing_model_msg->msg_type) {
-			char *topic = calloc(1, strlen(topic_formate) + strlen(thing_model_msg->product_key) + strlen(thing_model_msg->device_name) - 4 + 1);
-			sprintf(topic, topic_formate, thing_model_msg->product_key, thing_model_msg->device_name);
+			/* char *topic = calloc(1, strlen(topic_formate) + strlen(thing_model_msg->product_key) + strlen(thing_model_msg->device_name) - 4 + 1); */
+			/* sprintf(topic, topic_formate, thing_model_msg->product_key, thing_model_msg->device_name); */
+			char *topic = NULL;
+			neu_asprintf(&topic, topic_formate, thing_model_msg->product_key, thing_model_msg->device_name);
 			lan_mqtt5_service_publish(adapter->lan_mqtt5_service, topic, thing_model_msg->msg);
 			free(topic);
 		}
 	} else if (ESV_TMM_MTD_LAN_SUBTHING_THING_SERVICE_PROPERTY_SET_REPLY == thing_model_msg->method) {
-		char *topic_formate = "lan/subthing/%s/%s/thing/service/property/setReply";
+		char *topic_formate = "lan/thing/sub/%s/%s/thing/service/property/setReply";
 		if (ESV_TMM_JSON_STRING_PTR == thing_model_msg->msg_type) {
-			char *topic = calloc(1, strlen(topic_formate) + strlen(thing_model_msg->product_key) + strlen(thing_model_msg->device_name) - 4 + 1);
-			sprintf(topic, topic_formate, thing_model_msg->product_key, thing_model_msg->device_name);
+			/* char *topic = calloc(1, strlen(topic_formate) + strlen(thing_model_msg->product_key) + strlen(thing_model_msg->device_name) - 4 + 1); */
+			/* sprintf(topic, topic_formate, thing_model_msg->product_key, thing_model_msg->device_name); */
+			char *topic = NULL;
+			neu_asprintf(&topic, topic_formate, thing_model_msg->product_key, thing_model_msg->device_name);
 			lan_mqtt5_service_publish(adapter->lan_mqtt5_service, topic, thing_model_msg->msg);
 			free(topic);
 		}
 	} else if (ESV_TMM_MTD_LAN_SUBTHING_THING_SERVICE_PROPERTY_GET == thing_model_msg->method) {
-		char *topic_formate = "lan/subthing/%s/%s/thing/service/property/get";
+		char *topic_formate = "lan/thing/sub/%s/%s/thing/service/property/get";
 		if (ESV_TMM_JSON_STRING_PTR == thing_model_msg->msg_type) {
-			char *topic = calloc(1, strlen(topic_formate) + strlen(thing_model_msg->product_key) + strlen(thing_model_msg->device_name) - 4 + 1);
-			sprintf(topic, topic_formate, thing_model_msg->product_key, thing_model_msg->device_name);
+			/* char *topic = calloc(1, strlen(topic_formate) + strlen(thing_model_msg->product_key) + strlen(thing_model_msg->device_name) - 4 + 1); */
+			/* sprintf(topic, topic_formate, thing_model_msg->product_key, thing_model_msg->device_name); */
+			char *topic = NULL;
+			neu_asprintf(&topic, topic_formate, thing_model_msg->product_key, thing_model_msg->device_name);
 			lan_mqtt5_service_publish(adapter->lan_mqtt5_service, topic, thing_model_msg->msg);
 			free(topic);
 		}
 	} else if (ESV_TMM_MTD_LAN_SUBTHING_THING_SERVICE_PROPERTY_GET_REPLY == thing_model_msg->method) {
-		char *topic_formate = "lan/subthing/%s/%s/thing/service/property/getReply";
+		char *topic_formate = "lan/thing/sub/%s/%s/thing/service/property/getReply";
 		if (ESV_TMM_JSON_STRING_PTR == thing_model_msg->msg_type) {
-			char *topic = calloc(1, strlen(topic_formate) + strlen(thing_model_msg->product_key) + strlen(thing_model_msg->device_name) - 4 + 1);
-			sprintf(topic, topic_formate, thing_model_msg->product_key, thing_model_msg->device_name);
+			/* char *topic = calloc(1, strlen(topic_formate) + strlen(thing_model_msg->product_key) + strlen(thing_model_msg->device_name) - 4 + 1); */
+			/* sprintf(topic, topic_formate, thing_model_msg->product_key, thing_model_msg->device_name); */
+			char *topic = NULL;
+			neu_asprintf(&topic, topic_formate, thing_model_msg->product_key, thing_model_msg->device_name);
 			lan_mqtt5_service_publish(adapter->lan_mqtt5_service, topic, thing_model_msg->msg);
 			free(topic);
 		}
-	} else if (ESV_TMM_MTD_WAN_SUBTHING_THING_SERVICE_PROPERTY_SET == thing_model_msg->method) {
-		char *topic_formate = "wan/subthing/%s/%s/thing/service/property/set";
+	} 
+	/* else if (ESV_TMM_MTD_WAN_SUBTHING_THING_SERVICE_PROPERTY_SET == thing_model_msg->method) { */
+	/* 	char *topic_formate = "wan/thing/sub/%s/%s/thing/service/property/set"; */
+	/* 	if (ESV_TMM_JSON_STRING_PTR == thing_model_msg->msg_type) { */
+	/* 		/1* char *topic = calloc(1, strlen(topic_formate) + strlen(thing_model_msg->product_key) + strlen(thing_model_msg->device_name) - 4 + 1); *1/ */
+	/* 		/1* sprintf(topic, topic_formate, thing_model_msg->product_key, thing_model_msg->device_name); *1/ */
+	/* 		char *topic = NULL; */
+	/* 		neu_asprintf(&topic, topic_formate, thing_model_msg->product_key, thing_model_msg->device_name); */
+	/* 		lan_mqtt5_service_publish(adapter->lan_mqtt5_service, topic, thing_model_msg->msg); */
+	/* 		free(topic); */
+	/* 	} */
+	/* } */ 
+	else if (ESV_TMM_MTD_WAN_SUBTHING_THING_SERVICE_PROPERTY_SET_REPLY == thing_model_msg->method) {
+		char *topic_formate = "wan/thing/sub/%s/%s/thing/service/property/setReply";
 		if (ESV_TMM_JSON_STRING_PTR == thing_model_msg->msg_type) {
-			char *topic = calloc(1, strlen(topic_formate) + strlen(thing_model_msg->product_key) + strlen(thing_model_msg->device_name) - 4 + 1);
-			sprintf(topic, topic_formate, thing_model_msg->product_key, thing_model_msg->device_name);
+			/* char *topic = calloc(1, strlen(topic_formate) + strlen(thing_model_msg->product_key) + strlen(thing_model_msg->device_name) - 4 + 1); */
+			/* sprintf(topic, topic_formate, thing_model_msg->product_key, thing_model_msg->device_name); */
+			char *topic = NULL;
+			neu_asprintf(&topic, topic_formate, thing_model_msg->product_key, thing_model_msg->device_name);
 			lan_mqtt5_service_publish(adapter->lan_mqtt5_service, topic, thing_model_msg->msg);
 			free(topic);
 		}
-	} else if (ESV_TMM_MTD_WAN_SUBTHING_THING_SERVICE_PROPERTY_SET_REPLY == thing_model_msg->method) {
-		char *topic_formate = "wan/subthing/%s/%s/thing/service/property/setReply";
+	} 
+	/* else if (ESV_TMM_MTD_WAN_SUBTHING_THING_SERVICE_PROPERTY_GET == thing_model_msg->method) { */
+	/* 	char *topic_formate = "wan/thing/sub/%s/%s/thing/service/property/get"; */
+	/* 	if (ESV_TMM_JSON_STRING_PTR == thing_model_msg->msg_type) { */
+	/* 		/1* char *topic = calloc(1, strlen(topic_formate) + strlen(thing_model_msg->product_key) + strlen(thing_model_msg->device_name) - 4 + 1); *1/ */
+	/* 		/1* sprintf(topic, topic_formate, thing_model_msg->product_key, thing_model_msg->device_name); *1/ */
+	/* 		char *topic = NULL; */
+	/* 		neu_asprintf(&topic, topic_formate, thing_model_msg->product_key, thing_model_msg->device_name); */
+	/* 		lan_mqtt5_service_publish(adapter->lan_mqtt5_service, topic, thing_model_msg->msg); */
+	/* 		free(topic); */
+	/* 	} */
+	/* } */
+	else if (ESV_TMM_MTD_WAN_SUBTHING_THING_SERVICE_PROPERTY_GET_REPLY == thing_model_msg->method) {
+		char *topic_formate = "wan/thing/sub/%s/%s/thing/service/property/getReply";
 		if (ESV_TMM_JSON_STRING_PTR == thing_model_msg->msg_type) {
-			char *topic = calloc(1, strlen(topic_formate) + strlen(thing_model_msg->product_key) + strlen(thing_model_msg->device_name) - 4 + 1);
-			sprintf(topic, topic_formate, thing_model_msg->product_key, thing_model_msg->device_name);
-			lan_mqtt5_service_publish(adapter->lan_mqtt5_service, topic, thing_model_msg->msg);
-			free(topic);
-		}
-	} else if (ESV_TMM_MTD_WAN_SUBTHING_THING_SERVICE_PROPERTY_GET == thing_model_msg->method) {
-		char *topic_formate = "wan/subthing/%s/%s/thing/service/property/get";
-		if (ESV_TMM_JSON_STRING_PTR == thing_model_msg->msg_type) {
-			char *topic = calloc(1, strlen(topic_formate) + strlen(thing_model_msg->product_key) + strlen(thing_model_msg->device_name) - 4 + 1);
-			sprintf(topic, topic_formate, thing_model_msg->product_key, thing_model_msg->device_name);
-			lan_mqtt5_service_publish(adapter->lan_mqtt5_service, topic, thing_model_msg->msg);
-			free(topic);
-		}
-	} else if (ESV_TMM_MTD_WAN_SUBTHING_THING_SERVICE_PROPERTY_GET_REPLY == thing_model_msg->method) {
-		char *topic_formate = "wan/subthing/%s/%s/thing/service/property/getReply";
-		if (ESV_TMM_JSON_STRING_PTR == thing_model_msg->msg_type) {
-			char *topic = calloc(1, strlen(topic_formate) + strlen(thing_model_msg->product_key) + strlen(thing_model_msg->device_name) - 4 + 1);
-			sprintf(topic, topic_formate, thing_model_msg->product_key, thing_model_msg->device_name);
+			/* char *topic = calloc(1, strlen(topic_formate) + strlen(thing_model_msg->product_key) + strlen(thing_model_msg->device_name) - 4 + 1); */
+			/* sprintf(topic, topic_formate, thing_model_msg->product_key, thing_model_msg->device_name); */
+			char *topic = NULL;
+			neu_asprintf(&topic, topic_formate, thing_model_msg->product_key, thing_model_msg->device_name);
 			lan_mqtt5_service_publish(adapter->lan_mqtt5_service, topic, thing_model_msg->msg);
 			free(topic);
 		}

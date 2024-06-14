@@ -37,6 +37,10 @@ int forward_thing_model_msg_to_esvdriver(neu_manager_t *manager, esv_thing_model
 		return EXIT_FAILURE;
 	}
 
+	/* TODO:  <13-05-24, winston> 
+	 * 根据plugin type分发数据
+	 * */
+
 	// 根据node_name找到对应的adapter
 	nlog_info("to find adapter of node_name:%s", node_name);
 	neu_adapter_t *adapter = neu_node_manager_find(manager->node_manager, node_name);
