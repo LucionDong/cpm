@@ -24,6 +24,7 @@
 
 #include "adapter/adapter_internal.h"
 #include "node_manager.h"
+#include "utils/log.h"
 
 typedef struct node_entity {
     char *name;
@@ -257,8 +258,10 @@ UT_array *neu_node_manager_get_adapter(neu_node_manager_t *mgr, int type)
     HASH_ITER(hh, mgr->nodes, el, tmp)
     {
         if (!el->is_static && el->display) {
-            if (el->adapter->module->type & type) {
+            /* if (el->adapter->module->type & type) { */
+            if (el->adapter->module->type == type) {
                 utarray_push_back(array, &el->adapter);
+				nlog_debug("get adapter %s", el->adapter->name);
             }
         }
     }

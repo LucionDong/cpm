@@ -61,6 +61,7 @@ struct neu_adapter {
 	/* esv_lan_mqtt_service_t *lan_mqtt_service; */
 	esv_lan_mqtt5_service_t *lan_mqtt5_service;
 	/* esv_outside_service_manager_t *outside_service_manager; */
+	neu_manager_t *manager;
 };
 
 typedef void (*adapter_handler)(neu_adapter_t *     adapter,
@@ -112,4 +113,5 @@ void neu_adapter_del_group_metrics(neu_adapter_t *adapter,
                                    const char *   group_name);
 // esview
 void esv_adapter_set_lan_mqtt5_service(neu_adapter_t *adapter, esv_lan_mqtt5_service_t *lan_mqtt5_service);
+void esv_adapter_set_manager(neu_adapter_t *adapter, neu_manager_t *manager);
 #endif

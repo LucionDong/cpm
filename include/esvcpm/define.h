@@ -28,8 +28,8 @@
 #define NEU_GROUP_NAME_LEN 128
 #define NEU_GROUP_INTERVAL_LIMIT 100
 #define NEU_NODE_NAME_LEN 128
-#define NEU_PLUGIN_NAME_LEN 32
-#define NEU_PLUGIN_LIBRARY_LEN 32
+#define NEU_PLUGIN_NAME_LEN 128
+#define NEU_PLUGIN_LIBRARY_LEN 128
 #define NEU_PLUGIN_DESCRIPTION_LEN 512
 #define NEU_TEMPLATE_NAME_LEN 128
 #define NEU_DRIVER_TAG_CACHE_EXPIRE_TIME 60
@@ -71,6 +71,12 @@ typedef enum {
 	NEU_NA_TYPE_ESVAPPDRIVER = 10,
 	/* 应用：cpm传输所有设备信息给应用 */
 	NEU_NA_TYPE_ESVAPP = 11,
+	/* RS485-232设备驱动：cpm只传输对应pk dn的数据给对应驱动 */
+	NEU_NA_TYPE_ESVDEVICEDRIVERRS = 12,
+	/* RS485-232应用驱动：cpm传输所有设备信息给应用驱动 */
+	NEU_NA_TYPE_ESVAPPDRIVERRS = 13,
+	/* RS485-232应用：cpm传输所有设备信息给应用 */
+	NEU_NA_TYPE_ESVAPPRS = 14,
 
 } neu_adapter_type_e,
     neu_node_type_e;

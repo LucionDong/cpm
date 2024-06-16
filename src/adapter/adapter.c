@@ -140,6 +140,8 @@ neu_adapter_t *neu_adapter_create(neu_adapter_info_t *info, bool load)
         adapter = calloc(1, sizeof(neu_adapter_t));
         break;
 	case NEU_NA_TYPE_ESVDEVICEDRIVER:
+	case NEU_NA_TYPE_ESVAPPDRIVER:
+	case NEU_NA_TYPE_ESVAPP:
         adapter = (neu_adapter_t *) neu_adapter_esvdriver_create();
 		break;
     }
@@ -1679,4 +1681,8 @@ void *neu_msg_gen(neu_reqresp_head_t *header, void *data)
 // easeview
 void esv_adapter_set_lan_mqtt5_service(neu_adapter_t *adapter, esv_lan_mqtt5_service_t *lan_mqtt5_service) {
 	adapter->lan_mqtt5_service = lan_mqtt5_service;
+}
+
+void esv_adapter_set_manager(neu_adapter_t *adapter, neu_manager_t *manager) {
+	adapter->manager = manager;
 }

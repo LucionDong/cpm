@@ -3,6 +3,7 @@
 
 #include "manager_internal.h"
 /* int forward_msg_to_esvdriver(neu_manager_t *manager, esv_between_adapter_driver_msg_t *msg); */
-int forward_thing_model_msg_to_esvdriver(neu_manager_t *manager, esv_thing_model_msg_t *msg);
+int forward_thing_model_msg_to_esvdriver(neu_manager_t *manager, const esv_thing_model_msg_t *msg);
+int forward_thing_model_msg_to_esvapps(neu_manager_t *manager, const esv_thing_model_msg_t *msg);
 
 #endif /* ifndef _MANAGER_ADAPTER_MSG_H_ */

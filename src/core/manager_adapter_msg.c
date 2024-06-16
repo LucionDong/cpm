@@ -1,3 +1,4 @@
+#include "manager_internal.h"
 #include "node_manager.h"
 #include "utils/log.h"
 #include "adapter/adapter_internal.h"
@@ -27,7 +28,7 @@
 /* 	return 0; */
 /* } */
 
-int forward_thing_model_msg_to_esvdriver(neu_manager_t *manager, esv_thing_model_msg_t *msg) {
+int forward_thing_model_msg_to_esvdriver(neu_manager_t *manager, const esv_thing_model_msg_t *msg) {
 	// 根据pk dn找到对应的node_name
 	nlog_info("pk:%s dn:%s to find node_name", msg->product_key, msg->device_name);
 	char *node_name = NULL;
@@ -52,4 +53,27 @@ int forward_thing_model_msg_to_esvdriver(neu_manager_t *manager, esv_thing_model
 	int rv = adapter->module->intf_funs->esvdriver.thing_model_msg_arrived(adapter->plugin, msg);
 end:
 	return rv;
+}
+
+/* TODO:  <16-06-24, yourname> 
+ * 需要释放esvappnodes
+ * */
+static UT_array *esvappnodes = NULL;
+int forward_thing_model_msg_to_esvapps(neu_manager_t *manager, const esv_thing_model_msg_t *msg) {
+	if (esvappnodes == NULL) {
+		nlog_debug("to get adapter type %d", NEU_NA_TYPE_ESVAPP);
+		esvappnodes = neu_node_manager_get_adapter(manager->node_manager, NEU_NA_TYPE_ESVAPP);
+	}
+
+	if (esvappnodes == NULL) {
+		nlog_info("do not find esv app!");
+		return -1;
+	}
+
+	utarray_foreach(esvappnodes, neu_adapter_t **, adapter) {
+		nlog_debug("send msg to app adapter %s", (*adapter)->name);
+		(*adapter)->module->intf_funs->esvdriver.thing_model_msg_arrived((*adapter)->plugin, msg);
+	}
+
+	return 0;
 }
