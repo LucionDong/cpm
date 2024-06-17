@@ -119,7 +119,10 @@ neu_manager_t *neu_manager_create()
     /* neu_metrics_init(); */
     /* start_static_adapter(manager, DEFAULT_DASHBOARD_PLUGIN_NAME); */
 
-    if (manager_load_plugin(manager) != 0) {
+    /* if (manager_load_plugin(manager) != 0) { */
+    /*     nlog_warn("load plugin error"); */
+    /* } */
+    if (esv_manager_load_plugin_from_db(manager) != 0) {
         nlog_warn("load plugin error");
     }
 

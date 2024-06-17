@@ -2024,3 +2024,102 @@ error:
     return NEU_ERR_EINTERNAL;
 
 }
+
+static int query_plugins_from_db(neu_json_plugin_req_t **result) {
+	sqlite3_stmt *stmt = NULL;
+	const char *query ="SELECT lib_name FROM plugin_lib";
+    neu_json_plugin_req_t *req      = calloc(1, sizeof(neu_json_plugin_req_t));
+    if (req == NULL) {
+        return -1;
+    }
+
+	if (SQLITE_OK != sqlite3_prepare_v2(thing_db, query, -1, &stmt, NULL)) {
+        nlog_error("prepare `%s` fail: %s", query, sqlite3_errmsg(thing_db));
+        goto error;
+    }
+
+	// Execute the statement and count rows
+	int step = sqlite3_step(stmt);
+	while (SQLITE_ROW == step) {
+		req->n_plugin++;
+        step = sqlite3_step(stmt);
+    }
+    if (SQLITE_DONE != step) {
+        nlog_warn("query count `%s` fail: %s", query, sqlite3_errmsg(thing_db));
+		goto sql_done_error;
+    }
+
+    req->plugins = calloc(req->n_plugin, sizeof(neu_json_plugin_req_plugin_t));
+    neu_json_plugin_req_plugin_t *p_plugin = req->plugins;
+
+	// Reset the statement to use the results again
+	sqlite3_reset(stmt);
+	// Use the results again
+	step = sqlite3_step(stmt);
+	while (SQLITE_ROW == step) {
+		char *lib_name = strdup((char *) sqlite3_column_text(stmt, 0));
+		if (lib_name == NULL) {
+			goto sql_error;	
+		}
+
+		*p_plugin = lib_name;
+		p_plugin++;
+
+sql_error:
+        step = sqlite3_step(stmt);
+    }
+
+    if (SQLITE_DONE != step) {
+        nlog_warn("query `%s` fail: %s", query, sqlite3_errmsg(thing_db));
+		goto sql_done_error;
+    }
+
+    *result = req;
+	goto sql_done;
+
+error:
+sql_done_error:
+    if (req != NULL) {
+		neu_json_decode_plugin_req_free(req);
+    }
+	if (stmt != NULL) {
+		sqlite3_finalize(stmt);
+	}
+    return EXIT_FAILURE;
+
+sql_done:
+    sqlite3_finalize(stmt);
+    return EXIT_SUCCESS;
+}
+
+static int load_plugins_from_db(UT_array *plugin_infos)
+{
+    neu_json_plugin_req_t *plugin_req = NULL;
+    int rv = query_plugins_from_db(&plugin_req);
+    if (rv != 0) {
+        return rv;
+    }
+
+    for (int i = 0; i < plugin_req->n_plugin; i++) {
+        char *name = plugin_req->plugins[i];
+        utarray_push_back(plugin_infos, &name);
+    }
+
+    free(plugin_req->plugins);
+    free(plugin_req);
+    return 0;
+}
+
+int esv_persister_load_plugins_from_db(UT_array **plugin_infos)
+{
+    UT_array *default_plugins = NULL;
+    utarray_new(default_plugins, &ut_ptr_icd);
+
+    // default plugins will always present
+    if (0 != load_plugins_from_db(default_plugins)) {
+        nlog_warn("cannot load default plugins");
+    }
+
+    *plugin_infos = default_plugins;
+    return 0;
+}
