@@ -70,12 +70,12 @@ set(ESVCPM_BASE_SOURCE
 	${PERSIST_SOURCES}
 	)
 
-add_library(esvcpm-base SHARED)
-target_sources(esvcpm-base PRIVATE 
+add_library(esvcpm-232-base SHARED)
+target_sources(esvcpm-232-base PRIVATE 
 	${ESVCPM_BASE_SOURCE}
 	${ESV_SRC_PARSE}
 	)
-target_include_directories(esvcpm-base PRIVATE 
+target_include_directories(esvcpm-232-base PRIVATE 
 	include/${PROJECT_NAME}
 	src
 	)
@@ -92,7 +92,7 @@ find_library(SSL_LIB NAMES ssl REQUIRED)
 find_library(SQLITE3_LIB NAMES sqlite3 REQUIRED)
 find_library(PAHO-MQTTA_LIB NAMES paho-mqtt3a REQUIRED)
 
-target_link_libraries(esvcpm-base PRIVATE 
+target_link_libraries(esvcpm-232-base PRIVATE 
 	# ${PTHREAD_LIB}
 	# ${SSL_LIB}
 	# ${CRYPTO_LIB}
@@ -158,7 +158,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 
 
 target_link_libraries(${PROJECT_NAME} PRIVATE 
-	esvcpm-base
+	esvcpm-232-base
 	${DL_LIB}
 	${MATH_LIB}
 	${ZLOG_LIB}
@@ -193,6 +193,6 @@ install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include/"
         FILES_MATCHING
         PATTERN "*.h")
 
-install(TARGETS esvcpm esvcpm-base
+install(TARGETS esvcpm-232 esvcpm-232-base
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin)
