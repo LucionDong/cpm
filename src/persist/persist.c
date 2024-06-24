@@ -1791,11 +1791,12 @@ static UT_icd esv_node_info_icd = {
     (dtor_f *) esv_persist_node_info_fini,
 };
 
-int esv_persister_load_nodes(UT_array **esv_node_infos)
+int esv_persister_load_232_nodes(UT_array **esv_node_infos)
 {
     int           rv    = 0;
     sqlite3_stmt *stmt  = NULL;
-    const char *  query = "SELECT node_id, node_name, plugin_name, lib_name, node_type, install_type, node_config, node_config_index, state FROM plugin_node;";
+    const char *  query = "SELECT node_id, node_name, plugin_name, lib_name, node_type, install_type, node_config, node_config_index, state \
+						   FROM plugin_node WHERE node_type IN ('12', '13', '14');";
 
     utarray_new(*esv_node_infos, &esv_node_info_icd);
 

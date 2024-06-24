@@ -72,11 +72,11 @@ typedef enum {
 	/* 应用：cpm传输所有设备信息给应用 */
 	NEU_NA_TYPE_ESVAPP = 11,
 	/* RS485-232设备驱动：cpm只传输对应pk dn的数据给对应驱动 */
-	NEU_NA_TYPE_ESVDEVICEDRIVERRS = 12,
+	NEU_NA_TYPE_ESVDEVICEDRIVER232 = 12,
 	/* RS485-232应用驱动：cpm传输所有设备信息给应用驱动 */
-	NEU_NA_TYPE_ESVAPPDRIVERRS = 13,
+	NEU_NA_TYPE_ESVAPPDRIVER232 = 13,
 	/* RS485-232应用：cpm传输所有设备信息给应用 */
-	NEU_NA_TYPE_ESVAPPRS = 14,
+	NEU_NA_TYPE_ESVAPP232 = 14,
 
 } neu_adapter_type_e,
     neu_node_type_e;

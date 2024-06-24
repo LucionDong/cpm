@@ -84,7 +84,7 @@ void esv_persister_destroy();
  *                                  vector of neu_persist_node_info_t.
  * @return 0 on success, none-zero on failure
  */
-int esv_persister_load_nodes(UT_array **node_infos);
+int esv_persister_load_232_nodes(UT_array **node_infos);
 
 /**
  * Load node setting.
