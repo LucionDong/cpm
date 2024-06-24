@@ -1791,11 +1791,12 @@ static UT_icd esv_node_info_icd = {
     (dtor_f *) esv_persist_node_info_fini,
 };
 
-int esv_persister_load_nodes(UT_array **esv_node_infos)
+int esv_persister_load_normal_nodes(UT_array **esv_node_infos)
 {
     int           rv    = 0;
     sqlite3_stmt *stmt  = NULL;
-    const char *  query = "SELECT node_id, node_name, plugin_name, lib_name, node_type, install_type, node_config, node_config_index, state FROM plugin_node;";
+    const char *  query = "SELECT node_id, node_name, plugin_name, lib_name, node_type, install_type, node_config, node_config_index, state \
+						   FROM plugin_node WHERE node_type IN ('9', '10', '11');";
 
     utarray_new(*esv_node_infos, &esv_node_info_icd);
 
@@ -2025,9 +2026,10 @@ error:
 
 }
 
-static int query_plugins_from_db(neu_json_plugin_req_t **result) {
+static int query_normal_plugins_from_db(neu_json_plugin_req_t **result) {
 	sqlite3_stmt *stmt = NULL;
-	const char *query ="SELECT lib_name FROM plugin_lib";
+	/* const char *query ="SELECT lib_name FROM plugin_lib"; */
+	const char *query ="SELECT lib_name FROM plugin_lib WHERE node_type IN ('9', '10', '11')";
     neu_json_plugin_req_t *req      = calloc(1, sizeof(neu_json_plugin_req_t));
     if (req == NULL) {
         return -1;
@@ -2092,10 +2094,10 @@ sql_done:
     return EXIT_SUCCESS;
 }
 
-static int load_plugins_from_db(UT_array *plugin_infos)
+static int load_normal_plugins_from_db(UT_array *plugin_infos)
 {
     neu_json_plugin_req_t *plugin_req = NULL;
-    int rv = query_plugins_from_db(&plugin_req);
+    int rv = query_normal_plugins_from_db(&plugin_req);
     if (rv != 0) {
         return rv;
     }
@@ -2110,13 +2112,13 @@ static int load_plugins_from_db(UT_array *plugin_infos)
     return 0;
 }
 
-int esv_persister_load_plugins_from_db(UT_array **plugin_infos)
+int esv_persister_load_normal_plugins_from_db(UT_array **plugin_infos)
 {
     UT_array *default_plugins = NULL;
     utarray_new(default_plugins, &ut_ptr_icd);
 
     // default plugins will always present
-    if (0 != load_plugins_from_db(default_plugins)) {
+    if (0 != load_normal_plugins_from_db(default_plugins)) {
         nlog_warn("cannot load default plugins");
     }
 

@@ -4,12 +4,12 @@
 #include "storage.h"
 
 // easeview
-int esv_manager_load_node(neu_manager_t *manager)
+int esv_manager_load_normal_node(neu_manager_t *manager)
 {
     UT_array *node_infos = NULL;
     int       rv         = 0;
 
-    rv = esv_persister_load_nodes(&node_infos);
+    rv = esv_persister_load_normal_nodes(&node_infos);
     if (0 != rv) {
         nlog_error("failed to load adapter infos");
         return -1;
@@ -30,12 +30,12 @@ int esv_manager_load_node(neu_manager_t *manager)
     return rv;
 }
 
-int esv_manager_load_plugin_from_db(neu_manager_t *manager)
+int esv_manager_load_normal_plugin_from_db(neu_manager_t *manager)
 {
     UT_array *plugin_infos = NULL;
 
     /* int rv = neu_persister_load_plugins(&plugin_infos); */
-    int rv = esv_persister_load_plugins_from_db(&plugin_infos);
+    int rv = esv_persister_load_normal_plugins_from_db(&plugin_infos);
     if (rv != 0) {
         return rv;
     }

@@ -122,7 +122,7 @@ neu_manager_t *neu_manager_create()
     /* if (manager_load_plugin(manager) != 0) { */
     /*     nlog_warn("load plugin error"); */
     /* } */
-    if (esv_manager_load_plugin_from_db(manager) != 0) {
+    if (esv_manager_load_normal_plugin_from_db(manager) != 0) {
         nlog_warn("load plugin error");
     }
 
@@ -151,7 +151,7 @@ neu_manager_t *neu_manager_create()
 	manager->esv_lan_mqtt5_service = esv_lan_mqtt5_service;
 
     /* manager_load_node(manager); */
-    esv_manager_load_node(manager);
+    esv_manager_load_normal_node(manager);
     /* while (neu_node_manager_exist_uninit(manager->node_manager)) { */
     /*     usleep(1000 * 100); */
     /* } */

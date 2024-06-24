@@ -84,7 +84,7 @@ void esv_persister_destroy();
  *                                  vector of neu_persist_node_info_t.
  * @return 0 on success, none-zero on failure
  */
-int esv_persister_load_nodes(UT_array **node_infos);
+int esv_persister_load_normal_nodes(UT_array **node_infos);
 
 /**
  * Load node setting.
@@ -106,7 +106,7 @@ static inline void esv_persist_node_info_fini(esv_persist_node_info_t *info)
     free(info->lib_name);
     free(info->node_config);
 }
-int esv_persister_load_plugins_from_db(UT_array **plugin_infos);
+int esv_persister_load_normal_plugins_from_db(UT_array **plugin_infos);
 /* easeview end */
 
 /* typedef struct { */
