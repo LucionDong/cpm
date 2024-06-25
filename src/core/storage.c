@@ -21,8 +21,8 @@ int esv_manager_load_normal_node(neu_manager_t *manager)
                                   node_info->plugin_name, node_info->state,
                                   true);
         const char *ok_or_err = (0 == rv) ? "success" : "fail";
-        nlog_notice("load adapter %s type:%d, name:%s plugin:%s state:%d",
-                    ok_or_err, node_info->node_type, node_info->node_name,
+        nlog_notice("load adapter %s(%d) type:%d, name:%s plugin:%s state:%d",
+                    ok_or_err, rv, node_info->node_type, node_info->node_name,
                     node_info->plugin_name, node_info->state);
     }
 
