@@ -1765,19 +1765,19 @@ static bool is_device_in_device_list(esv_device_list_t *list, const char *pk, co
 
 static int thing_model_msg_arrived(neu_adapter_t *adapter, const esv_thing_model_msg_t *thing_model_msg) {
 	nlog_debug("thing_model_msg_arrived from driver: %s product_key: %s, device_name: %s, method: %d  msg_type: %d", adapter->name, thing_model_msg->product_key, thing_model_msg->device_name, thing_model_msg->method, thing_model_msg->msg_type);
-	if (adapter->module->type != NEU_NA_TYPE_ESVDEVICEDRIVER && adapter->module->type != NEU_NA_TYPE_ESVAPP) {
+	if (adapter->module->type != NEU_NA_TYPE_ESVDEVICEDRIVER232 && adapter->module->type != NEU_NA_TYPE_ESVAPP232) {
 			nlog_debug("adapter type(%d) error", adapter->module->type);
 			return 1;
 	}
 
-	if (adapter->module->type == NEU_NA_TYPE_ESVAPP) {
-		if (ESV_TMM_MTD_LAN_SUBTHING_THING_SERVICE_PROPERTY_SET != thing_model_msg->method) {
-			nlog_debug("esv app do not pass msg method != property set");
+	if (adapter->module->type == NEU_NA_TYPE_ESVAPP232) {
+		if (ESV_TMM_MTD_LAN_SUBTHING_THING_SERVICE_PROPERTY_SET != thing_model_msg->method && ESV_TMM_MTD_LAN_SUBTHING_THING_SERVICE_PROPERTY_GET != thing_model_msg->method) {
+			nlog_debug("esv app232 do not pass msg method != property set and != property get");
 			return 1;
 		}
 	}
 
-	if (adapter->module->type == NEU_NA_TYPE_ESVDEVICEDRIVER && !is_device_in_device_list(((neu_adapter_driver_t *)adapter)->device_list, thing_model_msg->product_key, thing_model_msg->device_name)) {
+	if (adapter->module->type == NEU_NA_TYPE_ESVDEVICEDRIVER232 && !is_device_in_device_list(((neu_adapter_driver_t *)adapter)->device_list, thing_model_msg->product_key, thing_model_msg->device_name)) {
 		nlog_warn("illegal device pk: %s dn: %s msg", thing_model_msg->product_key, thing_model_msg->device_name);
 		return 1;
 	}
@@ -1789,10 +1789,10 @@ static int thing_model_msg_arrived(neu_adapter_t *adapter, const esv_thing_model
 			neu_asprintf(&topic, topic_formate, thing_model_msg->product_key, thing_model_msg->device_name);
 			lan_mqtt5_service_publish(adapter->lan_mqtt5_service, topic, thing_model_msg->msg);
 			free(topic);
-			// msg from device-driver to app
-			if (adapter->module->type == NEU_NA_TYPE_ESVDEVICEDRIVER) {
-				nlog_debug("forward thing model msg from device driver to app");
-				forward_thing_model_msg_to_esvapps(adapter->manager, thing_model_msg);
+			// msg from device-driver to app232
+			if (adapter->module->type == NEU_NA_TYPE_ESVDEVICEDRIVER232) {
+				nlog_debug("forward thing model msg from device driver232 to app232");
+				forward_thing_model_msg_to_esvapp232s(adapter->manager, thing_model_msg);
 			}
 		}
 	} else if (ESV_TMM_MTD_LAN_SUBTHING_THING_SERVICE_PROPERTY_SET == thing_model_msg->method) {
@@ -1803,8 +1803,8 @@ static int thing_model_msg_arrived(neu_adapter_t *adapter, const esv_thing_model
 			lan_mqtt5_service_publish(adapter->lan_mqtt5_service, topic, thing_model_msg->msg);
 			free(topic);
 			// msg from app to device-driver
-			if (adapter->module->type == NEU_NA_TYPE_ESVAPP) {
-				nlog_debug("forward thing model msg from app to device driver");
+			if (adapter->module->type == NEU_NA_TYPE_ESVAPP232) {
+				nlog_debug("forward thing model msg from app232 to device driver");
 				forward_thing_model_msg_to_esvdriver(adapter->manager, thing_model_msg);
 			}
 		}
@@ -1823,6 +1823,11 @@ static int thing_model_msg_arrived(neu_adapter_t *adapter, const esv_thing_model
 			neu_asprintf(&topic, topic_formate, thing_model_msg->product_key, thing_model_msg->device_name);
 			lan_mqtt5_service_publish(adapter->lan_mqtt5_service, topic, thing_model_msg->msg);
 			free(topic);
+			// msg from app to device-driver
+			if (adapter->module->type == NEU_NA_TYPE_ESVAPP232) {
+				nlog_debug("forward thing model msg from app232 to device driver");
+				forward_thing_model_msg_to_esvdriver(adapter->manager, thing_model_msg);
+			}
 		}
 	} else if (ESV_TMM_MTD_LAN_SUBTHING_THING_SERVICE_PROPERTY_GET_REPLY == thing_model_msg->method) {
 		char *topic_formate = "lan/thing/sub/%s/%s/thing/service/property/getReply";
@@ -1831,6 +1836,11 @@ static int thing_model_msg_arrived(neu_adapter_t *adapter, const esv_thing_model
 			neu_asprintf(&topic, topic_formate, thing_model_msg->product_key, thing_model_msg->device_name);
 			lan_mqtt5_service_publish(adapter->lan_mqtt5_service, topic, thing_model_msg->msg);
 			free(topic);
+			// msg from device-driver to app232
+			if (adapter->module->type == NEU_NA_TYPE_ESVDEVICEDRIVER) {
+				nlog_debug("forward thing model msg from device driver to app232");
+				forward_thing_model_msg_to_esvapp232s(adapter->manager, thing_model_msg);
+			}
 		}
 	} 
 	/* else if (ESV_TMM_MTD_WAN_SUBTHING_THING_SERVICE_PROPERTY_SET == thing_model_msg->method) { */

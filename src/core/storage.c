@@ -35,20 +35,22 @@ int esv_manager_load_232_node(neu_manager_t *manager)
     UT_array *node_infos = NULL;
     int       rv         = 0;
 
+	nlog_debug("to persister load 232 nodes");
     rv = esv_persister_load_232_nodes(&node_infos);
     if (0 != rv) {
         nlog_error("failed to load adapter infos");
         return -1;
     }
 
+	nlog_debug("add node to manager");
     utarray_foreach(node_infos, esv_persist_node_info_t *, node_info)
     {
         rv                    = neu_manager_add_node(manager, node_info->node_name,
                                   node_info->plugin_name, node_info->state,
                                   true);
         const char *ok_or_err = (0 == rv) ? "success" : "fail";
-        nlog_notice("load adapter %s type:%d, name:%s plugin:%s state:%d",
-                    ok_or_err, node_info->node_type, node_info->node_name,
+        nlog_notice("load adapter %s(%d) type:%d, name:%s plugin:%s state:%d",
+                    ok_or_err, rv, node_info->node_type, node_info->node_name,
                     node_info->plugin_name, node_info->state);
     }
 
@@ -56,12 +58,12 @@ int esv_manager_load_232_node(neu_manager_t *manager)
     return rv;
 }
 
-int esv_manager_load_plugin_from_db(neu_manager_t *manager)
+int esv_manager_load_232_plugin_from_db(neu_manager_t *manager)
 {
     UT_array *plugin_infos = NULL;
 
     /* int rv = neu_persister_load_plugins(&plugin_infos); */
-    int rv = esv_persister_load_plugins_from_db(&plugin_infos);
+    int rv = esv_persister_load_232_plugins_from_db(&plugin_infos);
     if (rv != 0) {
         return rv;
     }

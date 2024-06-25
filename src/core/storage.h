@@ -77,6 +77,6 @@ int manager_load_node(neu_manager_t *manager);
 
 /* easeview */
 int esv_manager_load_232_node(neu_manager_t *manager);
-int esv_manager_load_plugin_from_db(neu_manager_t *manager);
+int esv_manager_load_232_plugin_from_db(neu_manager_t *manager);
 
 #endif

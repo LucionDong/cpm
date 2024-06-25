@@ -32,6 +32,9 @@ int forward_thing_model_msg_to_esvdriver(neu_manager_t *manager, const esv_thing
 	// 根据pk dn找到对应的node_name
 	nlog_info("pk:%s dn:%s to find node_name", msg->product_key, msg->device_name);
 	char *node_name = NULL;
+	/* TODO:  <24-06-24, winston> 
+	 * 需要优化，不要每次都从数据库读取，从缓存读取
+	 * */
 	esv_persister_query_device_node_name(msg->product_key, msg->device_name, &node_name);
 	if (NULL == node_name) {
 		nlog_warn("do not find node of pk: %s dn: %s", msg->product_key, msg->device_name);
@@ -58,19 +61,19 @@ end:
 /* TODO:  <16-06-24, yourname> 
  * 需要释放esvappnodes
  * */
-static UT_array *esvappnodes = NULL;
-int forward_thing_model_msg_to_esvapps(neu_manager_t *manager, const esv_thing_model_msg_t *msg) {
-	if (esvappnodes == NULL) {
-		nlog_debug("to get adapter type %d", NEU_NA_TYPE_ESVAPP);
-		esvappnodes = neu_node_manager_get_adapter(manager->node_manager, NEU_NA_TYPE_ESVAPP);
+static UT_array *esvapp232nodes = NULL;
+int forward_thing_model_msg_to_esvapp232s(neu_manager_t *manager, const esv_thing_model_msg_t *msg) {
+	if (esvapp232nodes == NULL) {
+		nlog_debug("to get adapter type %d", NEU_NA_TYPE_ESVAPP232);
+		esvapp232nodes = neu_node_manager_get_adapter(manager->node_manager, NEU_NA_TYPE_ESVAPP232);
 	}
 
-	if (esvappnodes == NULL) {
-		nlog_info("do not find esv app!");
+	if (esvapp232nodes == NULL) {
+		nlog_info("do not find esv app232!");
 		return -1;
 	}
 
-	utarray_foreach(esvappnodes, neu_adapter_t **, adapter) {
+	utarray_foreach(esvapp232nodes, neu_adapter_t **, adapter) {
 		nlog_debug("send msg to app adapter %s", (*adapter)->name);
 		(*adapter)->module->intf_funs->esvdriver.thing_model_msg_arrived((*adapter)->plugin, msg);
 	}

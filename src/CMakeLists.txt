@@ -186,6 +186,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
 
 
 # set(CMAKE_INSTALL_PREFIX "/home/winston/Works/mac_work/dev/3rdparty/c/build_armv5l/easemore/easeview/esvcpm")
+# set(DESTDIR /home/winston/Works/mac_work/dev/gateway/easeview/plugin/plugins/cpm232sdk)
 message(STATUS ${CMAKE_INSTALL_PREFIX})
 message(STATUS ${CMAKE_CURRENT_SOURCE_DIR}/include/)
 install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include/"

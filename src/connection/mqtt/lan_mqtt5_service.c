@@ -11,7 +11,7 @@
 #include "lan_mqtt5_service_internal.h"
 
 #define ADDRESS     "tcp://127.0.0.1:1883"
-#define CLIENTID    "cpm-lan-mqtt"
+#define CLIENTID    "cpm-232-lan-mqtt"
 #define QOS         1
 #define TIMEOUT     10000L
 

@@ -122,7 +122,7 @@ neu_manager_t *neu_manager_create()
     /* if (manager_load_plugin(manager) != 0) { */
     /*     nlog_warn("load plugin error"); */
     /* } */
-    if (esv_manager_load_plugin_from_db(manager) != 0) {
+    if (esv_manager_load_232_plugin_from_db(manager) != 0) {
         nlog_warn("load plugin error");
     }
 
@@ -150,6 +150,7 @@ neu_manager_t *neu_manager_create()
 	esv_lan_mqtt5_srvice_set_manager(esv_lan_mqtt5_service, manager);
 	manager->esv_lan_mqtt5_service = esv_lan_mqtt5_service;
 
+	nlog_debug("to load 232 node");
     /* manager_load_node(manager); */
     esv_manager_load_232_node(manager);
     /* while (neu_node_manager_exist_uninit(manager->node_manager)) { */
@@ -160,6 +161,7 @@ neu_manager_t *neu_manager_create()
 	/* nlog_debug("&manager=%p", manager); */
 	/* lan_mqtt_service_start(manager->esv_lan_mqtt_service); */
 	// mqtt5
+	nlog_debug("to start cpm232 lan mqtt5 service");
 	lan_mqtt5_service_start(manager->esv_lan_mqtt5_service);
     /* manager_load_subscribe(manager); */
 

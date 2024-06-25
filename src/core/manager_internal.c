@@ -69,19 +69,23 @@ int neu_manager_add_node(neu_manager_t *manager, const char *node_name,
         return NEU_ERR_NODE_EXIST;
     }
 
+	nlog_debug("manager create instance");
     ret = neu_plugin_manager_create_instance(manager->plugin_manager, info.name,
                                              &instance);
     if (ret != 0) {
         return NEU_ERR_LIBRARY_FAILED_TO_OPEN;
     }
+	nlog_debug("manager create instance done");
     adapter_info.handle = instance.handle;
     adapter_info.module = instance.module;
 
     /* adapter = neu_adapter_create(manager->esv_outside_service_manager, &adapter_info, load); */
+	nlog_debug("create adapter");
     adapter = neu_adapter_create(&adapter_info, load);
     if (adapter == NULL) {
         return neu_adapter_error();
     }
+	nlog_debug("create adapter done");
 	esv_adapter_set_lan_mqtt5_service(adapter, manager->esv_lan_mqtt5_service);
 	esv_adapter_set_manager(adapter, manager);
     neu_node_manager_add(manager->node_manager, adapter);

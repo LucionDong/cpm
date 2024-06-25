@@ -139,11 +139,13 @@ neu_adapter_t *neu_adapter_create(neu_adapter_info_t *info, bool load)
     case NEU_NA_TYPE_APP:
         adapter = calloc(1, sizeof(neu_adapter_t));
         break;
-	case NEU_NA_TYPE_ESVDEVICEDRIVER:
-	case NEU_NA_TYPE_ESVAPPDRIVER:
-	case NEU_NA_TYPE_ESVAPP:
+	case NEU_NA_TYPE_ESVDEVICEDRIVER232:
+	case NEU_NA_TYPE_ESVAPP232:
         adapter = (neu_adapter_t *) neu_adapter_esvdriver_create();
 		break;
+	default:
+		nlog_warn("adapter create fail, do not match adapter type: %d", info->module->type);
+		return NULL;
     }
 
     adapter->name                    = strdup(info->name);
@@ -180,8 +182,12 @@ neu_adapter_t *neu_adapter_create(neu_adapter_info_t *info, bool load)
             REGISTER_APP_METRICS(adapter);
         }
         break;
-	case NEU_NA_TYPE_ESVDEVICEDRIVER:
+	case NEU_NA_TYPE_ESVDEVICEDRIVER232:
+	case NEU_NA_TYPE_ESVAPP232:
 		neu_adapter_esvdriver_init((neu_adapter_driver_t *)adapter);
+		break;
+	default:
+		nlog_warn("adapter custom init fail, do not match adapter type: %d", info->module->type);
 		break;
     }
 
