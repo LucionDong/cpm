@@ -1804,7 +1804,7 @@ static int thing_model_msg_arrived(neu_adapter_t *adapter, const esv_thing_model
 			free(topic);
 			// msg from app to device-driver
 			if (adapter->module->type == NEU_NA_TYPE_ESVAPP232) {
-				nlog_debug("forward thing model msg from app232 to device driver");
+				nlog_debug("forward thing model msg from app232 to device driver232");
 				forward_thing_model_msg_to_esvdriver(adapter->manager, thing_model_msg);
 			}
 		}
@@ -1815,6 +1815,11 @@ static int thing_model_msg_arrived(neu_adapter_t *adapter, const esv_thing_model
 			neu_asprintf(&topic, topic_formate, thing_model_msg->product_key, thing_model_msg->device_name);
 			lan_mqtt5_service_publish(adapter->lan_mqtt5_service, topic, thing_model_msg->msg);
 			free(topic);
+			// msg from device-driver to app232
+			if (adapter->module->type == NEU_NA_TYPE_ESVDEVICEDRIVER232) {
+				nlog_debug("forward thing model msg from device driver232 to app232");
+				forward_thing_model_msg_to_esvapp232s(adapter->manager, thing_model_msg);
+			}
 		}
 	} else if (ESV_TMM_MTD_LAN_SUBTHING_THING_SERVICE_PROPERTY_GET == thing_model_msg->method) {
 		char *topic_formate = "lan/thing/sub/%s/%s/thing/service/property/get";
@@ -1825,7 +1830,7 @@ static int thing_model_msg_arrived(neu_adapter_t *adapter, const esv_thing_model
 			free(topic);
 			// msg from app to device-driver
 			if (adapter->module->type == NEU_NA_TYPE_ESVAPP232) {
-				nlog_debug("forward thing model msg from app232 to device driver");
+				nlog_debug("forward thing model msg from app232 to device driver232");
 				forward_thing_model_msg_to_esvdriver(adapter->manager, thing_model_msg);
 			}
 		}
@@ -1837,8 +1842,8 @@ static int thing_model_msg_arrived(neu_adapter_t *adapter, const esv_thing_model
 			lan_mqtt5_service_publish(adapter->lan_mqtt5_service, topic, thing_model_msg->msg);
 			free(topic);
 			// msg from device-driver to app232
-			if (adapter->module->type == NEU_NA_TYPE_ESVDEVICEDRIVER) {
-				nlog_debug("forward thing model msg from device driver to app232");
+			if (adapter->module->type == NEU_NA_TYPE_ESVDEVICEDRIVER232) {
+				nlog_debug("forward thing model msg from device driver232 to app232");
 				forward_thing_model_msg_to_esvapp232s(adapter->manager, thing_model_msg);
 			}
 		}
