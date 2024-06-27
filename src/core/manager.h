@@ -24,6 +24,8 @@
 
 #include "persist/persist.h"
 
+#include "config/easeview_config.h"
+
 #include "manager_internal.h"
 
 neu_manager_t *neu_manager_create();

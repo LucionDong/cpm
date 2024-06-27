@@ -140,6 +140,7 @@ set(ESVCPM_SOURCE
 	src/adapter/driver/driver.c
 	src/adapter/driver/device.c
 	src/connection/mqtt/lan_mqtt5_service.c
+	src/config/easeview_config.c
 	)
 
 # set(CMAKE_BUILD_RPATH ./)
