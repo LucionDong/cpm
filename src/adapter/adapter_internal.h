@@ -24,11 +24,10 @@
 #include <nng/protocol/pair1/pair.h>
 #include <nng/supplemental/util/platform.h>
 
-#include "event/event.h"
-#include "plugin.h"
-
 #include "adapter_info.h"
 #include "core/manager.h"
+#include "event/event.h"
+#include "plugin.h"
 
 #define MANAGER_RECEIVER "manager"
 
@@ -40,41 +39,41 @@ struct neu_adapter {
 
     adapter_callbacks_t cb_funs;
 
-    void *               handle;
+    void *handle;
     neu_plugin_module_t *module;
-    neu_plugin_t *       plugin;
+    neu_plugin_t *plugin;
 
     nng_socket sock;
     nng_dialer dialer;
 
-    neu_events_t *  events;
+    neu_events_t *events;
     neu_event_io_t *nng_io;
-    int             recv_fd;
+    int recv_fd;
 
     neu_event_timer_t *timer_lev;
-    int64_t            timestamp_lev;
+    int64_t timestamp_lev;
 
     // metrics
     neu_node_metrics_t *metrics;
 
-	// esview
-	/* esv_lan_mqtt_service_t *lan_mqtt_service; */
-	esv_lan_mqtt5_service_t *lan_mqtt5_service;
-	/* esv_outside_service_manager_t *outside_service_manager; */
-	neu_manager_t *manager;
+    // esview
+    /* esv_lan_mqtt_service_t *lan_mqtt_service; */
+    esv_lan_mqtt5_service_t *lan_mqtt5_service;
+    /* esv_outside_service_manager_t *outside_service_manager; */
+    neu_manager_t *manager;
 };
 
-typedef void (*adapter_handler)(neu_adapter_t *     adapter,
-                                neu_reqresp_head_t *header);
+typedef void (*adapter_handler)(neu_adapter_t *adapter, neu_reqresp_head_t *header);
 typedef struct adapter_msg_handler {
     neu_reqresp_type_e type;
-    adapter_handler    handler;
+    adapter_handler handler;
 } adapter_msg_handler_t;
 
-int  neu_adapter_error();
+int neu_adapter_error();
 void neu_adapter_set_error(int error);
 
-/* neu_adapter_t *neu_adapter_create(esv_outside_service_manager_t *outside_service_manager, neu_adapter_info_t *info, bool load); */
+/* neu_adapter_t *neu_adapter_create(esv_outside_service_manager_t *outside_service_manager, neu_adapter_info_t *info,
+ * bool load); */
 neu_adapter_t *neu_adapter_create(neu_adapter_info_t *info, bool load);
 void neu_adapter_init(neu_adapter_t *adapter, neu_node_running_state_e state);
 
@@ -86,11 +85,10 @@ int neu_adapter_stop(neu_adapter_t *adapter);
 
 neu_node_type_e neu_adapter_get_type(neu_adapter_t *adapter);
 
-int  neu_adapter_uninit(neu_adapter_t *adapter);
+int neu_adapter_uninit(neu_adapter_t *adapter);
 void neu_adapter_destroy(neu_adapter_t *adapter);
 
-neu_event_timer_t *neu_adapter_add_timer(neu_adapter_t *         adapter,
-                                         neu_event_timer_param_t param);
+neu_event_timer_t *neu_adapter_add_timer(neu_adapter_t *adapter, neu_event_timer_param_t param);
 void neu_adapter_del_timer(neu_adapter_t *adapter, neu_event_timer_t *timer);
 
 int neu_adapter_set_setting(neu_adapter_t *adapter, const char *config);
@@ -99,18 +97,12 @@ neu_node_state_t neu_adapter_get_state(neu_adapter_t *adapter);
 
 int neu_adapter_validate_tag(neu_adapter_t *adapter, neu_datatag_t *tag);
 
-int  neu_adapter_register_group_metric(neu_adapter_t *adapter,
-                                       const char *group_name, const char *name,
-                                       const char *help, neu_metric_type_e type,
-                                       uint64_t init);
-int  neu_adapter_update_group_metric(neu_adapter_t *adapter,
-                                     const char *   group_name,
-                                     const char *metric_name, uint64_t n);
-int  neu_adapter_metric_update_group_name(neu_adapter_t *adapter,
-                                          const char *   group_name,
-                                          const char *   new_group_name);
-void neu_adapter_del_group_metrics(neu_adapter_t *adapter,
-                                   const char *   group_name);
+int neu_adapter_register_group_metric(neu_adapter_t *adapter, const char *group_name, const char *name,
+                                      const char *help, neu_metric_type_e type, uint64_t init);
+int neu_adapter_update_group_metric(neu_adapter_t *adapter, const char *group_name, const char *metric_name,
+                                    uint64_t n);
+int neu_adapter_metric_update_group_name(neu_adapter_t *adapter, const char *group_name, const char *new_group_name);
+void neu_adapter_del_group_metrics(neu_adapter_t *adapter, const char *group_name);
 // esview
 void esv_adapter_set_lan_mqtt5_service(neu_adapter_t *adapter, esv_lan_mqtt5_service_t *lan_mqtt5_service);
 void esv_adapter_set_manager(neu_adapter_t *adapter, neu_manager_t *manager);

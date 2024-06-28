@@ -28,10 +28,9 @@ extern "C" {
 /* #include "utils/zlog.h" */
 #include <zlog.h>
 
-#include "event/event.h"
-
 #include "adapter.h"
 #include "define.h"
+#include "event/event.h"
 #include "type.h"
 
 #define NEURON_PLUGIN_VER_1_0 100
@@ -42,9 +41,9 @@ extern int64_t global_timestamp;
 typedef struct neu_plugin_common {
     uint32_t magic;
 
-    neu_adapter_t *            adapter;
+    neu_adapter_t *adapter;
     const adapter_callbacks_t *adapter_callbacks;
-    char                       name[NEU_NODE_NAME_LEN];
+    char name[NEU_NODE_NAME_LEN];
 
     neu_node_link_state_e link_state;
 
@@ -56,10 +55,10 @@ typedef struct neu_plugin neu_plugin_t;
 typedef struct neu_plugin_group neu_plugin_group_t;
 typedef void (*neu_plugin_group_free)(neu_plugin_group_t *pgp);
 struct neu_plugin_group {
-    char *    group_name;
+    char *group_name;
     UT_array *tags;
 
-    void *                user_data;
+    void *user_data;
     neu_plugin_group_free group_free;
 };
 
@@ -67,7 +66,7 @@ typedef int (*neu_plugin_tag_validator_t)(const neu_datatag_t *tag);
 
 typedef struct {
     neu_datatag_t *tag;
-    neu_value_u    value;
+    neu_value_u value;
 } neu_plugin_tag_value_t;
 
 typedef struct neu_plugin_intf_funs {
@@ -86,19 +85,23 @@ typedef struct neu_plugin_intf_funs {
             int (*validate_tag)(neu_plugin_t *plugin, neu_datatag_t *tag);
             int (*group_timer)(neu_plugin_t *plugin, neu_plugin_group_t *group);
             int (*write_tag)(neu_plugin_t *plugin, void *req, neu_datatag_t *tag, neu_value_u value);
-            int (*write_tags)( neu_plugin_t *plugin, void *req, UT_array *tag_values); // UT_array {neu_datatag_t, neu_value_u}
+            int (*write_tags)(neu_plugin_t *plugin, void *req,
+                              UT_array *tag_values);  // UT_array {neu_datatag_t, neu_value_u}
             neu_plugin_tag_validator_t tag_validator;
-            int (*load_tags)( neu_plugin_t *plugin, const char *group, neu_datatag_t *tags, int n_tag); // create tags using data from the database
-            int (*add_tags)(neu_plugin_t *plugin, const char *group, neu_datatag_t *tags, int            n_tag); // create tags by API
+            int (*load_tags)(neu_plugin_t *plugin, const char *group, neu_datatag_t *tags,
+                             int n_tag);  // create tags using data from the database
+            int (*add_tags)(neu_plugin_t *plugin, const char *group, neu_datatag_t *tags,
+                            int n_tag);  // create tags by API
             int (*del_tags)(neu_plugin_t *plugin, int n_tag);
         } driver;
         struct {
             int (*add_devices)(neu_plugin_t *plugin, const int device_cnt, const esv_device_info_t *device_infos);
             int (*remove_devices)(neu_plugin_t *plugin, const int device_cnt, const esv_device_info_t *device_infos);
             int (*thing_model_msg_arrived)(neu_plugin_t *plugin, const esv_thing_model_msg_t *msg);
-            /* int (*msg_to_driver)(neu_plugin_t *plugin, const esv_between_adapter_driver_msg_t *msg); */ 
-            int (*func4)(neu_plugin_t *plugin); 
-            int (*func5)(neu_plugin_t *plugin); 
+            /* int (*msg_to_driver)(neu_plugin_t *plugin, const esv_between_adapter_driver_msg_t *msg); */
+            int (*app_driver_232_thing_model_msg_arrived)(neu_plugin_t *plugin, const esv_232_thing_model_msg_t *msg);
+            int (*func4)(neu_plugin_t *plugin);
+            int (*func5)(neu_plugin_t *plugin);
             int (*func6)(neu_plugin_t *plugin);
             int (*func7)(neu_plugin_t *plugin);
             int (*func8)(neu_plugin_t *plugin);
@@ -107,23 +110,21 @@ typedef struct neu_plugin_intf_funs {
 } neu_plugin_intf_funs_t;
 
 typedef struct neu_plugin_module {
-    const uint32_t                version;
-    const char *                  schema;
-    const char *                  module_name;
-    const char *                  module_descr;
-    const char *                  module_descr_zh;
+    const uint32_t version;
+    const char *schema;
+    const char *module_name;
+    const char *module_descr;
+    const char *module_descr_zh;
     const neu_plugin_intf_funs_t *intf_funs;
-    neu_node_type_e               type;
-    neu_plugin_kind_e             kind;
-    bool                          display;
-    bool                          single;
-    const char *                  single_name;
-    neu_event_timer_type_e        timer_type;
+    neu_node_type_e type;
+    neu_plugin_kind_e kind;
+    bool display;
+    bool single;
+    const char *single_name;
+    neu_event_timer_type_e timer_type;
 } neu_plugin_module_t;
 
-inline static neu_plugin_common_t *
-neu_plugin_to_plugin_common(neu_plugin_t *plugin)
-{
+inline static neu_plugin_common_t *neu_plugin_to_plugin_common(neu_plugin_t *plugin) {
     return (neu_plugin_common_t *) plugin;
 }
 

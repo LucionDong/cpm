@@ -6,20 +6,20 @@
 #include "define.h"
 
 typedef enum esv_thing_model_msg_method {
-	ESV_TMM_MTD_LAN_SUBTHING_THING_EVENT_PROPERTY_POST = 0,
-	ESV_TMM_MTD_LAN_SUBTHING_THING_SERVICE_PROPERTY_SET,
-	ESV_TMM_MTD_LAN_SUBTHING_THING_SERVICE_PROPERTY_SET_REPLY,
-	ESV_TMM_MTD_LAN_SUBTHING_THING_SERVICE_PROPERTY_GET,
-	ESV_TMM_MTD_LAN_SUBTHING_THING_SERVICE_PROPERTY_GET_REPLY,
-	ESV_TMM_MTD_WAN_SUBTHING_THING_SERVICE_PROPERTY_SET,
-	ESV_TMM_MTD_WAN_SUBTHING_THING_SERVICE_PROPERTY_SET_REPLY,
-	ESV_TMM_MTD_WAN_SUBTHING_THING_SERVICE_PROPERTY_GET,
-	ESV_TMM_MTD_WAN_SUBTHING_THING_SERVICE_PROPERTY_GET_REPLY
+    ESV_TMM_MTD_LAN_SUBTHING_THING_EVENT_PROPERTY_POST = 0,
+    ESV_TMM_MTD_LAN_SUBTHING_THING_SERVICE_PROPERTY_SET,
+    ESV_TMM_MTD_LAN_SUBTHING_THING_SERVICE_PROPERTY_SET_REPLY,
+    ESV_TMM_MTD_LAN_SUBTHING_THING_SERVICE_PROPERTY_GET,
+    ESV_TMM_MTD_LAN_SUBTHING_THING_SERVICE_PROPERTY_GET_REPLY,
+    ESV_TMM_MTD_WAN_SUBTHING_THING_SERVICE_PROPERTY_SET,
+    ESV_TMM_MTD_WAN_SUBTHING_THING_SERVICE_PROPERTY_SET_REPLY,
+    ESV_TMM_MTD_WAN_SUBTHING_THING_SERVICE_PROPERTY_GET,
+    ESV_TMM_MTD_WAN_SUBTHING_THING_SERVICE_PROPERTY_GET_REPLY
 } esv_thing_model_msg_method_e;
 
 typedef enum esv_thing_model_msg_type {
-	ESV_TMM_JSON_STRING_PTR = 0,
-	ESV_TMM_JASSON_OBJECT_PTR = 1,
+    ESV_TMM_JSON_STRING_PTR = 0,
+    ESV_TMM_JASSON_OBJECT_PTR = 1,
 } esv_thing_model_msg_type_e;
 
 /* typedef enum esv_between_adapter_driver_msg_method { */
@@ -37,7 +37,7 @@ typedef struct {
     char *product_key;
     char *device_name;
     char *device_secret;
-	char *device_config;
+    char *device_config;
 } esv_device_info_t;
 
 /* typedef struct esv_thing_model_trans_data_ipc { */
@@ -48,12 +48,19 @@ typedef struct {
 /* } esv_thing_model_trans_data_ipc_t; */
 
 typedef struct {
-	esv_thing_model_msg_method_e method;
-	char                       *product_key;
-	char                       *device_name;
-	esv_thing_model_msg_type_e msg_type;
-	void		*msg;
+    esv_thing_model_msg_method_e method;
+    char *product_key;
+    char *device_name;
+    esv_thing_model_msg_type_e msg_type;
+    void *msg;
 } esv_thing_model_msg_t;
+
+typedef struct {
+    esv_thing_model_msg_method_e method;
+    char *serial_port_num;
+    esv_thing_model_msg_type_e msg_type;
+	void *msg;
+} esv_232_thing_model_msg_t;
 
 /* typedef struct { */
 /* 	esv_between_adapter_driver_msg_method_e method; */
