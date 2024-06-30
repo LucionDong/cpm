@@ -20,14 +20,14 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include "./mcurs232/serial_port.h"
+#include "../manager_adapter_msg.h"
+#include "../mcurs232/serial_port.h"
+#include "../outside_service_manager.h"
+#include "../outside_service_manager_internal.h"
+#include "../parser_config_json/config_parser.h"
 #include "device.h"
 #include "event/event.h"
-#include "json_parse.h"
-#include "manager_adapter_msg.h"
-#include "outside_service_manager.h"
-#include "outside_service_manager_internal.h"
-#include "rs232_recv.h"
+#include "parser_rs232_frame.h"
 
 char *mcu_rs232_devie_path = "/dev/ttyS2";
 
@@ -61,7 +61,8 @@ int write_to_mcu(esv_outside_service_manager_t *outside_service_manager, void *f
 // }
 //
 
-void make_ack_frame(Mcurs232_class_t *mcurs232_class) {
+// void make_ack_frame(Mcurs232_class_t *mcurs232_class) {
+void composition_ack_frame(Mcurs232_class_t *mcurs232_class) {
     uint8_t *read_buf = utarray_front(mcurs232_class->serial_port_read_buf_head);
     if (read_buf[TYPE_DISTANCE_FROM_FRAME_HEADER] == 0x42 || read_buf[FRAME_CONTROL_DOMAIN] == 0x00 ||
         read_buf[TYPE_DISTANCE_FROM_FRAME_HEADER] == 0x44 || read_buf[TYPE_DISTANCE_FROM_FRAME_HEADER] == 0x00) {
@@ -213,7 +214,7 @@ int print_read_buf(Mcurs232_class_t *mcurs232_class) {
     return 0;
 }
 
-int set_read_buf(Mcurs232_class_t *mcurs232_class, const unsigned char *buf, int buf_length) {
+int push_back_serial_port_read_buf(Mcurs232_class_t *mcurs232_class, const unsigned char *buf, int buf_length) {
     printf("set_read_buf starti: %ld\n", syscall(SYS_gettid));
     pthread_mutex_lock(&mcurs232_class->serial_port_trans_share->mcurs_share_mutex);
     printf("set_read_buf lock: %ld\n", syscall(SYS_gettid));
@@ -228,9 +229,9 @@ int set_read_buf(Mcurs232_class_t *mcurs232_class, const unsigned char *buf, int
     pthread_mutex_unlock(&mcurs232_class->serial_port_trans_share->mcurs_share_mutex);
     printf("set_read_buf unlock over: %ld\n", syscall(SYS_gettid));
 
-    nlog_info("check_serial_port_message start");
-    check_serial_port_message(mcurs232_class);
-    nlog_info("check_serial_port_message over");
+    // nlog_info("check_serial_port_message start");
+    // check_serial_port_message(mcurs232_class);
+    // nlog_info("check_serial_port_message over");
 
     return 0;
 }
@@ -509,7 +510,8 @@ int find_frame_tail_and_change_event(Mcurs232_class_t *mcurs232_class, int tail_
     }
 }
 
-int make_up_ch(Mcurs232_class_t *mcurs232_class, int complete_len, char **complete_frame_buf) {
+// int make_up_ch(Mcurs232_class_t *mcurs232_class, int complete_len, char **complete_frame_buf) {
+int init_complete_frame_buf(Mcurs232_class_t *mcurs232_class, int complete_len, char **complete_frame_buf) {
     // pthread_mutex_lock(&plugin->serial_port_trans_mutex);
     // pthread_mutex_lock(&mcurs232_class->serial_port_trans_share->mcurs_share_mutex);
     unsigned char *buf = (unsigned char *) utarray_front(mcurs232_class->serial_port_read_buf_head);
@@ -578,11 +580,11 @@ int check_serial_port_message(Mcurs232_class_t *mcurs232_class) {
 
                 frame_e frame_type = check_serial_port_type(mcurs232_class);
                 char *complete_frame_buf = NULL;
-                make_up_ch(mcurs232_class, tmp_distance_from_head, &complete_frame_buf);
+                init_complete_frame_buf(mcurs232_class, tmp_distance_from_head, &complete_frame_buf);
                 insert_new_element_to_complete_frame_list(mcurs232_class, complete_frame_buf, tmp_distance_from_head,
                                                           frame_type);
 
-                make_ack_frame(mcurs232_class);
+                composition_ack_frame(mcurs232_class);
                 free(complete_frame_buf);
                 erase_serial_port_read_buf(mcurs232_class, tmp_distance_from_head);
 
@@ -613,7 +615,7 @@ static int mcu_rs232_reading_cb(enum neu_event_io_type type, int fd, void *usr_d
         }
 
         hnlog_notice(readBuf, readBufSize);
-        set_read_buf(outside_service_manager->mcurs232_class, readBuf, readBufSize);
+        push_back_serial_port_read_buf(outside_service_manager->mcurs232_class, readBuf, readBufSize);
         // sleep(10);
         // nlog_info("readBufSize :%d", readBufSize);
         // nlog_info("read buf:");

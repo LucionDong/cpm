@@ -12,16 +12,18 @@
 #include <string.h>
 #include <utils/log.h>
 
+#include "./config_parser.h"
 #include "config/easeview_config.h"
-#include "json_parse.h"
 #include "ut_include/utarray.h"
 // #include "outside_service_manager.h"
 // #include "rs232_recv.h"
 int open_files_to_json(const char *filepath, json_t **root);
 int get_config_json_array_and_size(json_t *root, int *array_size, json_t **uarts);
 // int get_config_json_array_and_size(json_t *root, int *array_size, json_t *uarts);
-int make_empty_config_frame(unsigned char **config_frame, int uart_enble_count);
-int make_config_frame_element(json_t *uarts, int enable_port_count, serial_config_frame_t *serial_config_frame);
+// int make_empty_config_frame(unsigned char **config_frame, int uart_enble_count);
+// int make_config_frame_element(json_t *uarts, int enable_port_count, serial_config_frame_t *serial_config_frame);
+int create_empty_config_frame(unsigned char **config_frame, int uart_enble_count);
+int composition_config_frame_element(json_t *uarts, int enable_port_count, serial_config_frame_t *serial_config_frame);
 
 static UT_array *easeview_config_array = NULL;
 int parse_easeview_config_json(json_t *esv_driver_232_configs_array) {
@@ -44,7 +46,8 @@ int parse_easeview_config_json(json_t *esv_driver_232_configs_array) {
     return 0;
 }
 
-int make_config_frame(serial_config_frame_t *serial_config_frame) {
+// int make_config_frame(serial_config_frame_t *serial_config_frame) {
+int composition_config_frame_start(serial_config_frame_t *serial_config_frame) {
     // json_t *root = json_object();
     json_t *uarts = json_array();
     parse_easeview_config_json(uarts);
@@ -52,8 +55,8 @@ int make_config_frame(serial_config_frame_t *serial_config_frame) {
     int uart_enble_count = json_array_size(uarts);
 
     // get_config_json_array_and_size(root, &uart_enble_count, &uarts);
-    make_empty_config_frame(&serial_config_frame->config_frame, uart_enble_count);
-    make_config_frame_element(uarts, uart_enble_count, serial_config_frame);
+    create_empty_config_frame(&serial_config_frame->config_frame, uart_enble_count);
+    composition_config_frame_element(uarts, uart_enble_count, serial_config_frame);
 
     nlog_info("serial_config_frame: ");
     hnlog_notice(serial_config_frame->config_frame, serial_config_frame->config_frame_len);
@@ -117,7 +120,8 @@ int get_config_json_array_and_size(json_t *root, int *array_size, json_t **uarts
     return 0;
 }
 
-int make_empty_config_frame(unsigned char **config_frame, int uart_enble_count) {
+// int make_empty_config_frame(unsigned char **config_frame, int uart_enble_count) {
+int create_empty_config_frame(unsigned char **config_frame, int uart_enble_count) {
     int frame_len = uart_enble_count * FIX_CONFIG_FRAME_ELEMENT_LEN + FIX_CONFIG_FRAME_LEN;
     printf("frame_len: %d\n", frame_len);
     *config_frame = malloc(sizeof(unsigned char) * (frame_len));
@@ -239,7 +243,8 @@ uint16_t calculate_crc16(const uint8_t *data, size_t length) {
     return crc;
 }
 
-int make_config_frame_element(json_t *uarts, int enable_port_count, serial_config_frame_t *serial_config_frame) {
+// int make_config_frame_element(json_t *uarts, int enable_port_count, serial_config_frame_t *serial_config_frame) {
+int composition_config_frame_element(json_t *uarts, int enable_port_count, serial_config_frame_t *serial_config_frame) {
     json_t *uarts_value;
     size_t uarts_index;
     json_array_foreach(uarts, uarts_index, uarts_value) {
