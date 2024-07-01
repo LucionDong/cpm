@@ -5,7 +5,7 @@ typedef struct esv_outside_service_manager_s esv_outside_service_manager_t;
 
 #include "adapter/driver/device_internal.h"
 #include "manager_internal.h"
-#include "mcurs232/frame_handle/parser_rs232_frame.h"
+#include "mcurs232/plugin_frame_handle/parser_rs232_frame.h"
 #include "mqtt/mqtt_msg_handle.h"
 #include "outside_service_manager_common.h"
 #include "outside_service_manager_internal.h"

@@ -178,7 +178,7 @@ void esv_outside_service_manager_set_neu_manager(esv_outside_service_manager_t *
 #include "manager_internal.h"
 #include "outside_service_manager.h"
 #include "outside_service_manager_internal.h"
-#include "rs232_recv.h"
+// #include "rs232_recv.h"
 #include "utils/log.h"
 
 /* static const char *const url = "ipc:///tmp/nng/cpm/esv_outside_service_manager"; */
