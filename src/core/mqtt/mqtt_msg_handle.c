@@ -17,11 +17,11 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "../manager_adapter_msg.h"
+#include "../outside_service_manager.h"
+#include "../outside_service_manager_internal.h"
 #include "device.h"
-#include "manager_adapter_msg.h"
-#include "mqtt_conn.h"
-#include "outside_service_manager.h"
-#include "outside_service_manager_internal.h"
+#include "mqtt_msg_handle.h"
 
 int move_all_list_node(mqtt_share_t *share, mqtt_message_node_t **tmp_head);
 int pop_list(mqtt_message_node_t **head);
@@ -44,7 +44,7 @@ int composition_timestamp(const time_t *timestamp, char *client_id) {
 
 void onReconnected(void *context, char *cause) {
     // MQTTAsync client = (MQTTAsync) context;
-    Mqtt_class_t *mqtt_class = (Mqtt_class_t *) context;
+    mqtt_class_t *mqtt_class = (mqtt_class_t *) context;
     MQTTAsync_responseOptions opts = MQTTAsync_responseOptions_initializer;
     int rc;
 
@@ -66,7 +66,7 @@ void onReconnected(void *context, char *cause) {
 
 void onReconnected5(void *context, char *cause) {
     nlog_info("onReconnected5");
-    Mqtt_class_t *mqtt_class = (Mqtt_class_t *) context;
+    mqtt_class_t *mqtt_class = (mqtt_class_t *) context;
 
     MQTTSubscribe_options subscribe_options = MQTTSubscribe_options_initializer;
     MQTTAsync_callOptions copts = MQTTAsync_callOptions_initializer;
@@ -84,7 +84,7 @@ void onReconnected5(void *context, char *cause) {
 }
 
 void onConnect(void *context, MQTTAsync_successData *response) {
-    Mqtt_class_t *mqtt_class = (Mqtt_class_t *) context;
+    mqtt_class_t *mqtt_class = (mqtt_class_t *) context;
     // MQTTAsync client = (MQTTAsync) context;
     MQTTAsync_responseOptions opts = MQTTAsync_responseOptions_initializer;
     int rc;
@@ -393,7 +393,7 @@ int destroy_mqtt_share_element(mqtt_share_t *share) {
     return 0;
 }
 
-int destroy_mqtt_share(Mqtt_class_t *mqtt_class) {
+int destroy_mqtt_share(mqtt_class_t *mqtt_class) {
     if (mqtt_class->recv_share) {
         free(mqtt_class->recv_share);
     }
@@ -416,7 +416,7 @@ int destroy_mqtt_class(esv_outside_service_manager_t *outside_service_manager) {
     return 0;
 }
 
-int destroy_mqtt_pthread(Mqtt_class_t *mqtt_class) {
+int destroy_mqtt_pthread(mqtt_class_t *mqtt_class) {
     pthread_join(mqtt_class->recv_thread, NULL);
     pthread_join(mqtt_class->send_thread, NULL);
 
@@ -439,7 +439,7 @@ int init_topic_to_composition_stamp(char *client_id) {
     return 0;
 }
 
-int init_mqtt_class(Mqtt_class_t *mqtt_class) {
+int init_mqtt_class(mqtt_class_t *mqtt_class) {
     mqtt_class->recv_share = calloc(sizeof(mqtt_share_t), 1);
     mqtt_class->send_share = calloc(sizeof(mqtt_share_t), 1);
     // mqtt_class->recv_share = malloc(sizeof(mqtt_share_t));
@@ -461,7 +461,7 @@ int init_manager_and_element(esv_outside_service_manager_t **outside_service_man
         return -1;
     }
 
-    (*outside_service_manager)->mqtt_class = calloc(1, sizeof(Mqtt_class_t));
+    (*outside_service_manager)->mqtt_class = calloc(1, sizeof(mqtt_class_t));
     init_mqtt_class((*outside_service_manager)->mqtt_class);
 
     return 0;
