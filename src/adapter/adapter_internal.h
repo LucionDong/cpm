@@ -24,6 +24,7 @@
 #include <nng/protocol/pair1/pair.h>
 #include <nng/supplemental/util/platform.h>
 
+#include "../core/outside_service_manager.h"
 #include "adapter_info.h"
 #include "core/manager.h"
 #include "event/event.h"
@@ -34,6 +35,7 @@
 struct neu_adapter {
     char *name;
     char *setting;
+    char *uartPort;
 
     neu_node_running_state_e state;
 
@@ -59,7 +61,7 @@ struct neu_adapter {
     // esview
     /* esv_lan_mqtt_service_t *lan_mqtt_service; */
     esv_lan_mqtt5_service_t *lan_mqtt5_service;
-    /* esv_outside_service_manager_t *outside_service_manager; */
+    esv_outside_service_manager_t *outside_service_manager;
     neu_manager_t *manager;
 };
 

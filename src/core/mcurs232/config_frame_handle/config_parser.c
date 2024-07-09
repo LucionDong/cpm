@@ -47,7 +47,7 @@ int parse_easeview_config_json(json_t *esv_driver_232_configs_array) {
 }
 
 // int make_config_frame(serial_config_frame_t *serial_config_frame) {
-int composition_config_frame_start(serial_config_frame_t *serial_config_frame) {
+int composition_config_frame(serial_config_frame_t *serial_config_frame) {
     // json_t *root = json_object();
     json_t *uarts = json_array();
     parse_easeview_config_json(uarts);

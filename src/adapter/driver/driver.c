@@ -30,6 +30,7 @@
 
 #include "adapter.h"
 #include "adapter/adapter_internal.h"
+#include "core/mcurs232/plugin_frame_handle/parser_rs232_frame.h"
 #include "event/event.h"
 #include "utils/asprintf.h"
 #include "utils/log.h"
@@ -1566,7 +1567,7 @@ static bool is_device_in_device_list(esv_device_list_t *list, const char *pk, co
 }
 
 static int thing_model_232_msg_arrived(neu_adapter_t *adapter, const esv_thing_model_msg_t *thing_model_msg) {
-	//232cpm转发232插件中需要的信息到规则引擎中
+    // 232cpm转发232插件中需要的信息到规则引擎中
 }
 
 static int thing_model_msg_arrived(neu_adapter_t *adapter, const esv_thing_model_msg_t *thing_model_msg) {
@@ -1792,6 +1793,14 @@ static int thing_model_msg_arrived(neu_adapter_t *adapter, const esv_thing_model
 /*	/1* esv_outside_service_manager_dispatch_msg(adapter->outside_service_manager, msg); *1/ */
 /*} */
 
+static int esv_msg_to_adapter(neu_adapter_t *adapter, const esv_frame232_msg_t *msg) {
+    nlog_info("esv_msg_to_adapter");
+    nlog_info("msg: %s", (char *) msg->msg);
+    push_back_serial_port_read_buf_and_check(adapter->outside_service_manager->mcurs232_class, msg->msg,
+                                             msg->msg_length);
+    return 0;
+}
+
 static void esv_func3(neu_adapter_t *adapter) {
     nlog_info("esv_func3");
 }
@@ -1807,6 +1816,7 @@ neu_adapter_driver_t *neu_adapter_esvdriver_create() {
     driver->driver_events = neu_event_new();
     driver->adapter.cb_funs.esvdriver.thing_model_msg_arrived = thing_model_msg_arrived;
     /* driver->adapter.cb_funs.esvdriver.msg_to_adapter = esv_msg_to_adapter; */
+    driver->adapter.cb_funs.esvdriver.msg_to_232adapter = esv_msg_to_adapter;
     driver->adapter.cb_funs.esvdriver.func3 = esv_func3;
     driver->adapter.cb_funs.esvdriver.func4 = esv_func4;
 

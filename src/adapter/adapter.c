@@ -108,6 +108,7 @@ neu_adapter_t *neu_adapter_create(neu_adapter_info_t *info, bool load) {
     int init_rv = 0;
     neu_adapter_t *adapter = NULL;
     neu_event_io_param_t param = {0};
+    esv_outside_service_manager_t *outside_service_manager;
 
     switch (info->module->type) {
         case NEU_NA_TYPE_DRIVER:
@@ -120,6 +121,7 @@ neu_adapter_t *neu_adapter_create(neu_adapter_info_t *info, bool load) {
         case NEU_NA_TYPE_ESVDEVICEDRIVER232:
         case NEU_NA_TYPE_ESVAPP232:
             adapter = (neu_adapter_t *) neu_adapter_esvdriver_create();
+            init_manager_and_element(&outside_service_manager);
             break;
         default:
             nlog_warn("adapter create fail, do not match adapter type: %d", info->module->type);
@@ -138,7 +140,7 @@ neu_adapter_t *neu_adapter_create(neu_adapter_info_t *info, bool load) {
 
     adapter->timestamp_lev = 0;
 
-    /* adapter->outside_service_manager = outside_service_manager; */
+    adapter->outside_service_manager = outside_service_manager;
 
     /* rv = nng_pair1_open(&adapter->sock); */
     /* assert(rv == 0); */

@@ -22,6 +22,11 @@ typedef enum esv_thing_model_msg_type {
     ESV_TMM_JASSON_OBJECT_PTR = 1,
 } esv_thing_model_msg_type_e;
 
+// typedef enum esv_between_adapter_driver_msg_type {
+	// ESV_TO_ADAPTER_MCURS_POST;
+	// ESV_
+// } esv_between_adapter_driver_msg_type_e;
+
 /* typedef enum esv_between_adapter_driver_msg_method { */
 /* 	ESV_TO_ADAPTER_MCURS_POST = 0, */
 /* 	ESV_TO_ADAPTER_MQTT_PROPERTY_POST, */
@@ -57,10 +62,11 @@ typedef struct {
 
 typedef struct {
     esv_thing_model_msg_method_e method;
-    char *serial_port_num;
     esv_thing_model_msg_type_e msg_type;
-	void *msg;
-} esv_232_thing_model_msg_t;
+    char *serial_port_num;
+    void *msg;
+    int msg_length;
+} esv_frame232_msg_t;
 
 /* typedef struct { */
 /* 	esv_between_adapter_driver_msg_method_e method; */

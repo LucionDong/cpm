@@ -61,11 +61,11 @@ end:
 
 static UT_array *esv_app_driver_232_config_nodes = NULL;
 static UT_array *esv_app_driver_232_nodes = NULL;
-int forward_thint_model_msg_to_232esvdriver(neu_manager_t *manager, const esv_232_thing_model_msg_t *msg) {
+int forward_msg_to_232esvdriver(neu_manager_t *manager, const esv_frame232_msg_t *msg) {
     //根据msg中的类型发送到对应的232插件中
     // msg类型设计主要应为从数据库中读取到的串口号或者可以单独标识插件
-    utarray_new(esv_app_driver_232_config_nodes, &ut_str_icd);
-    load_uart_config_from_db(esv_app_driver_232_config_nodes);
+    // utarray_new(esv_app_driver_232_config_nodes, &ut_str_icd);
+    // load_uart_config_from_db(esv_app_driver_232_config_nodes);
 
     if (esv_app_driver_232_nodes == NULL) {
         nlog_debug("to get adapter type %d", NEU_NA_TYPE_ESVAPPDRIVER232);
@@ -80,18 +80,12 @@ int forward_thint_model_msg_to_232esvdriver(neu_manager_t *manager, const esv_23
     utarray_foreach(esv_app_driver_232_nodes, neu_adapter_t **, adapter) {
         //校验每个adapter的串口号是否一致
         //一致后向该adapter发送信息
-		//该回调函数由插件实现
-        (*adapter)->module->intf_funs->esvdriver.app_driver_232_thing_model_msg_arrived((*adapter)->plugin, msg);
+        //该回调函数由插件实现
+        if (!strcmp((*adapter)->uartPort, msg->serial_port_num)) {
+            (*adapter)->module->intf_funs->esvdriver.app_driver_232_msg_arrived((*adapter)->plugin, msg);
+        }
     }
-
-    // neu_adapter_t *adapter = neu_node_manager_find(manager->node_manager, node_name);
-    // if (NULL == adapter) {
-    //     nlog_warn("do not find adapter of node name: %s", node_name);
-    //     return EXIT_FAILURE;
-    // }
-    //
-    // int rv = adapter->module->intf_funs->esvdriver.thing_model_msg_arrived(adapter->plugin, msg);
-	return 0;
+    return 0;
 }
 
 /* TODO:  <16-06-24, yourname>

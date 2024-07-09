@@ -37,12 +37,12 @@ typedef struct mcurs232_class mcurs232_class_t;
 #define MAX_SEND_TO_MCU_BUF_NUM 65
 
 typedef enum {
-    ASK_CONFIG = 1,
-    CONFIG,
-    COMMAND,
+    REQUEST_CONFIG_FRAME = 1,
+    RESPONSE_CONFIG_FRAME,
+    FRAME_TO_MCU,
     ERROR,
     NORMAL_ACK,
-    ACK_TO_MQTT,
+    FRAME_FROM_MCU,
 } frame_e;
 
 typedef enum {
@@ -85,5 +85,7 @@ void *mcurs232_thread_func(void *arg);
 int destroy_mcurs232_share(mcurs232_class_t *mcurs_class);
 int destroy_mcurs232_pthread(mcurs232_class_t *mcurs_class);
 int destroy_mcurs232_class(esv_outside_service_manager_t *outside_service_manager);
-int set_read_buf(mcurs232_class_t *mcurs232_class, const unsigned char *buf, int buf_length);
+int push_back_serial_port_read_buf_and_check(mcurs232_class_t *mcurs232_class, const unsigned char *buf,
+                                             int buf_length);
+// int set_read_buf(mcurs232_class_t *mcurs232_class, const unsigned char *buf, int buf_length);
 #endif /* !__RS232_RECV_H__ */

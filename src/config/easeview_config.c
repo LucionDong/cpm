@@ -107,8 +107,8 @@ int load_uart_config_from_db(UT_array *configs_nodes) {
     for (int i = 0; i < configs->n_config; i++) {
         utarray_push_back(configs_nodes, &configs->configs[i]);
 
-        // char *config = configs->configs[i];
-        // nlog_debug("uart config: %s", config);
+        char *config = configs->configs[i];
+        nlog_debug("uart config: %s", config);
     }
 
     /* free(configs->configs); */

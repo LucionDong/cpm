@@ -179,6 +179,7 @@ void esv_outside_service_manager_set_neu_manager(esv_outside_service_manager_t *
 #include "outside_service_manager.h"
 #include "outside_service_manager_internal.h"
 // #include "rs232_recv.h"
+#include "./mcurs232/plugin_frame_handle/parser_rs232_frame.h"
 #include "utils/log.h"
 
 /* static const char *const url = "ipc:///tmp/nng/cpm/esv_outside_service_manager"; */
@@ -204,9 +205,9 @@ int init_manager_and_element(esv_outside_service_manager_t **outside_service_man
         return -1;
     }
 
-    (*outside_service_manager)->mqtt_class = calloc(1, sizeof(mqtt_class_t));
+    // (*outside_service_manager)->mqtt_class = calloc(1, sizeof(mqtt_class_t));
     (*outside_service_manager)->mcurs232_class = calloc(1, sizeof(mcurs232_class_t));
-    init_mqtt_class((*outside_service_manager)->mqtt_class);
+    // init_mqtt_class((*outside_service_manager)->mqtt_class);
     init_mcurs_class((*outside_service_manager)->mcurs232_class);
 
     return 0;
@@ -224,16 +225,16 @@ int destroy_all(esv_outside_service_manager_t *outside_service_manager) {
     pthread_mutex_destroy(&outside_service_manager->mqtt_class->recv_share->mqtt_message_list_mutex);
     pthread_cond_destroy(&outside_service_manager->mqtt_class->recv_share->mqtt_message_list_cond);
 #endif
-    destroy_mqtt_pthread(outside_service_manager->mqtt_class);
+    // destroy_mqtt_pthread(outside_service_manager->mqtt_class);
 
-    destroy_mqtt_share_element(outside_service_manager->mqtt_class->recv_share);
-    destroy_mqtt_share_element(outside_service_manager->mqtt_class->send_share);
+    // destroy_mqtt_share_element(outside_service_manager->mqtt_class->recv_share);
+    // destroy_mqtt_share_element(outside_service_manager->mqtt_class->send_share);
 
-    destroy_mqtt_share(outside_service_manager->mqtt_class);
-    destroy_mqtt_class(outside_service_manager);
+    // destroy_mqtt_share(outside_service_manager->mqtt_class);
+    // destroy_mqtt_class(outside_service_manager);
 
-    destroy_message_list(&outside_service_manager->mqtt_class->send_share->mqtt_message_list_head);
-    destroy_message_list(&outside_service_manager->mqtt_class->recv_share->mqtt_message_list_head);
+    // destroy_message_list(&outside_service_manager->mqtt_class->send_share->mqtt_message_list_head);
+    // destroy_message_list(&outside_service_manager->mqtt_class->recv_share->mqtt_message_list_head);
 
     destroy_mcurs232_pthread(outside_service_manager->mcurs232_class);
     destroy_mcurs232_share(outside_service_manager->mcurs232_class);
@@ -250,30 +251,11 @@ esv_outside_service_manager_t *esv_outside_service_manager_create() {
     esv_outside_service_manager_t *outside_service_manager = calloc(1, sizeof(esv_outside_service_manager_t));
 
     init_manager_and_element(&outside_service_manager);
-    pthread_create(&outside_service_manager->mqtt_class->recv_thread, NULL, recv_thread_func, outside_service_manager);
-    pthread_create(&outside_service_manager->mqtt_class->send_thread, NULL, send_thread_func, outside_service_manager);
+    // pthread_create(&outside_service_manager->mqtt_class->recv_thread, NULL, recv_thread_func, outside_service_manager);
+    // pthread_create(&outside_service_manager->mqtt_class->send_thread, NULL, send_thread_func, outside_service_manager);
 
     pthread_create(&outside_service_manager->mcurs232_class->mcurs232_thread, NULL, mcurs232_thread_func,
                    outside_service_manager);
-
-    /* neu_event_io_param_t param   = { */
-    /* .usr_data = (void *) outside_service_manager, */
-    /* .cb       = outside_service_manager_loop, */
-    /* }; */
-
-    /* outside_service_manager ->events            = neu_event_new(); */
-
-    /* rv = nng_pair1_open(&outside_service_manager->socket); */
-    /* assert(rv == 0); */
-
-    /* rv = nng_listen(outside_service_manager->socket, url, NULL, 0); */
-    /* assert(rv == 0); */
-
-    /* nng_socket_set_int(outside_service_manager->socket, NNG_OPT_RECVBUF, 8192); */
-    /* nng_socket_set_int(outside_service_manager->socket, NNG_OPT_SENDBUF, 8292); */
-    /* nng_socket_set_ms(outside_service_manager->socket, NNG_OPT_SENDTIMEO, 1000); */
-    /* nng_socket_get_int(outside_service_manager->socket, NNG_OPT_RECVFD, &param.fd); */
-    /* outside_service_manager->event_io_ctx = neu_event_add_io(outside_service_manager->events, param); */
 
     nlog_notice("outside service manager start");
 
@@ -281,10 +263,6 @@ esv_outside_service_manager_t *esv_outside_service_manager_create() {
 }
 
 void esv_outside_service_manager_destory(esv_outside_service_manager_t *manager) {
-    /* nng_close(manager->socket); */
-    /* neu_event_del_io(manager->events, manager->event_io_ctx); */
-    /* neu_event_close(manager->events); */
-
     free(manager);
     nlog_notice("outside service manager exit");
 }
@@ -385,25 +363,14 @@ void esv_outside_service_manager_set_neu_manager(esv_outside_service_manager_t *
 /* } */
 
 int esv_outside_service_manager_dispatch_msg(esv_outside_service_manager_t *outside_service_manager,
-                                             const esv_between_adapter_driver_msg_t *msg) {
+                                             const esv_frame232_msg_t *msg) {
     /* TODO:  <24-12-23, winston>
      * 根据 msg 类型
      * 发送给网关 gatewaybroker mqtt broker
      * 发送给网关 mcurs232
      * */
     nlog_info("esv_outside_service_manager_dispatch_msg");
-    if (msg->msg_type == ESV_TAM_BYTES_PTR) {
-        // send to mcurs232
-        // unknow msg size for msg->msg
-        nlog_info("esv_outside_service_manager_dispatch_msg byte");
-        printf("esv_outside_service_manager_dispatch_msg after\n");
-        // hnlog_notice(msg->msg, msg->msg_len);
-        push_back_serial_port_read_buf_and_check(outside_service_manager->mcurs232_class, (unsigned char *) msg->msg,
-                                       msg->msg_len);
-    } else if (msg->msg_type == ESV_TAM_JSON_OBJECT_PTR) {
-        // send to mqtt broker
-        append_node_to_send_list(outside_service_manager, (char *) msg->msg, PLUGIN_TO_MQTT);
-        nlog_info("msg->msg_type == ESV_TAM_JSON_OBJECT_PTR");
-    }
+    push_back_serial_port_read_buf_and_check(outside_service_manager->mcurs232_class, (unsigned char *) msg->msg,
+                                             msg->msg_length);
     return 0;
 }

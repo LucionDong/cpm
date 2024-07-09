@@ -17,7 +17,7 @@ if(NOT CMAKE_SYSTEM_NAME)
   set(CMAKE_SYSTEM_NAME "Linux")
 endif()
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fdiagnostics-color=always -Wall -Wextra -g -Wno-missing-braces")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fdiagnostics-color=always -Wall -Wextra -g -lpthread -Wno-missing-braces")
 # set(CMAKE_C_FLAGS "-Wall -Wextra -g")
 # set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS} -O1")
 set(CMAKE_C_FLAGS_RELEASE "-O1")
@@ -133,7 +133,12 @@ set(ESVCPM_SOURCE
 	src/core/storage.c
 	src/core/manager_adapter_msg.c
 	# src/core/manager_thing_model.c
-	# src/core/outside_service_manager.c
+	src/core/outside_service_manager.c
+	src/core/mcurs232/config_frame_handle/config_parser.c
+	src/core/mcurs232/plugin_frame_handle/parser_rs232_frame.c
+	# src/core/mcurs232/mcurs232_handle.c
+	src/core/mcurs232/mcurs232_helper_functions.c
+	src/core/mcurs232/serial_port.c
 	src/adapter/adapter.c
 	src/adapter/storage.c
 	src/adapter/driver/cache.c

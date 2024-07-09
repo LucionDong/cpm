@@ -24,7 +24,9 @@
 #define MASTER 0x01
 #define SLAVE 0x00
 
-typedef enum { GENERAL = 1 } device_type_e;
+typedef enum {
+    GENERAL = 1,
+} device_type_e;
 
 struct serial_config_frame {
     unsigned char *config_frame;
@@ -33,7 +35,8 @@ struct serial_config_frame {
 
 typedef struct serial_config_frame serial_config_frame_t;
 
-int make_config_frame(serial_config_frame_t *serial_config_frame);
+int composition_config_frame(serial_config_frame_t *serial_config_frame);
+// int make_config_frame(serial_config_frame_t *serial_config_frame);
 uint16_t calculate_crc16(const uint8_t *data, size_t length);
 
 #endif /* !__JSON_PARSE_H__ */

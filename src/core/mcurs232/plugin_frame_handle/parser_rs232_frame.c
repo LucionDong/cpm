@@ -20,11 +20,11 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include "../manager_adapter_msg.h"
-#include "../mcurs232/serial_port.h"
-#include "../outside_service_manager.h"
-#include "../outside_service_manager_internal.h"
-#include "../parser_config_json/config_parser.h"
+#include "../..//manager_adapter_msg.h"
+#include "../../outside_service_manager.h"
+#include "../../outside_service_manager_internal.h"
+#include "../config_frame_handle/config_parser.h"
+#include "../serial_port.h"
 #include "device.h"
 #include "event/event.h"
 #include "parser_rs232_frame.h"
@@ -35,8 +35,7 @@ static int mcu_rs232_reading_cb(enum neu_event_io_type type, int fd, void *usr_d
 int open_mcu_rs232_port(esv_outside_service_manager_t *outside_service_manager);
 int handle_stop(esv_outside_service_manager_t *outside_service_manager);
 int close_mcu_rs232_port(mcurs232_class_t *mcurs232_class);
-int make_send_to_plugin_msg(esv_between_adapter_driver_msg_t *send_to_plugin_msg, const unsigned char *msg,
-                            int msg_len);
+int make_send_to_plugin_msg(esv_frame232_msg_t *send_to_plugin_msg, const unsigned char *msg, int msg_len);
 int pop_complete_list(complete_frame_list_t **head);
 int move_all_complete_list_node(mcurs232_class_t *mcurs232_class, complete_frame_list_t **tmp_head);
 int check_serial_port_message(mcurs232_class_t *mcurs232_class);
@@ -140,7 +139,7 @@ int init_mcurs_class(mcurs232_class_t *mcurs_class) {
     return 0;
 }
 
-int handle_start(esv_outside_service_manager_t *outside_service_manager) {
+int rs232_port_recv_task_create(esv_outside_service_manager_t *outside_service_manager) {
     open_mcu_rs232_port(outside_service_manager);
     outside_service_manager->events = neu_event_new();
     neu_event_io_param_t param = {
@@ -153,7 +152,7 @@ int handle_start(esv_outside_service_manager_t *outside_service_manager) {
     return 0;
 }
 
-int handle_stop(esv_outside_service_manager_t *outside_service_manager) {
+int rs232_port_recv_task_stop(esv_outside_service_manager_t *outside_service_manager) {
     close_mcu_rs232_port(outside_service_manager->mcurs232_class);
     neu_event_del_io(outside_service_manager->events, outside_service_manager->event_io_ctx);
     neu_event_close(outside_service_manager->events);
@@ -216,6 +215,7 @@ int print_read_buf(mcurs232_class_t *mcurs232_class) {
 
 int push_back_serial_port_read_buf_and_check(mcurs232_class_t *mcurs232_class, const unsigned char *buf,
                                              int buf_length) {
+    nlog_info("push_back_serial_port_read_buf_and_check\n");
     printf("set_read_buf starti: %ld\n", syscall(SYS_gettid));
     pthread_mutex_lock(&mcurs232_class->serial_port_trans_share->mcurs_share_mutex);
     printf("set_read_buf lock: %ld\n", syscall(SYS_gettid));
@@ -267,46 +267,46 @@ frame_e check_serial_port_type(mcurs232_class_t *mcurs232_class) {
     hnlog_notice(tmp_frame_ch, 8);
     if (tmp_frame_ch[TYPE_DISTANCE_FROM_FRAME_HEADER] == DEF_ASK_CONFIG_FRAME) {
         nlog_info("serial_port_type: CONFIG");
-        return ASK_CONFIG;
+        return REQUEST_CONFIG_FRAME;
     } else if (tmp_frame_ch[TYPE_DISTANCE_FROM_FRAME_HEADER] == DEF_CONFIG_FRAME) {
-        return CONFIG;
+        return RESPONSE_CONFIG_FRAME;
     } else if (tmp_frame_ch[TYPE_DISTANCE_FROM_FRAME_HEADER] == DEF_COMMAND_FRAME &&
                (tmp_frame_ch[FRAME_COMMAND_TYPE] == DEF_READ_COMMAND_TYPE ||
                 tmp_frame_ch[FRAME_COMMAND_TYPE] == DEF_WRITE_COMMAND_TYPE)) {
-        return COMMAND;
+        return FRAME_TO_MCU;
     } else if (tmp_frame_ch[TYPE_DISTANCE_FROM_FRAME_HEADER] == DEF_NORMAL_ACK_FRAME) {
         return NORMAL_ACK;
     } else if (tmp_frame_ch[TYPE_DISTANCE_FROM_FRAME_HEADER] == DEF_COMMAND_FRAME &&
                tmp_frame_ch[FRAME_COMMAND_TYPE] == DEF_STATUS_COMMAND_TYPE) {
         nlog_info("status command");
-        return ACK_TO_MQTT;
+        return FRAME_FROM_MCU;
     }
     nlog_info("check_serial_port_type_end");
 
     return ERROR;
 }
 
-void *send_complete_func(void *arg) {
-    mcurs232_class_t *mcurs232_class = (mcurs232_class_t *) arg;
-    // esv_outside_service_manager_t *outside_service_manager = (esv_outside_service_manager_t *) arg;
+void *send_complete_frame_task(void *arg) {
+    // mcurs232_class_t *mcurs232_class = (mcurs232_class_t *) arg;
+    esv_outside_service_manager_t *outside_service_manager = (esv_outside_service_manager_t *) arg;
 
     nlog_info("send_complete_frame_to_plugin start");
     while (1) {
         int count = 0;
         complete_frame_list_t *elt;
-        pthread_mutex_lock(&mcurs232_class->complete_frame_list_share->mcurs_share_mutex);
-        DL_COUNT(mcurs232_class->complete_frame_list_head, elt, count);
+        pthread_mutex_lock(&outside_service_manager->mcurs232_class->complete_frame_list_share->mcurs_share_mutex);
+        DL_COUNT(outside_service_manager->mcurs232_class->complete_frame_list_head, elt, count);
         while (count < 1) {
-            pthread_cond_wait(&mcurs232_class->complete_frame_list_share->mcurs_share_cond,
-                              &mcurs232_class->complete_frame_list_share->mcurs_share_mutex);
-            DL_COUNT(mcurs232_class->complete_frame_list_head, elt, count);
+            pthread_cond_wait(&outside_service_manager->mcurs232_class->complete_frame_list_share->mcurs_share_cond,
+                              &outside_service_manager->mcurs232_class->complete_frame_list_share->mcurs_share_mutex);
+            DL_COUNT(outside_service_manager->mcurs232_class->complete_frame_list_head, elt, count);
         }
-        pthread_mutex_unlock(&mcurs232_class->complete_frame_list_share->mcurs_share_mutex);
+        pthread_mutex_unlock(&outside_service_manager->mcurs232_class->complete_frame_list_share->mcurs_share_mutex);
         complete_frame_list_t *tmp_head = NULL;
-        move_all_complete_list_node(mcurs232_class, &tmp_head);
+        move_all_complete_list_node(outside_service_manager->mcurs232_class, &tmp_head);
 
         while (tmp_head) {
-            if (tmp_head->frame_type == ASK_CONFIG) {
+            if (tmp_head->frame_type == REQUEST_CONFIG_FRAME) {
                 //请求配置帧校验版本号
                 if (tmp_head->frame_buf[DEF_ASK_CONFIG_FRAME_VERSION_LOCATION] < DEF_ASK_CONFIG_FRAME_VERSION_NUM ||
                     tmp_head->frame_buf_size < 11) {
@@ -314,10 +314,12 @@ void *send_complete_func(void *arg) {
                     break;
                 }
                 serial_config_frame_t *serial_config_frame = malloc(sizeof(serial_config_frame_t));
-                make_config_frame(serial_config_frame);
+                composition_config_frame(serial_config_frame);
                 hnlog_notice(serial_config_frame->config_frame, serial_config_frame->config_frame_len);
-                int ret = write(mcurs232_class->mcu_rs232_port->handle, serial_config_frame->config_frame,
-                                serial_config_frame->config_frame_len);
+                // int ret = write(mcurs232_class->mcu_rs232_port->handle, serial_config_frame->config_frame,
+                // serial_config_frame->config_frame_len);
+                int ret = write_to_mcu(outside_service_manager->mcurs232_class, serial_config_frame->config_frame,
+                                       serial_config_frame->config_frame_len);
                 nlog_info("write ret: %d", ret);
                 if (ret == 0 || ret == -1) {
                     nlog_error("write to mcurs232 error");
@@ -326,25 +328,25 @@ void *send_complete_func(void *arg) {
                 if (serial_config_frame->config_frame)
                     free(serial_config_frame->config_frame);
                 free(serial_config_frame);
-            } else if (tmp_head->frame_type == COMMAND) {
+            } else if (tmp_head->frame_type == FRAME_TO_MCU) {
                 hnlog_notice(tmp_head->frame_buf, tmp_head->frame_buf_size);
-                int ret = write_to_mcu(mcurs232_class, tmp_head->frame_buf, tmp_head->frame_buf_size);
-                //     int ret = write(outside_service_manager->mcurs232_class->mcu_rs232_port->handle,
-                //     tmp_head->frame_buf,
-                //                     tmp_head->frame_buf_size);
+                int ret = write_to_mcu(outside_service_manager->mcurs232_class, tmp_head->frame_buf,
+                                       tmp_head->frame_buf_size);
                 nlog_info("write ret: %d", ret);
                 if (ret == 0 || ret == -1) {
                     nlog_error("write to mcurs232 error");
                 }
                 nlog_info("complete_frame_trans over");
-            } else if (tmp_head->frame_type == ACK_TO_MQTT) {
+            } else if (tmp_head->frame_type == FRAME_FROM_MCU) {
                 hnlog_notice(tmp_head->frame_buf, tmp_head->frame_buf_size);
-                esv_between_adapter_driver_msg_t send_to_plugin_msg;
+                esv_frame232_msg_t send_to_plugin_msg;
+                // esv_between_adapter_driver_msg_t send_to_plugin_msg;
                 if (tmp_head->frame_buf[1] == 0x00) {
                     return 0;
                 }
                 make_send_to_plugin_msg(&send_to_plugin_msg, tmp_head->frame_buf, tmp_head->frame_buf_size);
-                forward_msg_to_esvdriver(outside_service_manager->neu_manager, &send_to_plugin_msg);
+                //将信息发送给插件
+                forward_msg_to_232esvdriver(outside_service_manager->neu_manager, &send_to_plugin_msg);
             }
             pop_complete_list(&tmp_head);
         }
@@ -602,35 +604,30 @@ int check_serial_port_message(mcurs232_class_t *mcurs232_class) {
 static int mcu_rs232_reading_cb(enum neu_event_io_type type, int fd, void *usr_data) {
     // neu_plugin_t *plugin = (neu_plugin_t *) usr_data;
 
-    mcurs232_class_t *mcurs232_class = (mcurs232_class_t *) usr_data;
-    // esv_outside_service_manager_t *outside_service_manager = (esv_outside_service_manager_t *) usr_data;
+    // mcurs232_class_t *mcurs232_class = (mcurs232_class_t *) usr_data;
+    esv_outside_service_manager_t *outside_service_manager = (esv_outside_service_manager_t *) usr_data;
     nlog_notice("mcu rs232 reading event callback type: %d", type);
 
     if (type == NEU_EVENT_IO_READ) {
         unsigned char *readBuf = NULL;
         int readBufSize = 0;
-        readBytes(mcurs232_class->mcu_rs232_port, &readBuf, &readBufSize);
+        readBytes(outside_service_manager->mcurs232_class->mcu_rs232_port, &readBuf, &readBufSize);
         nlog_info("read buf size: %d", readBufSize);
         if (readBufSize <= 0) {
             return 0;
         }
 
         hnlog_notice(readBuf, readBufSize);
-        push_back_serial_port_read_buf_and_check(mcurs232_class, readBuf, readBufSize);
-        // sleep(10);
-        // nlog_info("readBufSize :%d", readBufSize);
-        // nlog_info("read buf:");
-        // hnlog_notice(readBuf, readBufSize);
+        push_back_serial_port_read_buf_and_check(outside_service_manager->mcurs232_class, readBuf, readBufSize);
         free(readBuf);
     }
 
     return 0;
 }
 
-int make_send_to_plugin_msg(esv_between_adapter_driver_msg_t *send_to_plugin_msg, const unsigned char *msg,
-                            int msg_len) {
-    send_to_plugin_msg->method = ESV_TO_ADAPTER_MCURS_POST;
-    send_to_plugin_msg->msg_type = ESV_TAM_BYTES_PTR;
+int make_send_to_plugin_msg(esv_frame232_msg_t *send_to_plugin_msg, const unsigned char *msg, int msg_len) {
+    // send_to_plugin_msg->method = ESV_TO_ADAPTER_MCURS_POST;
+    // send_to_plugin_msg->msg_type = ESV_TAM_BYTES_PTR;
     send_to_plugin_msg->msg = malloc(sizeof(unsigned char) * msg_len);
     if (send_to_plugin_msg->msg == NULL) {
         nlog_warn("Mcurs send_to_plugin_msg malloc failed");
@@ -638,22 +635,22 @@ int make_send_to_plugin_msg(esv_between_adapter_driver_msg_t *send_to_plugin_msg
     }
 
     memcpy(send_to_plugin_msg->msg, msg, msg_len);
-    send_to_plugin_msg->msg_len = msg_len;
+    send_to_plugin_msg->msg_length = msg_len;
 
     return 0;
 }
 
-int make_send_to_adapter_msg(esv_between_adapter_driver_msg_t *send_to_adapter_msg, const unsigned char *msg,
-                             int msg_len) {
-
-    return 0;
-}
+// int make_send_to_adapter_msg(esv_between_adapter_driver_msg_t *send_to_adapter_msg, const unsigned char *msg,
+//                          int msg_len) {
+//
+// return 0;
+// }
 
 void *mcurs232_thread_func(void *arg) {
     esv_outside_service_manager_t *outside_service_manager = (esv_outside_service_manager_t *) arg;
-    handle_start(outside_service_manager);
+    rs232_port_recv_task_create(outside_service_manager);
     nlog_info("mcurs232_thread_func");
-    pthread_create(&outside_service_manager->mcurs232_class->mcurs232_send_thread, NULL, send_complete_func,
+    pthread_create(&outside_service_manager->mcurs232_class->mcurs232_send_thread, NULL, send_complete_frame_task,
                    outside_service_manager);
 
     pthread_exit(NULL);
