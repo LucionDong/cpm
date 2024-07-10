@@ -8,7 +8,7 @@
 #ifndef __RS232_RECV_H__
 #define __RS232_RECV_H__
 
-typedef struct mcurs232_class mcurs232_class_t;
+typedef struct mcurs232_relate mcurs232_relate_t;
 
 #include "../../outside_service_manager.h"
 #include "../mcurs232_helper_functions.h"
@@ -64,7 +64,7 @@ typedef struct mcurs_share {
     pthread_mutexattr_t mcurs_share_mutex_attr;
 } mcurs_share_t;
 
-typedef struct mcurs232_class {
+typedef struct mcurs232_relate {
     pthread_t mcurs232_thread;
     pthread_t mcurs232_send_thread;
 
@@ -77,15 +77,15 @@ typedef struct mcurs232_class {
     event_e frame_event;
 
     serialPort *mcu_rs232_port;
-} mcurs232_class_t;
+} mcurs232_relate_t;
 
 int init_mcurs_share(mcurs_share_t *share);
-int init_mcurs_class(mcurs232_class_t *mcurs_class);
+int init_mcurs_relate(mcurs232_relate_t *mcurs_relate);
 void *mcurs232_thread_func(void *arg);
-int destroy_mcurs232_share(mcurs232_class_t *mcurs_class);
-int destroy_mcurs232_pthread(mcurs232_class_t *mcurs_class);
-int destroy_mcurs232_class(esv_outside_service_manager_t *outside_service_manager);
-int push_back_serial_port_read_buf_and_check(mcurs232_class_t *mcurs232_class, const unsigned char *buf,
+int destroy_mcurs232_share(mcurs232_relate_t *mcurs_relate);
+int destroy_mcurs232_pthread(mcurs232_relate_t *mcurs_relate);
+int destroy_mcurs232_relate(esv_outside_service_manager_t *outside_service_manager);
+int push_back_serial_port_read_buf_and_check(mcurs232_relate_t *mcurs232_relate, const unsigned char *buf,
                                              int buf_length);
-// int set_read_buf(mcurs232_class_t *mcurs232_class, const unsigned char *buf, int buf_length);
+// int set_read_buf(mcurs232_relate_t *mcurs232_relate, const unsigned char *buf, int buf_length);
 #endif /* !__RS232_RECV_H__ */

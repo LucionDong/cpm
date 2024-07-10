@@ -171,7 +171,7 @@ void esv_outside_service_manager_set_neu_manager(esv_outside_service_manager_t *
 #include <stdlib.h>
 #include <string.h>
 
-#include "./mqtt/mqtt_msg_handle.h"
+// #include "./mqtt/mqtt_msg_handle.h"
 #include "device.h"
 #include "event/event.h"
 #include "manager_adapter_msg.h"
@@ -205,40 +205,40 @@ int init_manager_and_element(esv_outside_service_manager_t **outside_service_man
         return -1;
     }
 
-    // (*outside_service_manager)->mqtt_class = calloc(1, sizeof(mqtt_class_t));
-    (*outside_service_manager)->mcurs232_class = calloc(1, sizeof(mcurs232_class_t));
-    // init_mqtt_class((*outside_service_manager)->mqtt_class);
-    init_mcurs_class((*outside_service_manager)->mcurs232_class);
+    // (*outside_service_manager)->mqtt_relate = calloc(1, sizeof(mqtt_relate_t));
+    (*outside_service_manager)->mcurs232_relate = calloc(1, sizeof(mcurs232_relate_t));
+    // init_mqtt_relate((*outside_service_manager)->mqtt_relate);
+    init_mcurs_relate((*outside_service_manager)->mcurs232_relate);
 
     return 0;
 }
 
 int destroy_all(esv_outside_service_manager_t *outside_service_manager) {
 #if 0
-    pthread_mutex_lock(&outside_service_manager->mqtt_class->send_share->mqtt_message_list_mutex);
-    pthread_cond_signal(&outside_service_manager->mqtt_class->recv_share->mqtt_message_list_cond);
-    pthread_mutex_unlock(&outside_service_manager->mqtt_class->send_share->mqtt_message_list_mutex);
-    pthread_join(outside_service_manager->mqtt_class->send_thread, NULL);
+    pthread_mutex_lock(&outside_service_manager->mqtt_relate->send_share->mqtt_message_list_mutex);
+    pthread_cond_signal(&outside_service_manager->mqtt_relate->recv_share->mqtt_message_list_cond);
+    pthread_mutex_unlock(&outside_service_manager->mqtt_relate->send_share->mqtt_message_list_mutex);
+    pthread_join(outside_service_manager->mqtt_relate->send_thread, NULL);
 
-    pthread_mutex_destroy(&outside_service_manager->mqtt_class->send_share->mqtt_message_list_mutex);
-    pthread_cond_destroy(&outside_service_manager->mqtt_class->send_share->mqtt_message_list_cond);
-    pthread_mutex_destroy(&outside_service_manager->mqtt_class->recv_share->mqtt_message_list_mutex);
-    pthread_cond_destroy(&outside_service_manager->mqtt_class->recv_share->mqtt_message_list_cond);
+    pthread_mutex_destroy(&outside_service_manager->mqtt_relate->send_share->mqtt_message_list_mutex);
+    pthread_cond_destroy(&outside_service_manager->mqtt_relate->send_share->mqtt_message_list_cond);
+    pthread_mutex_destroy(&outside_service_manager->mqtt_relate->recv_share->mqtt_message_list_mutex);
+    pthread_cond_destroy(&outside_service_manager->mqtt_relate->recv_share->mqtt_message_list_cond);
 #endif
-    // destroy_mqtt_pthread(outside_service_manager->mqtt_class);
+    // destroy_mqtt_pthread(outside_service_manager->mqtt_relate);
 
-    // destroy_mqtt_share_element(outside_service_manager->mqtt_class->recv_share);
-    // destroy_mqtt_share_element(outside_service_manager->mqtt_class->send_share);
+    // destroy_mqtt_share_element(outside_service_manager->mqtt_relate->recv_share);
+    // destroy_mqtt_share_element(outside_service_manager->mqtt_relate->send_share);
 
-    // destroy_mqtt_share(outside_service_manager->mqtt_class);
-    // destroy_mqtt_class(outside_service_manager);
+    // destroy_mqtt_share(outside_service_manager->mqtt_relate);
+    // destroy_mqtt_relate(outside_service_manager);
 
-    // destroy_message_list(&outside_service_manager->mqtt_class->send_share->mqtt_message_list_head);
-    // destroy_message_list(&outside_service_manager->mqtt_class->recv_share->mqtt_message_list_head);
+    // destroy_message_list(&outside_service_manager->mqtt_relate->send_share->mqtt_message_list_head);
+    // destroy_message_list(&outside_service_manager->mqtt_relate->recv_share->mqtt_message_list_head);
 
-    destroy_mcurs232_pthread(outside_service_manager->mcurs232_class);
-    destroy_mcurs232_share(outside_service_manager->mcurs232_class);
-    destroy_mcurs232_class(outside_service_manager);
+    destroy_mcurs232_pthread(outside_service_manager->mcurs232_relate);
+    destroy_mcurs232_share(outside_service_manager->mcurs232_relate);
+    destroy_mcurs232_relate(outside_service_manager);
 
     free(outside_service_manager);
 
@@ -252,11 +252,11 @@ esv_outside_service_manager_t *esv_outside_service_manager_create() {
     esv_outside_service_manager_t *outside_service_manager = NULL;
 
     init_manager_and_element(&outside_service_manager);
-    // pthread_create(&outside_service_manager->mqtt_class->recv_thread, NULL, recv_thread_func,
-    // outside_service_manager); pthread_create(&outside_service_manager->mqtt_class->send_thread, NULL,
+    // pthread_create(&outside_service_manager->mqtt_relate->recv_thread, NULL, recv_thread_func,
+    // outside_service_manager); pthread_create(&outside_service_manager->mqtt_relate->send_thread, NULL,
     // send_thread_func, outside_service_manager);
 
-    pthread_create(&outside_service_manager->mcurs232_class->mcurs232_thread, NULL, mcurs232_thread_func,
+    pthread_create(&outside_service_manager->mcurs232_relate->mcurs232_thread, NULL, mcurs232_thread_func,
                    outside_service_manager);
 
     nlog_notice("outside service manager start");
@@ -364,15 +364,15 @@ void esv_outside_service_manager_set_neu_manager(esv_outside_service_manager_t *
 /*      return 0; */
 /* } */
 
-int esv_outside_service_manager_dispatch_msg(esv_outside_service_manager_t *outside_service_manager,
-                                             const esv_frame232_msg_t *msg) {
-    /* TODO:  <24-12-23, winston>
-     * 根据 msg 类型
-     * 发送给网关 gatewaybroker mqtt broker
-     * 发送给网关 mcurs232
-     * */
-    nlog_info("esv_outside_service_manager_dispatch_msg");
-    push_back_serial_port_read_buf_and_check(outside_service_manager->mcurs232_class, (unsigned char *) msg->msg,
-                                             msg->msg_length);
-    return 0;
-}
+// int esv_outside_service_manager_dispatch_msg(esv_outside_service_manager_t *outside_service_manager,
+    //                                          const esv_frame232_msg_t *msg) {
+    // /* TODO:  <24-12-23, winston>
+    //  * 根据 msg 类型
+    //  * 发送给网关 gatewaybroker mqtt broker
+    //  * 发送给网关 mcurs232
+    //  * */
+    // nlog_info("esv_outside_service_manager_dispatch_msg");
+    // push_back_serial_port_read_buf_and_check(outside_service_manager->mcurs232_relate, (unsigned char *) msg->msg,
+    //                                          msg->msg_length);
+    // return 0;
+// }

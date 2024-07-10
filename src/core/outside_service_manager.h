@@ -6,7 +6,7 @@ typedef struct esv_outside_service_manager_s esv_outside_service_manager_t;
 #include "adapter/driver/device_internal.h"
 #include "manager_internal.h"
 #include "mcurs232/plugin_frame_handle/parser_rs232_frame.h"
-#include "mqtt/mqtt_msg_handle.h"
+// #include "mqtt/mqtt_msg_handle.h"
 #include "outside_service_manager_common.h"
 #include "outside_service_manager_internal.h"
 
@@ -34,9 +34,9 @@ struct esv_outside_service_manager_s {
     neu_events_t *events;
     neu_event_io_t *event_io_ctx;
 
-    mqtt_class_t *mqtt_class;
+    // mqtt_relate_t *mqtt_relate;
 
-    mcurs232_class_t *mcurs232_class;
+    mcurs232_relate_t *mcurs232_relate;
 
 #if 0
     MQTTAsync client;
