@@ -248,11 +248,13 @@ int destroy_all(esv_outside_service_manager_t *outside_service_manager) {
 esv_outside_service_manager_t *esv_outside_service_manager_create() {
     int rv = 0;
     system("/usr/local/sh/mcu_restart.sh restart");
-    esv_outside_service_manager_t *outside_service_manager = calloc(1, sizeof(esv_outside_service_manager_t));
+    // esv_outside_service_manager_t *outside_service_manager = calloc(1, sizeof(esv_outside_service_manager_t));
+    esv_outside_service_manager_t *outside_service_manager = NULL;
 
     init_manager_and_element(&outside_service_manager);
-    // pthread_create(&outside_service_manager->mqtt_class->recv_thread, NULL, recv_thread_func, outside_service_manager);
-    // pthread_create(&outside_service_manager->mqtt_class->send_thread, NULL, send_thread_func, outside_service_manager);
+    // pthread_create(&outside_service_manager->mqtt_class->recv_thread, NULL, recv_thread_func,
+    // outside_service_manager); pthread_create(&outside_service_manager->mqtt_class->send_thread, NULL,
+    // send_thread_func, outside_service_manager);
 
     pthread_create(&outside_service_manager->mcurs232_class->mcurs232_thread, NULL, mcurs232_thread_func,
                    outside_service_manager);

@@ -18,18 +18,14 @@
  **/
 #include <dlfcn.h>
 
-#include "utils/log.h"
-
 #include "adapter.h"
-#include "errcodes.h"
-
 #include "adapter/adapter_internal.h"
 #include "adapter/driver/driver_internal.h"
-
+#include "errcodes.h"
 #include "manager_internal.h"
+#include "utils/log.h"
 
-int neu_manager_add_plugin(neu_manager_t *manager, const char *library)
-{
+int neu_manager_add_plugin(neu_manager_t *manager, const char *library) {
     return neu_plugin_manager_add(manager->plugin_manager, library);
 }
 
@@ -38,23 +34,19 @@ int neu_manager_add_plugin(neu_manager_t *manager, const char *library)
 /*     return neu_plugin_manager_del(manager->plugin_manager, plugin); */
 /* } */
 
-UT_array *neu_manager_get_plugins(neu_manager_t *manager)
-{
+UT_array *neu_manager_get_plugins(neu_manager_t *manager) {
     return neu_plugin_manager_get(manager->plugin_manager);
 }
 
-int neu_manager_add_node(neu_manager_t *manager, const char *node_name,
-                         const char *             plugin_name,
-                         neu_node_running_state_e state, bool load)
-{
-    neu_adapter_t *       adapter      = NULL;
-    neu_plugin_instance_t instance     = { 0 };
-    neu_adapter_info_t    adapter_info = {
+int neu_manager_add_node(neu_manager_t *manager, const char *node_name, const char *plugin_name,
+                         neu_node_running_state_e state, bool load) {
+    neu_adapter_t *adapter = NULL;
+    neu_plugin_instance_t instance = {0};
+    neu_adapter_info_t adapter_info = {
         .name = node_name,
     };
-    neu_resp_plugin_info_t info = { 0 };
-    int                    ret =
-        neu_plugin_manager_find(manager->plugin_manager, plugin_name, &info);
+    neu_resp_plugin_info_t info = {0};
+    int ret = neu_plugin_manager_find(manager->plugin_manager, plugin_name, &info);
 
     if (ret != 0) {
         return NEU_ERR_LIBRARY_NOT_FOUND;
@@ -69,30 +61,29 @@ int neu_manager_add_node(neu_manager_t *manager, const char *node_name,
         return NEU_ERR_NODE_EXIST;
     }
 
-	nlog_debug("manager create instance");
-    ret = neu_plugin_manager_create_instance(manager->plugin_manager, info.name,
-                                             &instance);
+    nlog_debug("manager create instance");
+    ret = neu_plugin_manager_create_instance(manager->plugin_manager, info.name, &instance);
     if (ret != 0) {
         return NEU_ERR_LIBRARY_FAILED_TO_OPEN;
     }
-	nlog_debug("manager create instance done");
+    nlog_debug("manager create instance done");
     adapter_info.handle = instance.handle;
     adapter_info.module = instance.module;
 
     /* adapter = neu_adapter_create(manager->esv_outside_service_manager, &adapter_info, load); */
-	nlog_debug("create adapter");
-    adapter = neu_adapter_create(&adapter_info, load);
+    nlog_debug("create adapter");
+    adapter = neu_adapter_create(manager->esv_outside_service_manager, &adapter_info, load);
     if (adapter == NULL) {
         return neu_adapter_error();
     }
-	nlog_debug("create adapter done");
-	esv_adapter_set_lan_mqtt5_service(adapter, manager->esv_lan_mqtt5_service);
-	esv_adapter_set_manager(adapter, manager);
+    nlog_debug("create adapter done");
+    esv_adapter_set_lan_mqtt5_service(adapter, manager->esv_lan_mqtt5_service);
+    esv_adapter_set_manager(adapter, manager);
     neu_node_manager_add(manager->node_manager, adapter);
-	// winston add 2024-4-12 9:56
+    // winston add 2024-4-12 9:56
     /* neu_adapter_init(adapter, state); */
     neu_adapter_init(adapter, false);
-	neu_adapter_start(adapter);
+    neu_adapter_start(adapter);
 
     return NEU_ERR_SUCCESS;
 }
@@ -112,9 +103,7 @@ int neu_manager_add_node(neu_manager_t *manager, const char *node_name,
 /*     return NEU_ERR_SUCCESS; */
 /* } */
 
-UT_array *neu_manager_get_nodes(neu_manager_t *manager, int type,
-                                const char *plugin, const char *node)
-{
+UT_array *neu_manager_get_nodes(neu_manager_t *manager, int type, const char *plugin, const char *node) {
     return neu_node_manager_filter(manager->node_manager, type, plugin, node);
 }
 
@@ -811,16 +800,14 @@ UT_array *neu_manager_get_nodes(neu_manager_t *manager, int type,
 /*     return 0; */
 /* } */
 
-int neu_manager_get_node_info(neu_manager_t *manager, const char *name,
-                              neu_persist_node_info_t *info)
-{
+int neu_manager_get_node_info(neu_manager_t *manager, const char *name, neu_persist_node_info_t *info) {
     neu_adapter_t *adapter = neu_node_manager_find(manager->node_manager, name);
 
     if (adapter != NULL) {
-        info->name        = strdup(name);
-        info->type        = adapter->module->type;
+        info->name = strdup(name);
+        info->type = adapter->module->type;
         info->plugin_name = strdup(adapter->module->module_name);
-        info->state       = adapter->state;
+        info->state = adapter->state;
         return 0;
     }
 

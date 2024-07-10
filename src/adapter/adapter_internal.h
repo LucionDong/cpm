@@ -76,7 +76,8 @@ void neu_adapter_set_error(int error);
 
 /* neu_adapter_t *neu_adapter_create(esv_outside_service_manager_t *outside_service_manager, neu_adapter_info_t *info,
  * bool load); */
-neu_adapter_t *neu_adapter_create(neu_adapter_info_t *info, bool load);
+neu_adapter_t *neu_adapter_create(esv_outside_service_manager_t *outside_service_manager, neu_adapter_info_t *info,
+                                  bool load);
 void neu_adapter_init(neu_adapter_t *adapter, neu_node_running_state_e state);
 
 int neu_adapter_rename(neu_adapter_t *adapter, const char *new_name);

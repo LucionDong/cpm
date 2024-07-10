@@ -33,6 +33,7 @@
 
 #include "adapter.h"
 #include "adapter_internal.h"
+#include "core/outside_service_manager.h"
 #include "driver/driver_internal.h"
 #include "errcodes.h"
 #include "esvcpm-232/utils/log.h"
@@ -103,12 +104,13 @@ void neu_adapter_set_error(int error) {
     create_adapter_error = error;
 }
 
-neu_adapter_t *neu_adapter_create(neu_adapter_info_t *info, bool load) {
+neu_adapter_t *neu_adapter_create(esv_outside_service_manager_t *outside_service_manager, neu_adapter_info_t *info,
+                                  bool load) {
     int rv = 0;
     int init_rv = 0;
     neu_adapter_t *adapter = NULL;
     neu_event_io_param_t param = {0};
-    esv_outside_service_manager_t *outside_service_manager;
+    // esv_outside_service_manager_t *outside_service_manager = esv_outside_service_manager_create();
 
     switch (info->module->type) {
         case NEU_NA_TYPE_DRIVER:
@@ -121,7 +123,7 @@ neu_adapter_t *neu_adapter_create(neu_adapter_info_t *info, bool load) {
         case NEU_NA_TYPE_ESVDEVICEDRIVER232:
         case NEU_NA_TYPE_ESVAPP232:
             adapter = (neu_adapter_t *) neu_adapter_esvdriver_create();
-            init_manager_and_element(&outside_service_manager);
+            // init_manager_and_element(&outside_service_manager);
             break;
         default:
             nlog_warn("adapter create fail, do not match adapter type: %d", info->module->type);

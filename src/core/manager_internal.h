@@ -23,47 +23,44 @@
 #include <nng/nng.h>
 #include <nng/supplemental/util/platform.h>
 
+#include "connection/mqtt/lan_mqtt5_service_internal.h"
 #include "event/event.h"
-#include "persist/persist.h"
-
 #include "node_manager.h"
+#include "outside_service_manager_internal.h"
+#include "persist/persist.h"
 #include "plugin_manager.h"
 #include "subscribe.h"
 #include "template_manager.h"
-/* #include "outside_service_manager_internal.h" */
-#include "connection/mqtt/lan_mqtt5_service_internal.h"
 
 typedef struct neu_manager {
-    nng_socket      socket;
-    neu_events_t *  events;
+    nng_socket socket;
+    neu_events_t *events;
     neu_event_io_t *loop;
 
-    neu_plugin_manager_t *  plugin_manager;
-    neu_node_manager_t *    node_manager;
-    neu_subscribe_mgr_t *   subscribe_manager;
+    neu_plugin_manager_t *plugin_manager;
+    neu_node_manager_t *node_manager;
+    neu_subscribe_mgr_t *subscribe_manager;
     neu_template_manager_t *template_manager;
-	/* esv_outside_service_manager_t *esv_outside_service_manager; */
-	//mqtt3
-	/* esv_lan_mqtt_service_t * esv_lan_mqtt_service; */
-	//mqtt5
-	esv_lan_mqtt5_service_t * esv_lan_mqtt5_service;
+    esv_outside_service_manager_t *esv_outside_service_manager;
+    // mqtt3
+    /* esv_lan_mqtt_service_t * esv_lan_mqtt_service; */
+    // mqtt5
+    esv_lan_mqtt5_service_t *esv_lan_mqtt5_service;
 
     neu_event_timer_t *timer_timestamp;
 
     neu_event_timer_t *timer_lev;
-    int64_t            timestamp_lev_manager;
+    int64_t timestamp_lev_manager;
 } neu_manager_t;
 
-int       neu_manager_add_plugin(neu_manager_t *manager, const char *library);
+int neu_manager_add_plugin(neu_manager_t *manager, const char *library);
 /* int       neu_manager_del_plugin(neu_manager_t *manager, const char *plugin); */
 UT_array *neu_manager_get_plugins(neu_manager_t *manager);
 
-int       neu_manager_add_node(neu_manager_t *manager, const char *node_name,
-                               const char *             plugin_name,
-                               neu_node_running_state_e state, bool load);
+int neu_manager_add_node(neu_manager_t *manager, const char *node_name, const char *plugin_name,
+                         neu_node_running_state_e state, bool load);
 /* int       neu_manager_del_node(neu_manager_t *manager, const char *node_name); */
-UT_array *neu_manager_get_nodes(neu_manager_t *manager, int type,
-                                const char *plugin, const char *node);
+UT_array *neu_manager_get_nodes(neu_manager_t *manager, int type, const char *plugin, const char *node);
 /* int       neu_manager_update_node_name(neu_manager_t *manager, const char *node, */
 /*                                        const char *new_name); */
 /* int neu_manager_update_group_name(neu_manager_t *manager, const char *driver, */
@@ -128,6 +125,5 @@ UT_array *neu_manager_get_nodes(neu_manager_t *manager, int type,
 /* int neu_manager_get_ndriver_maps(neu_manager_t *manager, const char *ndriver, */
 /*                                  UT_array **result); */
 
-int neu_manager_get_node_info(neu_manager_t *manager, const char *name,
-                              neu_persist_node_info_t *info);
+int neu_manager_get_node_info(neu_manager_t *manager, const char *name, neu_persist_node_info_t *info);
 #endif
