@@ -3,7 +3,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-#include "config/easeview_config.h"
+#include "config/easeview_user_config.h"
 #include "core/manager.h"
 #include "utils/log.h"
 #include "utils/time.h"
@@ -29,7 +29,7 @@ static void sig_handler(int sig)
         /* neu_manager_destroy(g_manager); */
         /* neu_persister_destroy(); */
 		esv_persister_destroy();
-		esv_easeview_config_persister_destroy();
+		esv_easeview_user_config_persister_destroy();
         zlog_fini();
     }
     exit_flag = true;
@@ -58,7 +58,7 @@ static int neuron_run(const neu_cli_args_t *args)
     rv = esv_persister_create(args->config_dir);
     assert(rv == 0);
 
-    rv = esv_easeview_config_persister_create();
+    rv = esv_easeview_user_config_persister_create();
     assert(rv == 0);
 
     zlog_notice(neuron, "neuron start, daemon: %d, version: %s (%s %s)",
