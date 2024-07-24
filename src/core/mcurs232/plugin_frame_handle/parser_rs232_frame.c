@@ -413,11 +413,7 @@ int move_all_complete_list_node(mcurs232_relate_t *mcurs232_relate, complete_fra
 }
 
 int erase_serial_port_read_buf(mcurs232_relate_t *mcurs232_relate, int length) {
-    // pthread_mutex_lock(&mcurs232_relate->serial_port_trans_share->mcurs_share_mutex);
     utarray_erase(mcurs232_relate->serial_port_read_buf_head, 0, length);
-    // utarray_erase(plugin->serial_port_read_buf, 0, length);
-    // pthread_mutex_unlock(&mcurs232_relate->serial_port_trans_share->mcurs_share_mutex);
-    // pthread_mutex_unlock(&plugin->serial_port_trans_mutex);
 
     return 0;
 }

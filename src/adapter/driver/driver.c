@@ -1796,8 +1796,21 @@ static int thing_model_msg_arrived(neu_adapter_t *adapter, const esv_thing_model
 static int esv_msg_to_adapter(neu_adapter_t *adapter, const esv_frame232_msg_t *msg) {
     nlog_info("esv_msg_to_adapter");
     nlog_info("msg: %s", (char *) msg->msg);
-    push_back_serial_port_read_buf_and_check(adapter->outside_service_manager->mcurs232_class, msg->msg,
-                                             msg->msg_length);
+    nlog_info("msg->product_key: %s", msg->product_key);
+    if (msg->msg_type == ESV_TAM_BYTES_PTR) {
+        push_back_serial_port_read_buf_and_check(adapter->outside_service_manager->mcurs232_relate, msg->msg,
+                                                 msg->msg_length);
+    } else if (msg->msg_type == ESV_TAM_JSON_OBJECT_PTR) {
+        // char *data_root_str = json_dumps(msg->msg, 0);
+        esv_thing_model_msg_t thing_model_msg = {.method = msg->method,
+                                                 .product_key = (char *) msg->product_key,
+                                                 .device_name = (char *) msg->device_name,
+                                                 .msg_type = ESV_TMM_JSON_STRING_PTR,
+                                                 .msg = msg->msg};
+        nlog_info("232-cmp to cpm");
+        adapter->cb_funs.esvdriver.thing_model_msg_arrived(adapter, &thing_model_msg);
+        // free(data_root_str);
+    }
     return 0;
 }
 

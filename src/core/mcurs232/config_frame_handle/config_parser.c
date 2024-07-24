@@ -13,7 +13,7 @@
 #include <utils/log.h>
 
 #include "./config_parser.h"
-#include "config/easeview_config.h"
+#include "config/easeview_user_config.h"
 #include "ut_include/utarray.h"
 // #include "outside_service_manager.h"
 // #include "rs232_recv.h"
@@ -25,18 +25,22 @@ int get_config_json_array_and_size(json_t *root, int *array_size, json_t **uarts
 int create_empty_config_frame(unsigned char **config_frame, int uart_enble_count);
 int composition_config_frame_element(json_t *uarts, int enable_port_count, serial_config_frame_t *serial_config_frame);
 
-static UT_array *easeview_config_array = NULL;
+static UT_array *easeview_config_array;
 int parse_easeview_config_json(json_t *esv_driver_232_configs_array) {
-    char **easeview_config_array_value;
+    nlog_info("parse_easeview_config_json start");
+    char **easeview_config_array_value = NULL;
     utarray_new(easeview_config_array, &ut_str_icd);
-    load_uart_config_from_db(easeview_config_array);
+    load_uart_config_from_db(&easeview_config_array);
 
     if (easeview_config_array == NULL) {
         nlog_info("easeview_config_array is NULL");
         return -1;
     }
 
+    nlog_info("while start");
     while ((easeview_config_array_value = (char **) utarray_next(easeview_config_array, easeview_config_array_value))) {
+        nlog_info("in while start");
+        nlog_info("*easeview_config_array_value: %s", *easeview_config_array_value);
         json_error_t error;
         json_t *tmp_json_array_value = json_loads(*easeview_config_array_value, 0, &error);
         json_array_append(esv_driver_232_configs_array, tmp_json_array_value);
@@ -49,10 +53,19 @@ int parse_easeview_config_json(json_t *esv_driver_232_configs_array) {
 // int make_config_frame(serial_config_frame_t *serial_config_frame) {
 int composition_config_frame(serial_config_frame_t *serial_config_frame) {
     // json_t *root = json_object();
-    json_t *uarts = json_array();
+    json_t *uarts = json_array(), *uarts_array_value;
+    size_t uarts_array_size;
     parse_easeview_config_json(uarts);
     // open_files_to_json(FILE_PATH, &root);
-    int uart_enble_count = json_array_size(uarts);
+
+    // int uart_enble_count = json_array_size(uarts);
+    int uart_enble_count = 0;
+    json_array_foreach(uarts, uarts_array_size, uarts_array_value) {
+        if (json_integer_value(json_object_get(uarts_array_value, "enable")) == 0)
+            continue;
+        uart_enble_count++;
+    }
+    nlog_info("uart_enble_count: %d", uart_enble_count);
 
     // get_config_json_array_and_size(root, &uart_enble_count, &uarts);
     create_empty_config_frame(&serial_config_frame->config_frame, uart_enble_count);
@@ -123,7 +136,7 @@ int get_config_json_array_and_size(json_t *root, int *array_size, json_t **uarts
 // int make_empty_config_frame(unsigned char **config_frame, int uart_enble_count) {
 int create_empty_config_frame(unsigned char **config_frame, int uart_enble_count) {
     int frame_len = uart_enble_count * FIX_CONFIG_FRAME_ELEMENT_LEN + FIX_CONFIG_FRAME_LEN;
-    printf("frame_len: %d\n", frame_len);
+    nlog_info("frame_len: %d", frame_len);
     *config_frame = malloc(sizeof(unsigned char) * (frame_len));
     if (*config_frame == NULL) {
         // nlog_error("malloc error");
@@ -248,10 +261,14 @@ int composition_config_frame_element(json_t *uarts, int enable_port_count, seria
     json_t *uarts_value;
     size_t uarts_index;
     json_array_foreach(uarts, uarts_index, uarts_value) {
+        if (json_integer_value(json_object_get(uarts_value, "enable")) == 0) {
+            continue;
+        }
+
         unsigned char tmp[CONFIG_PART_OFFSET];
         memset(tmp, 0x00, CONFIG_PART_OFFSET);
 
-        json_t *uart_config = json_object_get(uarts_value, "uartConfig");
+        // json_t *uart_config = json_object_get(uarts_value, "uartConfig");
         tmp[0] = MASTER;
         //         if (json_boolean_value(json_object_get(uart_config, "masterMode"))) {
         //     tmp[0] = MASTER;
@@ -275,22 +292,26 @@ int composition_config_frame_element(json_t *uarts, int enable_port_count, seria
         int baudrate = atoi(json_string_value(json_object_get(uarts_value, "baudrate")));
         get_baudrate(&baudrate);
         tmp[4] = baudrate;
-        tmp[5] = atoi(json_string_value(json_object_get(uarts_value, "dataBYtes")));
+        tmp[5] = atoi(json_string_value(json_object_get(uarts_value, "dataByes")));
+        nlog_info("1");
+        nlog_info("parity: %s", json_string_value(json_object_get(uarts_value, "parity")));
         tmp[6] = get_parity(json_string_value(json_object_get(uarts_value, "parity")));
-        tmp[7] = atoi(json_string_value(json_object_get(uart_config, "stopbits")));
-
-        //         for (int i = 0; i < sizeof(tmp); ++i) {
-        // printf("%x\n", tmp[i]);
-        //         }
+        nlog_info("1");
+        tmp[7] = atoi(json_string_value(json_object_get(uarts_value, "stopbits")));
+        nlog_info("tmp[7]: %d", tmp[7]);
 
         append_array(serial_config_frame->config_frame, (uarts_index + 1) * CONFIG_PART_OFFSET, tmp, sizeof(tmp));
     }
+    nlog_info("2");
     uint16_t config_frame_crc_ret = calculate_crc16(
         serial_config_frame->config_frame, FIX_CONFIG_FRAME_LEN + enable_port_count * FIX_CONFIG_FRAME_ELEMENT_LEN - 3);
+    nlog_info("3");
     append_array(serial_config_frame->config_frame,
                  FIX_CONFIG_FRAME_LEN + enable_port_count * FIX_CONFIG_FRAME_ELEMENT_LEN - 3, &config_frame_crc_ret,
                  FIX_CRC_LEN);
+    nlog_info("4");
     serial_config_frame->config_frame_len = FIX_CONFIG_FRAME_LEN + enable_port_count * FIX_CONFIG_FRAME_ELEMENT_LEN;
+    nlog_info("composition_config_frame_element over");
     return 0;
 }
 

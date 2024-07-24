@@ -1,7 +1,8 @@
+#include <jansson.h>
 #include <stdlib.h>
 
 #include "adapter/adapter_internal.h"
-#include "config/easeview_config.h"
+#include "config/easeview_user_config.h"
 #include "manager_adapter_msg.h"
 #include "manager_internal.h"
 #include "node_manager.h"
@@ -28,6 +29,12 @@
 
 /* 	return 0; */
 /* } */
+
+void parser_setting_to_uart_port(neu_adapter_t *adapter) {
+    json_error_t error;
+    json_t *root = json_loads(adapter->setting, 0, &error);
+    adapter->uart_port = strdup(json_string_value(json_object_get(root, "uartPort")));
+}
 
 int forward_thing_model_msg_to_esvdriver(neu_manager_t *manager, const esv_thing_model_msg_t *msg) {
     // 根据pk dn找到对应的node_name
@@ -81,7 +88,8 @@ int forward_msg_to_232esvdriver(neu_manager_t *manager, const esv_frame232_msg_t
         //校验每个adapter的串口号是否一致
         //一致后向该adapter发送信息
         //该回调函数由插件实现
-        if (!strcmp((*adapter)->uartPort, msg->serial_port_num)) {
+        parser_setting_to_uart_port(*adapter);
+        if (!strcmp((*adapter)->uart_port, msg->serial_port_num)) {
             (*adapter)->module->intf_funs->esvdriver.app_driver_232_msg_arrived((*adapter)->plugin, msg);
         }
     }

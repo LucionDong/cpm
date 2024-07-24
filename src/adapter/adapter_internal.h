@@ -35,7 +35,7 @@
 struct neu_adapter {
     char *name;
     char *setting;
-    char *uartPort;
+    char *uart_port;
 
     neu_node_running_state_e state;
 

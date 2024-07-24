@@ -22,9 +22,14 @@ typedef enum esv_thing_model_msg_type {
     ESV_TMM_JASSON_OBJECT_PTR = 1,
 } esv_thing_model_msg_type_e;
 
+typedef enum esv_between_adapter_driver_msg_type {
+    ESV_TAM_JSON_OBJECT_PTR = 0,
+    ESV_TAM_BYTES_PTR,
+} esv_between_adapter_driver_msg_type_e;
+
 // typedef enum esv_between_adapter_driver_msg_type {
-	// ESV_TO_ADAPTER_MCURS_POST;
-	// ESV_
+// ESV_TO_ADAPTER_MCURS_POST;
+// ESV_
 // } esv_between_adapter_driver_msg_type_e;
 
 /* typedef enum esv_between_adapter_driver_msg_method { */
@@ -62,10 +67,13 @@ typedef struct {
 
 typedef struct {
     esv_thing_model_msg_method_e method;
-    esv_thing_model_msg_type_e msg_type;
+    esv_thing_model_msg_type_e esv_thing_msg_type;
+    esv_between_adapter_driver_msg_type_e msg_type;
     char *serial_port_num;
     void *msg;
     int msg_length;
+    const char *product_key;
+    const char *device_name;
 } esv_frame232_msg_t;
 
 /* typedef struct { */
