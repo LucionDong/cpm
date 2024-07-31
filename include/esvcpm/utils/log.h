@@ -70,6 +70,12 @@ extern zlog_category_t *neuron;
     zlog((plugin)->common.log, __FILE__, sizeof(__FILE__) - 1, __func__, \
          sizeof(__func__) - 1, __LINE__, ZLOG_LEVEL_DEBUG, __VA_ARGS__)
 
+#define hplog_notice(plugin, ...) \
+    hzlog((plugin)->common.log, __FILE__, sizeof(__FILE__) - 1, __func__, \
+         sizeof(__func__) - 1, __LINE__, ZLOG_LEVEL_DEBUG, __VA_ARGS__)
+
+
+
 #define plog_send_protocol(plugin, bytes, n_byte)                            \
     uint16_t log_protocol_buf_size = n_byte * 5 + 20;                        \
     char *   log_protocol_buf      = calloc(log_protocol_buf_size, 1);       \

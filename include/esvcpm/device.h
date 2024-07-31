@@ -2,6 +2,7 @@
 #define _ESV_DEVICE_H_
 
 #include <jansson.h>
+#include <stdint.h>
 
 #include "define.h"
 
@@ -26,6 +27,12 @@ typedef enum esv_between_adapter_driver_msg_type {
     ESV_TAM_JSON_OBJECT_PTR = 0,
     ESV_TAM_BYTES_PTR,
 } esv_between_adapter_driver_msg_type_e;
+
+typedef enum {
+    WRITE_COMMAND = 1,
+    READ_COMMAND,
+    STATUS_COMMAND,
+} frame_command_type_e;
 
 // typedef enum esv_between_adapter_driver_msg_type {
 // ESV_TO_ADAPTER_MCURS_POST;
@@ -65,16 +72,29 @@ typedef struct {
     void *msg;
 } esv_thing_model_msg_t;
 
+typedef struct frame_element {
+    uint8_t *frame_msg;
+    uint8_t response_command_bytes;
+    // uint8_t *response_timeout_lsb_ms;
+    uint16_t response_timeout;
+    uint8_t has_response;
+    int frame_length;
+    frame_command_type_e frame_command_type;
+} frame_element_t;
+
 typedef struct {
     esv_thing_model_msg_method_e method;
     esv_thing_model_msg_type_e esv_thing_msg_type;
     esv_between_adapter_driver_msg_type_e msg_type;
-    char *serial_port_num;
-    void *msg;
-    int msg_length;
+    unsigned char serial_port_num;
+    frame_element_t *frame_element;
+    // void *msg;
+    // int msg_length;
     const char *product_key;
     const char *device_name;
 } esv_frame232_msg_t;
+
+typedef esv_frame232_msg_t uart_frame_t;
 
 /* typedef struct { */
 /* 	esv_between_adapter_driver_msg_method_e method; */

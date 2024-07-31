@@ -25,6 +25,7 @@
 #include "../../outside_service_manager_internal.h"
 #include "../config_frame_handle/config_parser.h"
 #include "../serial_port.h"
+#include "adapter.h"
 #include "device.h"
 #include "event/event.h"
 #include "parser_rs232_frame.h"
@@ -213,15 +214,60 @@ int print_read_buf(mcurs232_relate_t *mcurs232_relate) {
     return 0;
 }
 
+int composition_plugin_to_mcu_frame(int uart_port_num, uart_frame_t *uart_frame) {
+    if (uart_frame == NULL) {
+        nlog_warn("composition_plugin_to_mcu_frame uart_frame is NULL");
+        return -1;
+    }
+    uint8_t *tmp_frame = malloc(sizeof(uint8_t) * (uart_frame->frame_element->frame_length + 18));
+    int frame_command_length = uart_frame->frame_element->frame_length, crc_length = 0;
+    memset(tmp_frame, 0x00, frame_command_length + 18);
+    tmp_frame[0] = 0xee;
+    tmp_frame[1] = 0x46;
+    tmp_frame[3] = 11 + frame_command_length;
+    tmp_frame[4] = uart_port_num;
+    if (uart_frame->frame_element->frame_command_type == WRITE_COMMAND) {
+        tmp_frame[7] = 0x01;
+    } else if (uart_frame->frame_element->frame_command_type == READ_COMMAND) {
+        tmp_frame[7] = 0x02;
+    } else if (uart_frame->frame_element->frame_command_type == STATUS_COMMAND) {
+        tmp_frame[7] = 0x03;
+    }
+    tmp_frame[10] = frame_command_length;
+    memcpy(tmp_frame + 10, uart_frame->frame_element->frame_msg, frame_command_length);
+    tmp_frame[10 + frame_command_length + 1] = uart_frame->frame_element->has_response;
+    tmp_frame[10 + frame_command_length + 2] = uart_frame->frame_element->response_command_bytes;
+    tmp_frame[10 + frame_command_length + 3] = uart_frame->frame_element->response_timeout & 0x11110000;
+    tmp_frame[10 + frame_command_length + 4] = uart_frame->frame_element->response_timeout & 0x00001111;
+
+    crc_length = 10 + frame_command_length + 4 + 1;
+    uint16_t frame_crc_ret = calculate_crc16(tmp_frame, crc_length);
+    memcpy(tmp_frame + crc_length, frame_crc_ret, 2);
+    tmp_frame[crc_length + 2] = 0x1a;
+
+    hnlog_notice(tmp_frame, frame_command_length + 18);
+
+    free(uart_frame->frame_element->frame_msg);
+    uart_frame->frame_element->frame_msg = malloc(sizeof(uint8_t) * (frame_command_length + 18));
+    uart_frame->frame_element->frame_length = frame_command_length + 18;
+    memcpy(uart_frame->frame_element->frame_msg, tmp_frame, uart_frame->frame_element->frame_length);
+    return 0;
+}
+
 int push_back_serial_port_read_buf_and_check(mcurs232_relate_t *mcurs232_relate, const unsigned char *buf,
                                              int buf_length) {
+    uint8_t *recv_buf = malloc(sizeof(uint8_t) * buf_length);
+    memcpy(recv_buf, buf, buf_length);
+
     nlog_info("push_back_serial_port_read_buf_and_check\n");
     printf("set_read_buf starti: %ld\n", syscall(SYS_gettid));
     pthread_mutex_lock(&mcurs232_relate->serial_port_trans_share->mcurs_share_mutex);
     printf("set_read_buf lock: %ld\n", syscall(SYS_gettid));
     //  if (ret == 0) {
     for (int i = 0; i < buf_length; ++i) {
-        utarray_push_back(mcurs232_relate->serial_port_read_buf_head, &buf[i]);
+        utarray_push_back(mcurs232_relate->serial_port_read_buf_head, &recv_buf[i]);
+        //         if (buf != NULL)
+        //             free((unsigned char *) buf);
     }
     // printf("---------------\n");
     // print_read_buf(plugin);
@@ -286,6 +332,30 @@ frame_e check_serial_port_type(mcurs232_relate_t *mcurs232_relate) {
     return ERROR;
 }
 
+void parser_rs232_frame_command_type(uart_frame_t *uart_frame, const uint8_t *frame_msg) {
+    if (frame_msg[7] == 0x01) {
+        uart_frame->frame_element->frame_command_type = WRITE_COMMAND;
+    } else if (frame_msg[7] == 0x02) {
+        uart_frame->frame_element->frame_command_type = READ_COMMAND;
+    } else if (frame_msg[7] == 0x03) {
+        uart_frame->frame_element->frame_command_type = STATUS_COMMAND;
+    }
+}
+
+void parser_rs232_frame_to_plugin_frame(uart_frame_t *uart_frame, const uint8_t *frame_msg) {
+    uart_frame->frame_element = malloc(sizeof(frame_element_t));
+    uart_frame->frame_element->frame_length = frame_msg[FRAME_COMMAND_DATA_LENGTH];
+    uart_frame->frame_element->frame_msg = malloc(sizeof(uint8_t) * uart_frame->frame_element->frame_length);
+
+    hnlog_notice(uart_frame->frame_element->frame_msg, uart_frame->frame_element->frame_length);
+    memcpy(uart_frame->frame_element->frame_msg, frame_msg + FRAME_COMMAND_DATA_LOCATION,
+           uart_frame->frame_element->frame_length);
+
+    uart_frame->msg_type = ESV_TAM_BYTES_PTR;
+    uart_frame->serial_port_num = frame_msg[4];
+    parser_rs232_frame_command_type(uart_frame, frame_msg);
+}
+
 void *send_complete_frame_task(void *arg) {
     // mcurs232_relate_t *mcurs232_relate = (mcurs232_relate_t *) arg;
     esv_outside_service_manager_t *outside_service_manager = (esv_outside_service_manager_t *) arg;
@@ -303,6 +373,7 @@ void *send_complete_frame_task(void *arg) {
         }
         pthread_mutex_unlock(&outside_service_manager->mcurs232_relate->complete_frame_list_share->mcurs_share_mutex);
         complete_frame_list_t *tmp_head = NULL;
+        nlog_info("send_complete_frame_to_plugin start");
         move_all_complete_list_node(outside_service_manager->mcurs232_relate, &tmp_head);
 
         while (tmp_head) {
@@ -338,17 +409,24 @@ void *send_complete_frame_task(void *arg) {
                 }
                 nlog_info("complete_frame_trans over");
             } else if (tmp_head->frame_type == FRAME_FROM_MCU) {
+                nlog_info("frame from mcu");
                 hnlog_notice(tmp_head->frame_buf, tmp_head->frame_buf_size);
                 esv_frame232_msg_t send_to_plugin_msg;
                 // esv_between_adapter_driver_msg_t send_to_plugin_msg;
                 if (tmp_head->frame_buf[1] == 0x00) {
                     return 0;
                 }
-                make_send_to_plugin_msg(&send_to_plugin_msg, tmp_head->frame_buf, tmp_head->frame_buf_size);
+
+                parser_rs232_frame_to_plugin_frame(&send_to_plugin_msg, tmp_head->frame_buf);
+                // make_send_to_plugin_msg(&send_to_plugin_msg, tmp_head->frame_buf, tmp_head->frame_buf_size);
+                nlog_info("send_to_plugin_msg msg_type: %d", send_to_plugin_msg.msg_type);
                 //将信息发送给插件
                 forward_msg_to_232esvdriver(outside_service_manager->neu_manager, &send_to_plugin_msg);
+                free(send_to_plugin_msg.frame_element->frame_msg);
+                free(send_to_plugin_msg.frame_element);
             }
             pop_complete_list(&tmp_head);
+            nlog_info("pop_complete_list is over");
         }
     }
     return 0;
@@ -379,14 +457,21 @@ int write_to_mcu(mcurs232_relate_t *mcurs232_relate, void *frame_buf, int buf_le
 }
 
 int pop_complete_list(complete_frame_list_t **head) {
+    nlog_info("pop_complete_list start");
+    if (head == NULL || *head == NULL) {
+        nlog_warn("pop_complete_list recv head is NULL");
+        return -1;
+    }
     int count;
     complete_frame_list_t *elt;
     DL_COUNT(*head, elt, count);
     if (count < 1) {
         return -1;
     }
+    nlog_info("count : %d", count);
 
     complete_frame_list_t *del = *head;
+    // complete_frame_list_t *del;
     DL_DELETE(*head, del);
     if (del->frame_buf) {
         free(del->frame_buf);
@@ -533,10 +618,15 @@ int init_complete_frame_buf(mcurs232_relate_t *mcurs232_relate, int complete_len
 
 int check_serial_port_message(mcurs232_relate_t *mcurs232_relate) {
     // nlog_info("check_serial_port_message");
-    printf("++++++++++++++++++check_serial_port_message to lock: %ld\n", syscall(SYS_gettid));
+    nlog_info("++++++++++++++++++check_serial_port_message to lock: %ld\n", syscall(SYS_gettid));
     pthread_mutex_lock(&mcurs232_relate->serial_port_trans_share->mcurs_share_mutex);
-    printf("-----------------check_serial_port_message lock: %ld\n", syscall(SYS_gettid));
+    nlog_info("-----------------check_serial_port_message lock: %ld\n", syscall(SYS_gettid));
     int frame_data_length = 0;
+    if (mcurs232_relate->serial_port_read_buf_head == NULL) {
+        nlog_warn("mcurs_relate->serial_port_read_buf_head is NULL");
+        pthread_mutex_unlock(&mcurs232_relate->serial_port_trans_share->mcurs_share_mutex);
+        return -1;
+    }
     while (utarray_len(mcurs232_relate->serial_port_read_buf_head) > 0) {
         switch (mcurs232_relate->frame_event) {
             case FIND_FRAME_HEADER: {
@@ -592,9 +682,9 @@ int check_serial_port_message(mcurs232_relate_t *mcurs232_relate) {
         }
     switch_end : { printf("while_end\n"); }
     }
-    printf("+++++++++++++++++++check_serial_port_message to unlock: %ld\n", syscall(SYS_gettid));
+    nlog_info("+++++++++++++++++++check_serial_port_message to unlock: %ld\n", syscall(SYS_gettid));
     pthread_mutex_unlock(&mcurs232_relate->serial_port_trans_share->mcurs_share_mutex);
-    printf("------------------check_serial_port_message unlock: %ld\n", syscall(SYS_gettid));
+    nlog_info("------------------check_serial_port_message unlock: %ld\n", syscall(SYS_gettid));
     return 0;
 }
 
@@ -625,14 +715,19 @@ static int mcu_rs232_reading_cb(enum neu_event_io_type type, int fd, void *usr_d
 int make_send_to_plugin_msg(esv_frame232_msg_t *send_to_plugin_msg, const unsigned char *msg, int msg_len) {
     // send_to_plugin_msg->method = ESV_TO_ADAPTER_MCURS_POST;
     // send_to_plugin_msg->msg_type = ESV_TAM_BYTES_PTR;
-    send_to_plugin_msg->msg = malloc(sizeof(unsigned char) * msg_len);
-    if (send_to_plugin_msg->msg == NULL) {
+    send_to_plugin_msg->frame_element = malloc(sizeof(frame_element_t));
+    send_to_plugin_msg->frame_element->frame_msg = malloc(sizeof(unsigned char) * msg_len);
+    if (send_to_plugin_msg->frame_element->frame_msg == NULL) {
         nlog_warn("Mcurs send_to_plugin_msg malloc failed");
         return -1;
     }
 
-    memcpy(send_to_plugin_msg->msg, msg, msg_len);
-    send_to_plugin_msg->msg_length = msg_len;
+    memcpy(send_to_plugin_msg->frame_element->frame_msg, msg, msg_len);
+    // memcpy(send_to_plugin_msg->msg, msg, msg_len);
+
+    send_to_plugin_msg->serial_port_num = msg[4];
+    send_to_plugin_msg->frame_element->frame_length = msg_len;
+    send_to_plugin_msg->msg_type = ESV_TAM_BYTES_PTR;
 
     return 0;
 }

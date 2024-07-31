@@ -197,11 +197,13 @@ neu_adapter_t *neu_adapter_create(esv_outside_service_manager_t *outside_service
         }
     }
 
+    nlog_info("setting: %s", adapter->setting);
+
     /* if (info->module->type == NEU_NA_TYPE_DRIVER) { */
     /*     adapter_load_group_and_tag((neu_adapter_driver_t *) adapter); */
     /* } */
 
-    if (info->module->type == NEU_NA_TYPE_ESVDEVICEDRIVER) {
+    if (info->module->type == NEU_NA_TYPE_ESVDEVICEDRIVER232 || info->module->type == NEU_NA_TYPE_ESVAPP232) {
         adapter_load_device((neu_adapter_driver_t *) adapter);
     }
 
@@ -1129,17 +1131,20 @@ int neu_adapter_stop(neu_adapter_t *adapter) {
 }
 
 int neu_adapter_set_setting(neu_adapter_t *adapter, const char *setting) {
+    nlog_info("neu_adapter_set_setting start");
     int rv = -1;
 
     const neu_plugin_intf_funs_t *intf_funs;
 
     intf_funs = adapter->module->intf_funs;
     rv = intf_funs->setting(adapter->plugin, setting);
+
     if (rv == 0) {
         if (adapter->setting != NULL) {
             free(adapter->setting);
         }
         adapter->setting = strdup(setting);
+        nlog_info("setting: %s", adapter->setting);
 
         if (adapter->state == NEU_NODE_RUNNING_STATE_INIT) {
             adapter->state = NEU_NODE_RUNNING_STATE_READY;

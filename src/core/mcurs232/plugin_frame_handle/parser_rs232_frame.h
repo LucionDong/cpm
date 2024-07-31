@@ -20,6 +20,10 @@ typedef struct mcurs232_relate mcurs232_relate_t;
 #define TYPE_DISTANCE_FROM_FRAME_HEADER 1
 #define FRAME_COMMAND_TYPE 7
 
+#define FRAME_COMMAND_DATA_LENGTH 10
+#define FRAME_COMMAND_DATA_LOCATION 11
+#define FRAME_INTRINSIC_LENGTH 18
+
 #define FRAME_HEADER 0xee
 #define FRAME_TAIL 0x1a
 #define DEF_ASK_CONFIG_FRAME 0x44
@@ -85,6 +89,7 @@ void *mcurs232_thread_func(void *arg);
 int destroy_mcurs232_share(mcurs232_relate_t *mcurs_relate);
 int destroy_mcurs232_pthread(mcurs232_relate_t *mcurs_relate);
 int destroy_mcurs232_relate(esv_outside_service_manager_t *outside_service_manager);
+int composition_plugin_to_mcu_frame(int uart_port_num, uart_frame_t *uart_frame);
 int push_back_serial_port_read_buf_and_check(mcurs232_relate_t *mcurs232_relate, const unsigned char *buf,
                                              int buf_length);
 // int set_read_buf(mcurs232_relate_t *mcurs232_relate, const unsigned char *buf, int buf_length);

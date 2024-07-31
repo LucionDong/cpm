@@ -89,10 +89,6 @@ esv_outside_service_manager_t *esv_outside_service_manager_create() {
     esv_outside_service_manager_t *outside_service_manager = NULL;
 
     init_manager_and_element(&outside_service_manager);
-    // pthread_create(&outside_service_manager->mqtt_relate->recv_thread, NULL, recv_thread_func,
-    // outside_service_manager); pthread_create(&outside_service_manager->mqtt_relate->send_thread, NULL,
-    // send_thread_func, outside_service_manager);
-
     pthread_create(&outside_service_manager->mcurs232_relate->mcurs232_thread, NULL, mcurs232_thread_func,
                    outside_service_manager);
 

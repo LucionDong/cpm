@@ -86,7 +86,7 @@ neu_manager_t *neu_manager_create() {
     manager->node_manager = neu_node_manager_create();
     manager->esv_outside_service_manager = esv_outside_service_manager_create();
 
-    /* esv_outside_service_manager_set_neu_manager(manager->esv_outside_service_manager, manager); */
+    esv_outside_service_manager_set_neu_manager(manager->esv_outside_service_manager, manager);
     /* manager->subscribe_manager = neu_subscribe_manager_create(); */
     /* manager->template_manager  = neu_template_manager_create(); */
 

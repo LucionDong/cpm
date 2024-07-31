@@ -1571,6 +1571,16 @@ static int thing_model_232_msg_arrived(neu_adapter_t *adapter, const esv_thing_m
 }
 
 static int thing_model_msg_arrived(neu_adapter_t *adapter, const esv_thing_model_msg_t *thing_model_msg) {
+    if (adapter == NULL) {
+        nlog_warn("thing model msg arrived adapter is NULL");
+        return -1;
+    }
+
+    if (thing_model_msg == NULL) {
+        nlog_warn("thing_model_msg is NULL");
+        return -1;
+    }
+
     nlog_debug("thing_model_msg_arrived from driver: %s product_key: %s, device_name: %s, method: %d  msg_type: %d",
                adapter->name, thing_model_msg->product_key, thing_model_msg->device_name, thing_model_msg->method,
                thing_model_msg->msg_type);
@@ -1794,23 +1804,38 @@ static int thing_model_msg_arrived(neu_adapter_t *adapter, const esv_thing_model
 /*} */
 
 static int esv_msg_to_adapter(neu_adapter_t *adapter, const esv_frame232_msg_t *msg) {
-    nlog_info("esv_msg_to_adapter");
-    nlog_info("msg: %s", (char *) msg->msg);
-    nlog_info("msg->product_key: %s", msg->product_key);
-    if (msg->msg_type == ESV_TAM_BYTES_PTR) {
-        push_back_serial_port_read_buf_and_check(adapter->outside_service_manager->mcurs232_relate, msg->msg,
-                                                 msg->msg_length);
-    } else if (msg->msg_type == ESV_TAM_JSON_OBJECT_PTR) {
-        // char *data_root_str = json_dumps(msg->msg, 0);
-        esv_thing_model_msg_t thing_model_msg = {.method = msg->method,
-                                                 .product_key = (char *) msg->product_key,
-                                                 .device_name = (char *) msg->device_name,
-                                                 .msg_type = ESV_TMM_JSON_STRING_PTR,
-                                                 .msg = msg->msg};
-        nlog_info("232-cmp to cpm");
-        adapter->cb_funs.esvdriver.thing_model_msg_arrived(adapter, &thing_model_msg);
-        // free(data_root_str);
+    if (adapter == NULL) {
+        nlog_warn("adapter is NULL");
+        return -1;
     }
+    if (msg == NULL) {
+        nlog_warn("adapter->name: %s uart_frame_msg is NULL", adapter->name);
+        return -1;
+    }
+
+    uart_frame_t *uart_frame_msg = malloc(sizeof(uart_frame_t));
+    uart_frame_msg->frame_element = malloc(sizeof(frame_element_t));
+
+    memcpy(uart_frame_msg->frame_element->frame_msg, msg->frame_element->frame_msg, msg->frame_element->frame_length);
+    uart_frame_msg->frame_element->frame_length = msg->frame_element->frame_length;
+    uart_frame_msg->frame_element->frame_command_type = msg->frame_element->frame_command_type;
+    uart_frame_msg->frame_element->response_command_bytes = msg->frame_element->response_command_bytes;
+    uart_frame_msg->frame_element->has_response = msg->frame_element->has_response;
+    uart_frame_msg->frame_element->response_timeout = msg->frame_element->response_timeout;
+
+    parser_setting_to_uart_port(adapter);
+    composition_plugin_to_mcu_frame(atoi(adapter->uart_port), uart_frame_msg);
+
+    nlog_info("esv_msg_to_adapter");
+    push_back_serial_port_read_buf_and_check(adapter->outside_service_manager->mcurs232_relate,
+                                             uart_frame_msg->frame_element->frame_msg,
+                                             uart_frame_msg->frame_element->frame_length);
+
+    free(uart_frame_msg->frame_element->frame_msg);
+    free(uart_frame_msg->frame_element);
+    free(uart_frame_msg);
+    // }
+
     return 0;
 }
 
@@ -1829,7 +1854,7 @@ neu_adapter_driver_t *neu_adapter_esvdriver_create() {
     driver->driver_events = neu_event_new();
     driver->adapter.cb_funs.esvdriver.thing_model_msg_arrived = thing_model_msg_arrived;
     /* driver->adapter.cb_funs.esvdriver.msg_to_adapter = esv_msg_to_adapter; */
-    driver->adapter.cb_funs.esvdriver.msg_to_232adapter = esv_msg_to_adapter;
+    driver->adapter.cb_funs.esvdriver.uart_frame_arrived = esv_msg_to_adapter;
     driver->adapter.cb_funs.esvdriver.func3 = esv_func3;
     driver->adapter.cb_funs.esvdriver.func4 = esv_func4;
 
@@ -1868,6 +1893,7 @@ int neu_adapter_esvdriver_uninit(neu_adapter_driver_t *driver) {
 
 int esv_adapter_driver_load_devices(neu_adapter_driver_t *driver, const UT_array *device_infos) {
 
+    nlog_info("------------------------------------------\n-----------------------");
     uint16_t device_cnt = utarray_len(device_infos);
     esv_device_info_t *device_infos_unpacked = (esv_device_info_t *) calloc(device_cnt, sizeof(esv_device_info_t));
 
@@ -1882,7 +1908,9 @@ int esv_adapter_driver_load_devices(neu_adapter_driver_t *driver, const UT_array
         esv_device_list_add(driver->device_list, p->product_key, p->device_name);
     }
 
-    if (driver->adapter.module->type == NEU_NA_TYPE_ESVDEVICEDRIVER) {
+    if (driver->adapter.module->type == NEU_NA_TYPE_ESVDEVICEDRIVER232 ||
+        driver->adapter.module->type == NEU_NA_TYPE_ESVAPP232) {
+        nlog_info("------------------------------------------\n-----------------------");
         if (driver->adapter.module->intf_funs->esvdriver.add_devices != NULL) {
             driver->adapter.module->intf_funs->esvdriver.add_devices(driver->adapter.plugin, device_cnt,
                                                                      device_infos_unpacked);
