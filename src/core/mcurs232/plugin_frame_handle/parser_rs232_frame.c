@@ -215,42 +215,63 @@ int print_read_buf(mcurs232_relate_t *mcurs232_relate) {
 }
 
 int composition_plugin_to_mcu_frame(int uart_port_num, uart_frame_t *uart_frame) {
+    nlog_info("composition_plugin_to_mcu_frame start");
     if (uart_frame == NULL) {
         nlog_warn("composition_plugin_to_mcu_frame uart_frame is NULL");
         return -1;
     }
+
     uint8_t *tmp_frame = malloc(sizeof(uint8_t) * (uart_frame->frame_element->frame_length + 18));
     int frame_command_length = uart_frame->frame_element->frame_length, crc_length = 0;
+    nlog_info("frame_command_length: %d", frame_command_length);
+
     memset(tmp_frame, 0x00, frame_command_length + 18);
     tmp_frame[0] = 0xee;
     tmp_frame[1] = 0x46;
     tmp_frame[3] = 11 + frame_command_length;
     tmp_frame[4] = uart_port_num;
     if (uart_frame->frame_element->frame_command_type == WRITE_COMMAND) {
+        nlog_debug("WRITE_COMMAND");
         tmp_frame[7] = 0x01;
     } else if (uart_frame->frame_element->frame_command_type == READ_COMMAND) {
+        nlog_debug("READ_COMMAND");
         tmp_frame[7] = 0x02;
     } else if (uart_frame->frame_element->frame_command_type == STATUS_COMMAND) {
+        nlog_debug("STATUS_COMMAND");
         tmp_frame[7] = 0x03;
     }
     tmp_frame[10] = frame_command_length;
-    memcpy(tmp_frame + 10, uart_frame->frame_element->frame_msg, frame_command_length);
-    tmp_frame[10 + frame_command_length + 1] = uart_frame->frame_element->has_response;
-    tmp_frame[10 + frame_command_length + 2] = uart_frame->frame_element->response_command_bytes;
-    tmp_frame[10 + frame_command_length + 3] = uart_frame->frame_element->response_timeout & 0x11110000;
-    tmp_frame[10 + frame_command_length + 4] = uart_frame->frame_element->response_timeout & 0x00001111;
+    memcpy(tmp_frame + 11, uart_frame->frame_element->frame_msg, frame_command_length);
+    tmp_frame[11 + frame_command_length + 1] = uart_frame->frame_element->has_response;
+    tmp_frame[11 + frame_command_length + 2] = uart_frame->frame_element->response_command_bytes;
+    tmp_frame[11 + frame_command_length + 3] = (uart_frame->frame_element->response_timeout >> 8) & 0xff;
+    tmp_frame[11 + frame_command_length + 4] = uart_frame->frame_element->response_timeout & 0xff;
 
-    crc_length = 10 + frame_command_length + 4 + 1;
+    crc_length = 11 + frame_command_length + 4;
+    nlog_debug("crc_length: %d", crc_length);
+    hnlog_notice(tmp_frame, frame_command_length + 18);
     uint16_t frame_crc_ret = calculate_crc16(tmp_frame, crc_length);
-    memcpy(tmp_frame + crc_length, frame_crc_ret, 2);
-    tmp_frame[crc_length + 2] = 0x1a;
+    nlog_debug("%x", frame_crc_ret);
 
+    // uint8_t frame_crc_msb = (frame_crc_ret >> 8) & 0xff;
+    // uint8_t frame_crc_lsb = frame_crc_ret & 0xff;
+    // nlog_debug("frame crc msb: %x ,lsb: %x", frame_crc_msb, frame_crc_lsb);
+    // tmp_frame[crc_length + 1] = frame_crc_msb;
+    // tmp_frame[crc_length + 2] = frame_crc_lsb;
     hnlog_notice(tmp_frame, frame_command_length + 18);
 
-    free(uart_frame->frame_element->frame_msg);
+    memcpy(tmp_frame + crc_length, &frame_crc_ret, 2);
+    // memcpy(tmp_frame + crc_length + 1, frame_crc_msb, 1);
+    // memcpy(tmp_frame + crc_length + 2, frame_crc_lsb, 1);
+    tmp_frame[crc_length + 2] = 0x1a;
+    hnlog_notice(tmp_frame, frame_command_length + 18);
+
+    if (uart_frame->frame_element->frame_msg)
+        free(uart_frame->frame_element->frame_msg);
     uart_frame->frame_element->frame_msg = malloc(sizeof(uint8_t) * (frame_command_length + 18));
     uart_frame->frame_element->frame_length = frame_command_length + 18;
     memcpy(uart_frame->frame_element->frame_msg, tmp_frame, uart_frame->frame_element->frame_length);
+    hnlog_notice(uart_frame->frame_element->frame_msg, frame_command_length + 18);
     return 0;
 }
 

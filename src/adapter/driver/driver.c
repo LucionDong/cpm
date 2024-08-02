@@ -1815,8 +1815,11 @@ static int esv_msg_to_adapter(neu_adapter_t *adapter, const esv_frame232_msg_t *
 
     uart_frame_t *uart_frame_msg = malloc(sizeof(uart_frame_t));
     uart_frame_msg->frame_element = malloc(sizeof(frame_element_t));
+    uart_frame_msg->frame_element->frame_msg = malloc(sizeof(uint8_t) * msg->frame_element->frame_length);
 
     memcpy(uart_frame_msg->frame_element->frame_msg, msg->frame_element->frame_msg, msg->frame_element->frame_length);
+    hnlog_notice(uart_frame_msg->frame_element->frame_msg, msg->frame_element->frame_length);
+
     uart_frame_msg->frame_element->frame_length = msg->frame_element->frame_length;
     uart_frame_msg->frame_element->frame_command_type = msg->frame_element->frame_command_type;
     uart_frame_msg->frame_element->response_command_bytes = msg->frame_element->response_command_bytes;
