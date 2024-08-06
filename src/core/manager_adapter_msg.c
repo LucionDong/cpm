@@ -56,6 +56,29 @@ end:
 }
 
 /* TODO:  <16-06-24, yourname> 
+ * 需要释放esvdevicedrivernodes
+ * */
+static UT_array *esvdevicedrivernodes = NULL;
+int forward_thing_model_msg_to_all_esvdevicedriver(neu_manager_t *manager, const esv_thing_model_msg_t *msg) {
+	if (esvdevicedrivernodes == NULL) {
+		nlog_debug("to get adapter type %d", NEU_NA_TYPE_ESVDEVICEDRIVER);
+		esvdevicedrivernodes = neu_node_manager_get_adapter(manager->node_manager, NEU_NA_TYPE_ESVDEVICEDRIVER);
+	}
+
+	if (esvdevicedrivernodes == NULL) {
+		nlog_info("do not find esv device driver!");
+		return -1;
+	}
+
+	utarray_foreach(esvdevicedrivernodes, neu_adapter_t **, adapter) {
+		nlog_debug("send msg to device driver adapter %s", (*adapter)->name);
+		(*adapter)->module->intf_funs->esvdriver.thing_model_msg_arrived((*adapter)->plugin, msg);
+	}
+
+	return 0;
+}
+
+/* TODO:  <16-06-24, yourname> 
  * 需要释放esvappnodes
  * */
 static UT_array *esvappnodes = NULL;
