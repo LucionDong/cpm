@@ -6,5 +6,6 @@
 int forward_thing_model_msg_to_esvdriver(neu_manager_t *manager, const esv_thing_model_msg_t *msg);
 int forward_thing_model_msg_to_all_esvdevicedriver(neu_manager_t *manager, const esv_thing_model_msg_t *msg);
 int forward_thing_model_msg_to_esvapps(neu_manager_t *manager, const esv_thing_model_msg_t *msg);
+int forward_thing_model_msg_to_plugin_node(neu_manager_t *manager, const esv_thing_model_msg_t *msg, const char *plugin_node_id);
 
 #endif /* ifndef _MANAGER_ADAPTER_MSG_H_ */

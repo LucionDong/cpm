@@ -19,6 +19,10 @@
 // wan
 #define TOPIC_WILDCARD_WAN_THINGSUB_PROPERTY_SET "wan/+/+/thing/sub/+/+/thing/service/property/set"
 #define TOPIC_WILDCARD_WAN_THINGSUB_PROPERTY_GET "wan/+/+/thing/sub/+/+/thing/service/property/get"
+#define TOPIC_WILDCARD_WAN_THING_DISCOVERY "wan/+/+/thing/discovery"
+#define TOPIC_WILDCARD_WAN_THINGSUB_DISCOVERY "wan/+/+/thing/sub/+/+/thing/discovery"
+#define TOPIC_WILDCARD_WAN_THINGSUB_CONFIG_PUSH "wan/+/+/thing/sub/+/+/thing/config/push"
+#define TOPIC_WILDCARD_WAN_THING_PLUGIN_NODE_CONFIG_PUSH "wan/+/+/thing/pluginNode/+/config/push"
 // lan
 #define TOPIC_WILDCARD_LAN_THINGSUB_EVENT_PROPERTY_POST "lan/thing/sub/+/+/thing/event/property/post"
 #define TOPIC_WILDCARD_LAN_THINGSUB_SERVICE_PROPERTY_SET "lan/thing/sub/+/+/thing/service/property/set"
@@ -58,7 +62,7 @@ void connected5(void *context, char *cause)
 	nlog_notice("Connected5");
 	esv_lan_mqtt5_service_t *service = (esv_lan_mqtt5_service_t *)context;
 	nlog_info("contex=%p service=%p, service client=%p", context, service, service->client);
-	int topic_count = 8;
+	int topic_count = 12;
 	MQTTAsync client = service->client;
 	/* MQTTAsync_responseOptions opts = MQTTAsync_responseOptions_initializer; */
 	MQTTSubscribe_options subscribe_options = MQTTSubscribe_options_initializer;
@@ -77,10 +81,14 @@ void connected5(void *context, char *cause)
 		TOPIC_WILDCARD_LAN_THINGSUB_SERVICE_PROPERTY_SETREPLY,
 		TOPIC_WILDCARD_LAN_THINGSUB_SERVICE_PROPERTY_GET,
 		TOPIC_WILDCARD_LAN_THINGSUB_SERVICE_PROPERTY_GETREPLY,
-		TOPIC_WILDCARD_LAN_THING_SERVICE_PROPERTY_POSTREQ
+		TOPIC_WILDCARD_LAN_THING_SERVICE_PROPERTY_POSTREQ,
+		TOPIC_WILDCARD_WAN_THING_DISCOVERY,
+		TOPIC_WILDCARD_WAN_THINGSUB_DISCOVERY,
+		TOPIC_WILDCARD_WAN_THINGSUB_CONFIG_PUSH,
+		TOPIC_WILDCARD_WAN_THING_PLUGIN_NODE_CONFIG_PUSH
 	}; 
-	const int qos[] = {QOS, QOS, QOS, QOS, QOS, QOS, QOS, QOS};
-	MQTTSubscribe_options subopts[] = {subscribe_options, subscribe_options, subscribe_options, subscribe_options, subscribe_options, subscribe_options, subscribe_options, subscribe_options};
+	const int qos[] = {QOS, QOS, QOS, QOS, QOS, QOS, QOS, QOS, QOS, QOS, QOS, QOS};
+	MQTTSubscribe_options subopts[] = {subscribe_options, subscribe_options, subscribe_options, subscribe_options, subscribe_options, subscribe_options, subscribe_options, subscribe_options, subscribe_options, subscribe_options, subscribe_options, subscribe_options};
 	copts.subscribeOptionsList = subopts;
 	if ((rc = MQTTAsync_subscribeMany(client, topic_count, topics_to_subscribe, qos, &copts)) != MQTTASYNC_SUCCESS)
 	{
@@ -220,7 +228,7 @@ int messageArrived5(void* context, char* topicName, int topicLen, MQTTAsync_mess
 		thing_model_msg->msg_type = ESV_TMM_JSON_STRING_PTR;
 		thing_model_msg->msg = m->payload;
 		forward_thing_model_msg_to_esvdriver(service->manager, thing_model_msg);
-end1:		
+end_wan_prop_set:		
 		free(pk);
 		free(dn);
 		free(thing_model_msg);
@@ -240,14 +248,97 @@ end1:
 		thing_model_msg->msg_type = ESV_TMM_JSON_STRING_PTR;
 		thing_model_msg->msg = m->payload;
 		forward_thing_model_msg_to_esvdriver(service->manager, thing_model_msg);
-end2:		
+end_wan_prop_get:		
 		free(pk);
 		free(dn);
 		free(thing_model_msg);
 		MQTTAsync_freeMessage(&m);
 		MQTTAsync_free(topicName);
 
-	} else if (topic_matches_wildcard(topicName, TOPIC_WILDCARD_LAN_THINGSUB_SERVICE_PROPERTY_GET)) {
+	} else if (topic_matches_wildcard(topicName, TOPIC_WILDCARD_WAN_THING_DISCOVERY)) {
+		char *pk = "";
+		char *dn = "";
+		/* get_pk_dn_from_thingsub_topic(topicName, 3, &pk, &dn); */		
+		/* nlog_debug("pk:%s dn:%s", pk, dn); */
+		esv_lan_mqtt5_service_t *service = (esv_lan_mqtt5_service_t *)context;
+		esv_thing_model_msg_t *thing_model_msg = calloc(1, sizeof(esv_thing_model_msg_t));
+		thing_model_msg->method = ESV_TMM_MTD_WAN_THING_DISCOVERY;
+		thing_model_msg->product_key = pk;
+		thing_model_msg->device_name = dn;
+		thing_model_msg->msg_type = ESV_TMM_JSON_STRING_PTR;
+		thing_model_msg->msg = m->payload;
+		forward_thing_model_msg_to_all_esvdevicedriver(service->manager, thing_model_msg);
+end_wan_disc:		
+		/* free(pk); */
+		/* free(dn); */
+		free(thing_model_msg);
+		MQTTAsync_freeMessage(&m);
+		MQTTAsync_free(topicName);
+
+	} else if (topic_matches_wildcard(topicName, TOPIC_WILDCARD_WAN_THINGSUB_DISCOVERY)) {
+		char *pk = "";
+		char *dn = "";
+		get_pk_dn_from_thingsub_topic(topicName, 5, &pk, &dn);		
+		nlog_debug("pk:%s dn:%s", pk, dn);
+		esv_lan_mqtt5_service_t *service = (esv_lan_mqtt5_service_t *)context;
+		esv_thing_model_msg_t *thing_model_msg = calloc(1, sizeof(esv_thing_model_msg_t));
+		thing_model_msg->method = ESV_TMM_MTD_WAN_SUBTHING_THING_DISCOVERY;
+		thing_model_msg->product_key = pk;
+		thing_model_msg->device_name = dn;
+		thing_model_msg->msg_type = ESV_TMM_JSON_STRING_PTR;
+		thing_model_msg->msg = m->payload;
+		forward_thing_model_msg_to_all_esvdevicedriver(service->manager, thing_model_msg);
+end_wan_sub_disc:		
+		free(pk);
+		free(dn);
+		free(thing_model_msg);
+		MQTTAsync_freeMessage(&m);
+		MQTTAsync_free(topicName);
+
+	} else if (topic_matches_wildcard(topicName, TOPIC_WILDCARD_WAN_THINGSUB_DISCOVERY)) {
+		char *pk = "";
+		char *dn = "";
+		get_pk_dn_from_thingsub_topic(topicName, 5, &pk, &dn);		
+		nlog_debug("pk:%s dn:%s", pk, dn);
+		esv_lan_mqtt5_service_t *service = (esv_lan_mqtt5_service_t *)context;
+		esv_thing_model_msg_t *thing_model_msg = calloc(1, sizeof(esv_thing_model_msg_t));
+		thing_model_msg->method = ESV_TMM_MTD_WAN_SUBTHING_THING_CONFIG_PUSH;
+		thing_model_msg->product_key = pk;
+		thing_model_msg->device_name = dn;
+		thing_model_msg->msg_type = ESV_TMM_JSON_STRING_PTR;
+		thing_model_msg->msg = m->payload;
+		forward_thing_model_msg_to_all_esvdevicedriver(service->manager, thing_model_msg);
+end_wan_sub_config_push:		
+		free(pk);
+		free(dn);
+		free(thing_model_msg);
+		MQTTAsync_freeMessage(&m);
+		MQTTAsync_free(topicName);
+
+	} else if (topic_matches_wildcard(topicName, TOPIC_WILDCARD_WAN_THING_PLUGIN_NODE_CONFIG_PUSH)) {
+		char *pluginNodeId = "";
+		char *pk = "";
+		char *dn = "";
+		get_data_from_topic(topicName, 5, &pluginNodeId);		
+		nlog_debug("pluginNodeId:%s", pluginNodeId);
+		esv_lan_mqtt5_service_t *service = (esv_lan_mqtt5_service_t *)context;
+		esv_thing_model_msg_t *thing_model_msg = calloc(1, sizeof(esv_thing_model_msg_t));
+		thing_model_msg->method = ESV_TMM_MTD_WAN_THING_PLUGIN_NODE_CONFIG_PUSH;
+		thing_model_msg->product_key = pk;
+		thing_model_msg->device_name = dn;
+		thing_model_msg->msg_type = ESV_TMM_JSON_STRING_PTR;
+		thing_model_msg->msg = m->payload;
+		forward_thing_model_msg_to_plugin_node(service->manager, thing_model_msg, pluginNodeId);
+end_wan_plugin_node_config_push:		
+		/* free(pk); */
+		/* free(dn); */
+		free(thing_model_msg);
+		MQTTAsync_freeMessage(&m);
+		MQTTAsync_free(topicName);
+
+	}
+	// lan
+	else if (topic_matches_wildcard(topicName, TOPIC_WILDCARD_LAN_THINGSUB_SERVICE_PROPERTY_GET)) {
 		char *pk;
 		char *dn;
 		get_pk_dn_from_thingsub_topic(topicName, 3, &pk, &dn);		
@@ -260,7 +351,7 @@ end2:
 		thing_model_msg->msg_type = ESV_TMM_JSON_STRING_PTR;
 		thing_model_msg->msg = m->payload;
 		forward_thing_model_msg_to_esvdriver(service->manager, thing_model_msg);
-end3:		
+end_lan_prop_get:		
 		free(pk);
 		free(dn);
 		free(thing_model_msg);
@@ -280,7 +371,7 @@ end3:
 		thing_model_msg->msg_type = ESV_TMM_JSON_STRING_PTR;
 		thing_model_msg->msg = m->payload;
 		forward_thing_model_msg_to_esvdriver(service->manager, thing_model_msg);
-end4:		
+end_lan_prop_set:		
 		free(pk);
 		free(dn);
 		free(thing_model_msg);
@@ -300,88 +391,15 @@ end4:
 		thing_model_msg->msg_type = ESV_TMM_JSON_STRING_PTR;
 		thing_model_msg->msg = m->payload;
 		forward_thing_model_msg_to_all_esvdevicedriver(service->manager, thing_model_msg);
-end5:		
-		free(pk);
-		free(dn);
+end_lan_prop_post:		
+		/* free(pk); */
+		/* free(dn); */
 		free(thing_model_msg);
 		MQTTAsync_freeMessage(&m);
 		MQTTAsync_free(topicName);
 
-	}
-	/* if (topic_matches_wildcard(topicName, TOPIC_WILDCARD_WAN_SUBTHING_PROPERTY_SET)) { */
-	/* 	/1* nlog_info("              msg: \n%.*s", m->payloadlen, (char*)m->payload); *1/ */
-	/* 	char *topic2 = strdup(topicName); */
-	/* 	char *token; */
-	/* 	char *pk; */
-	/* 	char *dn; */
-	/* 	int token_count = 0; */
-	/* 	token = strtok(topic2, "/"); */
-	/* 	while (token != NULL) { */
-	/* 		if (token_count == 4) { */
-	/* 			pk = strdup(token); */
-	/* 		} else if (token_count == 5) { */
-	/* 			dn = strdup(token); */
-	/* 		} */
-	/* 		if (token_count == 5) { */
-	/* 			break; */
-	/* 		} */
-	/* 		token_count++; */
-	/* 		token = strtok(NULL, "/"); */		
-	/* 	} */
-	/* 	nlog_debug("pk:%s dn:%s", pk, dn); */
-	/* 	esv_lan_mqtt5_service_t *service = (esv_lan_mqtt5_service_t *)context; */
-	/* 	esv_thing_model_msg_t *thing_model_msg = calloc(1, sizeof(esv_thing_model_msg_t)); */
-	/* 	thing_model_msg->method = ESV_TMM_MTD_WAN_SUBTHING_THING_SERVICE_PROPERTY_SET; */
-	/* 	thing_model_msg->product_key = pk; */
-	/* 	thing_model_msg->device_name = dn; */
-	/* 	thing_model_msg->msg_type = ESV_TMM_JSON_STRING_PTR; */
-	/* 	thing_model_msg->msg = m->payload; */
-	/* 	forward_thing_model_msg_to_esvdriver(service->manager, thing_model_msg); */
-/* end1: */		
-	/* 	free(topic2); */
-	/* 	free(pk); */
-	/* 	free(dn); */
-	/* 	free(thing_model_msg); */
-	/* 	MQTTAsync_freeMessage(&m); */
-	/* 	MQTTAsync_free(topicName); */
-	/* } */
-	/* else if (topic_matches_wildcard(topicName, TOPIC_WILDCARD_WAN_SUBTHING_PROPERTY_GET)) { */
-	/* 	/1* nlog_info("              msg: \n%.*s", m->payloadlen, (char*)m->payload); *1/ */
-	/* 	char *topic2 = strdup(topicName); */
-	/* 	char *token; */
-	/* 	char *pk; */
-	/* 	char *dn; */
-	/* 	int token_count = 0; */
-	/* 	token = strtok(topic2, "/"); */
-	/* 	while (token != NULL) { */
-	/* 		if (token_count == 4) { */
-	/* 			pk = strdup(token); */
-	/* 		} else if (token_count == 5) { */
-	/* 			dn = strdup(token); */
-	/* 		} */
-	/* 		if (token_count == 5) { */
-	/* 			break; */
-	/* 		} */
-	/* 		token_count++; */
-	/* 		token = strtok(NULL, "/"); */		
-	/* 	} */
-	/* 	nlog_debug("pk:%s dn:%s", pk, dn); */
-	/* 	esv_lan_mqtt5_service_t *service = (esv_lan_mqtt5_service_t *)context; */
-	/* 	esv_thing_model_msg_t *thing_model_msg = calloc(1, sizeof(esv_thing_model_msg_t)); */
-	/* 	thing_model_msg->method = ESV_TMM_MTD_WAN_SUBTHING_THING_SERVICE_PROPERTY_GET; */
-	/* 	thing_model_msg->product_key = pk; */
-	/* 	thing_model_msg->device_name = dn; */
-	/* 	thing_model_msg->msg_type = ESV_TMM_JSON_STRING_PTR; */
-	/* 	thing_model_msg->msg = m->payload; */
-	/* 	forward_thing_model_msg_to_esvdriver(service->manager, thing_model_msg); */
-/* end2: */		
-	/* 	free(topic2); */
-	/* 	free(pk); */
-	/* 	free(dn); */
-	/* 	free(thing_model_msg); */
-	/* 	MQTTAsync_freeMessage(&m); */
-	/* 	MQTTAsync_free(topicName); */
-	/* } */
+	} 
+
 	return 1;
 }
 

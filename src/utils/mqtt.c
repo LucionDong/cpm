@@ -51,3 +51,24 @@ int get_pk_dn_from_thingsub_topic(const char *topic, const int start_token_index
 	free(topic2);
 	return 0;
 }
+
+int get_data_from_topic(const char *topic, const int start_token_index, char **data) {
+
+	char *topic2 = strdup(topic);
+	char *token;
+	int token_count = 0;
+	token = strtok(topic2, "/");
+	while (token != NULL) {
+		if (token_count == start_token_index) {
+			*data = strdup(token);
+		} 
+		if (token_count == (start_token_index)) {
+			break;
+		}
+		token_count++;
+		token = strtok(NULL, "/");		
+	}
+
+	free(topic2);
+	return 0;
+}

@@ -97,6 +97,7 @@ int esv_persister_load_node_config(const char *       node_name,
 int esv_persister_load_devices(const char *driver_name, UT_array **device_infos);
 
 int esv_persister_query_device_node_name(const char *product_key, const char *device_name, char **driver_name);
+int esv_persister_query_device_node_name_by_node_id(const char *plugin_node_id, char **node_name);
 
 static inline void esv_persist_node_info_fini(esv_persist_node_info_t *info)
 {

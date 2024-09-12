@@ -2026,6 +2026,40 @@ error:
 
 }
 
+int esv_persister_query_device_node_name_by_node_id(const char *plugin_node_id, char **node_name) {
+	sqlite3_stmt *stmt = NULL;
+	const char *query ="SELECT \
+						node_name \
+						FROM plugin_node WHERE node_id=? LIMIT 1";
+	
+	if (SQLITE_OK != sqlite3_prepare_v2(thing_db, query, -1, &stmt, NULL)) {
+        nlog_error("prepare `%s` fail: %s", query, sqlite3_errmsg(thing_db));
+        goto error;
+    }
+
+    if (SQLITE_OK != sqlite3_bind_text(stmt, 1, plugin_node_id, -1, NULL)) {
+        nlog_error("bind `%s` with `%s` fail: %s", query, plugin_node_id,
+                   sqlite3_errmsg(thing_db));
+        goto error;
+    }
+
+	int step = sqlite3_step(stmt);
+	if (SQLITE_ROW == step) {
+		*node_name = strdup((char *) sqlite3_column_text(stmt, 0));
+        step = sqlite3_step(stmt);
+    }
+    if (SQLITE_DONE != step) {
+        nlog_warn("query `%s` fail: %s", query, sqlite3_errmsg(thing_db));
+    }
+
+    sqlite3_finalize(stmt);
+    return EXIT_SUCCESS;
+
+error:
+    return NEU_ERR_EINTERNAL;
+
+}
+
 static int query_normal_plugins_from_db(neu_json_plugin_req_t **result) {
 	sqlite3_stmt *stmt = NULL;
 	/* const char *query ="SELECT lib_name FROM plugin_lib"; */

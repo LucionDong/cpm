@@ -100,3 +100,28 @@ int forward_thing_model_msg_to_esvapps(neu_manager_t *manager, const esv_thing_m
 
 	return 0;
 }
+
+
+int forward_thing_model_msg_to_plugin_node(neu_manager_t *manager, const esv_thing_model_msg_t *msg, const char *plugin_node_id) {
+	// 根据pluginNodeId找到对应的node_name
+	nlog_info("plugin_node_id:%s to find node_name", plugin_node_id);
+	char *node_name = NULL;
+	esv_persister_query_device_node_name_by_node_id(plugin_node_id, &node_name);
+	if (NULL == node_name) {
+		nlog_warn("do not find node of pk: %s dn: %s", msg->product_key, msg->device_name);
+		return EXIT_FAILURE;
+	}
+
+	// 根据node_name找到对应的adapter
+	nlog_info("to find adapter of node_name:%s", node_name);
+	neu_adapter_t *adapter = neu_node_manager_find(manager->node_manager, node_name);
+	if (NULL == adapter) {
+		nlog_warn("do not find adapter of node name: %s", node_name);
+		return EXIT_FAILURE;
+	}
+	nlog_info("to send ting model msg to plugin node:%s", adapter->name);
+	int rv = adapter->module->intf_funs->esvdriver.thing_model_msg_arrived(adapter->plugin, msg);
+end:
+	return rv;
+
+}

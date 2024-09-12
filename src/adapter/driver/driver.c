@@ -1777,10 +1777,13 @@ static int thing_model_msg_arrived(neu_adapter_t *adapter, const esv_thing_model
 		}
 	}
 
-	if (adapter->module->type == NEU_NA_TYPE_ESVDEVICEDRIVER && !is_device_in_device_list(((neu_adapter_driver_t *)adapter)->device_list, thing_model_msg->product_key, thing_model_msg->device_name)) {
-		nlog_warn("illegal device pk: %s dn: %s msg", thing_model_msg->product_key, thing_model_msg->device_name);
-		return 1;
-	}
+	/* TODO:  <11-09-24, winston> 
+	 * 需要对esvdevicedriver中设备自管理插件和普通插件进行区分，实现普通插件消息上发过滤，或者让插件自己管理
+	 **/
+	/* if (adapter->module->type == NEU_NA_TYPE_ESVDEVICEDRIVER && !is_device_in_device_list(((neu_adapter_driver_t *)adapter)->device_list, thing_model_msg->product_key, thing_model_msg->device_name)) { */
+	/* 	nlog_warn("illegal device pk: %s dn: %s msg", thing_model_msg->product_key, thing_model_msg->device_name); */
+	/* 	return 1; */
+	/* } */
 
 	if (ESV_TMM_MTD_LAN_SUBTHING_THING_EVENT_PROPERTY_POST == thing_model_msg->method) {
 		char *topic_formate = "lan/thing/sub/%s/%s/thing/event/property/post";
@@ -1859,6 +1862,7 @@ static int thing_model_msg_arrived(neu_adapter_t *adapter, const esv_thing_model
 	/* 		free(topic); */
 	/* 	} */
 	/* } */ 
+	// wan
 	else if (ESV_TMM_MTD_WAN_SUBTHING_THING_SERVICE_PROPERTY_SET_REPLY == thing_model_msg->method) {
 		char *topic_formate = "wan/thing/sub/%s/%s/thing/service/property/setReply";
 		if (ESV_TMM_JSON_STRING_PTR == thing_model_msg->msg_type) {
@@ -1887,51 +1891,32 @@ static int thing_model_msg_arrived(neu_adapter_t *adapter, const esv_thing_model
 			lan_mqtt5_service_publish(adapter->lan_mqtt5_service, topic, thing_model_msg->msg);
 			free(topic);
 		}
+	} else if (ESV_TMM_MTD_WAN_THING_DISCOVERY_REPLY == thing_model_msg->method) {
+		/* char *topic_formate = "wan/thing/discoveryReply"; */
+		if (ESV_TMM_JSON_STRING_PTR == thing_model_msg->msg_type) {
+			char *topic = "wan/thing/discoveryReply";
+			/* neu_asprintf(&topic, topic_formate, thing_model_msg->product_key, thing_model_msg->device_name); */
+			lan_mqtt5_service_publish(adapter->lan_mqtt5_service, topic, thing_model_msg->msg);
+			free(topic);
+		}
+	} else if (ESV_TMM_MTD_WAN_SUBTHING_THING_DISCOVERY_REPLY == thing_model_msg->method) {
+		char *topic_formate = "wan/thing/sub/%s/%s/thig/discoveryReply";
+		if (ESV_TMM_JSON_STRING_PTR == thing_model_msg->msg_type) {
+			char *topic = NULL;
+			neu_asprintf(&topic, topic_formate, thing_model_msg->product_key, thing_model_msg->device_name);
+			lan_mqtt5_service_publish(adapter->lan_mqtt5_service, topic, thing_model_msg->msg);
+			free(topic);
+		}
+	} else if (ESV_TMM_MTD_WAN_SUBTHING_THING_CONFIG_PUSH_REPLY == thing_model_msg->method) {
+		char *topic_formate = "wan/thing/sub/%s/%s/thig/config/pushReply";
+		if (ESV_TMM_JSON_STRING_PTR == thing_model_msg->msg_type) {
+			char *topic = NULL;
+			neu_asprintf(&topic, topic_formate, thing_model_msg->product_key, thing_model_msg->device_name);
+			lan_mqtt5_service_publish(adapter->lan_mqtt5_service, topic, thing_model_msg->msg);
+			free(topic);
+		}
 	}
 
-	/* nlog_info("thing_model_msg_arrived from driver: %s product_key: %s, device_name: %s, msg_type: %d", adapter->name, thing_model_msg->product_key, thing_model_msg->device_name, thing_model_msg->msg_type); */		
-	/* switch (thing_model_msg->msg_type) { */
-	/* 	case ESV_TMM_JSON_OBJECT_PTR: { */
-	/* 		/1* json_t *root = (json_t *)msg; *1/ */
-	/* 		if (!json_is_object((json_t *)thing_model_msg->msg)) { */
-	/* 			nlog_warn("received msg not json object"); */
-	/* 			break; */
-	/* 		} */ 
-	/* 		nlog_info("check msg json object passed"); */
-	/* 		neu_reqresp_head_t header = { 0 }; */
-	/* 		header.type               = ESV_THING_MODEL_TRANS_DATA_INPROC; */
-	/* 		strcpy(header.sender,adapter->name); */
-	/* 		strcpy(header.receiver,MANAGER_RECEIVER); */
-	/* 		esv_thing_model_trans_data_inproc_t *data = calloc(1, sizeof(esv_thing_model_trans_data_inproc_t)); */
-	/* 		data->method = thing_model_msg->method; */
-	/* 		data->driver = strdup(adapter->name); */
-	/* 		data->product_key = strdup(thing_model_msg->product_key); */
-	/* 		data->device_name = strdup(thing_model_msg->device_name); */
-	/* 		data->data_root = json_deep_copy((json_t *)thing_model_msg->msg); */
-
-	/* 		/1* neu_plugin_op(adapter->plugin, header, data); *1/ */ 
-	/* 		/1* send to manager *1/ */
-	/* 		nng_msg *nngmsg = esv_nng_msg_gen(&header, data); */
-	/* 		int ret = nng_sendmsg(adapter->sock, nngmsg, 0); */
-	/* 		if (ret != 0) { */
-	/* 			nng_msg_free(nngmsg); */
-	/* 		} */
-
-	/* 		free(data->driver); */
-	/* 		free(data->product_key); */
-	/* 		free(data->device_name); */
-	/* 		json_decref(data->data_root); */
-	/* 		free(data); */
-	/* 		return 0; */
-	/* 		break; */
-	/* 	 } */
-	/* 	default:{ */
-	/* 		nlog_info("at default"); */
-	/* 		break; */
-	/* 	} */
-	/* } */
-
-	/* return -1; */
 	return 0;
 }
 
