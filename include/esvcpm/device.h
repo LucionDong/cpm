@@ -62,6 +62,8 @@ typedef struct {
 	char                       *device_name;
 	esv_thing_model_msg_type_e msg_type;
 	void		*msg;
+	int msg_len;
+	int plugin_id;
 } esv_thing_model_msg_t;
 
 /* typedef struct { */

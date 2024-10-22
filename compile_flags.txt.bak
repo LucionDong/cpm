@@ -3,9 +3,3 @@
 -I/home/winston/Works/mac_work/dev/gateway/easeview/plugin/core-plugin-manager/include/esvcpm
 -I/home/winston/Works/mac_work/dev/gateway/easeview/plugin/core-plugin-manager/src
 -I/home/winston/Works/mac_work/dev/gateway/easeview/plugin/core-plugin-manager/plugins
-
--I/home/lucion/core-plugin-manager/plugins/tools/armv5l/lib/libc/usr/include
--I/home/lucion/core-plugin-manager/plugins/tools/armv5l/lib/libc/usr/local/include
--I/home/lucion/work/plugins/core-plugin-manager/plugins
--I/home/lucion/work/plugins/core-plugin-manager/include/esvcpm
--I/home/lucion/work/plugins/core-plugin-manager/src

@@ -1708,7 +1708,7 @@ static int thing_model_msg_arrived(neu_adapter_t *adapter, const esv_thing_model
             // free(topic);
         }
     } else if (ESV_TMM_MTD_WAN_SUBTHING_THING_DISCOVERY_REPLY == thing_model_msg->method) {
-        char *topic_formate = "wan/thing/sub/%s/%s/thig/discoveryReply";
+        char *topic_formate = "wan/thing/sub/%s/%s/thing/discoveryReply";
         if (ESV_TMM_JSON_STRING_PTR == thing_model_msg->msg_type) {
             char *topic = NULL;
             neu_asprintf(&topic, topic_formate, thing_model_msg->product_key, thing_model_msg->device_name);
@@ -1716,7 +1716,7 @@ static int thing_model_msg_arrived(neu_adapter_t *adapter, const esv_thing_model
             free(topic);
         }
     } else if (ESV_TMM_MTD_WAN_SUBTHING_THING_CONFIG_PUSH_REPLY == thing_model_msg->method) {
-        char *topic_formate = "wan/thing/sub/%s/%s/thig/config/pushReply";
+        char *topic_formate = "wan/thing/sub/%s/%s/thing/config/pushReply";
         if (ESV_TMM_JSON_STRING_PTR == thing_model_msg->msg_type) {
             char *topic = NULL;
             neu_asprintf(&topic, topic_formate, thing_model_msg->product_key, thing_model_msg->device_name);
@@ -1727,8 +1727,10 @@ static int thing_model_msg_arrived(neu_adapter_t *adapter, const esv_thing_model
         // char *topic_formate = "wan/thing/pluginNode/+/config/pushReply";
         if (ESV_TMM_JSON_STRING_PTR == thing_model_msg->msg_type) {
             // char *topic = "wan/thing/pluginNode/+/config/pushReply";
-			char *topic = "wan/thing/pluginNode/84/config/pushReply";
+            // char *topic = "wan/thing/pluginNode/84/config/pushReply";
             // neu_asprintf(&topic, topic_formate, thing_model_msg->product_key, thing_model_msg->device_name);
+            char topic[1024] = {0};
+			sprintf(topic,"wan/thing/pluginNode/%d/config/pushReply",thing_model_msg->plugin_id);
             lan_mqtt5_service_publish(adapter->lan_mqtt5_service, topic, thing_model_msg->msg);
             // free(topic);
         }
