@@ -32,6 +32,7 @@
 #include "template_manager.h"
 /* #include "outside_service_manager_internal.h" */
 #include "connection/mqtt/lan_mqtt5_service_internal.h"
+#include "sql/sql_handle.h"
 
 typedef struct neu_manager {
     nng_socket      socket;
@@ -52,6 +53,8 @@ typedef struct neu_manager {
 
     neu_event_timer_t *timer_lev;
     int64_t            timestamp_lev_manager;
+
+    sql_handle_t *sql_handle;
 } neu_manager_t;
 
 int       neu_manager_add_plugin(neu_manager_t *manager, const char *library);

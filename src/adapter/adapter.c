@@ -42,6 +42,7 @@
 /* #include "persist/persist.h" */
 #include "plugin.h"
 #include "storage.h"
+#include "define.h"
 
 
 static int adapter_loop(enum neu_event_io_type type, int fd, void *usr_data);
@@ -161,6 +162,8 @@ neu_adapter_t *neu_adapter_create(neu_adapter_info_t *info, bool load)
 
     adapter->timestamp_lev = 0;
 
+    nlog_info(">>>>>>>>>>>>>adapter name :%s", adapter->name);
+
 	/* adapter->outside_service_manager = outside_service_manager; */
 
     /* rv = nng_pair1_open(&adapter->sock); */
@@ -224,6 +227,7 @@ neu_adapter_t *neu_adapter_create(neu_adapter_info_t *info, bool load)
 
     if (info->module->type == NEU_NA_TYPE_ESVDEVICEDRIVER) {
 		adapter_load_device((neu_adapter_driver_t *) adapter);
+        nlog_info("adapter load device name :%s", adapter->name);
     }
 
     /* param.fd       = adapter->recv_fd; */

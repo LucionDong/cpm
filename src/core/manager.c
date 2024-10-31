@@ -43,6 +43,7 @@
 
 #include "manager.h"
 #include "manager_internal.h"
+#include "sql/sql_handle.h"
 
 // definition for adapter names
 #define DEFAULT_DASHBOARD_ADAPTER_NAME DEFAULT_DASHBOARD_PLUGIN_NAME
@@ -94,6 +95,7 @@ neu_manager_t *neu_manager_create()
     manager->events            = neu_event_new();
     manager->plugin_manager    = neu_plugin_manager_create();
     manager->node_manager      = neu_node_manager_create();
+    manager->sql_handle        = sql_handle_create();
 	/* manager->esv_outside_service_manager = esv_outside_service_manager_create(); */
 
 	/* esv_outside_service_manager_set_neu_manager(manager->esv_outside_service_manager, manager); */
@@ -217,6 +219,7 @@ void neu_manager_destroy(neu_manager_t *manager)
 	/* lan_mqtt_service_stop(manager->esv_lan_mqtt_service); */
 	// mqtt5
 	lan_mqtt5_service_stop(manager->esv_lan_mqtt5_service);
+    sql_handle_fini(&manager->sql_handle);
 
     free(manager);
     nlog_notice("manager exit");
@@ -553,6 +556,7 @@ static void start_static_adapter(neu_manager_t *manager, const char *name)
 
     /* adapter = neu_adapter_create(manager->esv_outside_service_manager, &adapter_info, true); */
     adapter = neu_adapter_create(&adapter_info, true);
+    nlog_info("start_static_adapter adapter name :%s", adapter->name);
     neu_node_manager_add_static(manager->node_manager, adapter);
     neu_adapter_init(adapter, false);
     neu_adapter_start(adapter);

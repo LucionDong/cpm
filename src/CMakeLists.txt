@@ -67,6 +67,7 @@ set(ESVCPM_BASE_SOURCE
 	src/utils/neu_jwt.c
 	src/utils/asprintf.c
 	src/utils/mqtt.c
+	src/sql/sql_handle.c
 	${PERSIST_SOURCES}
 	)
 

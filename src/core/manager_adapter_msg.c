@@ -1,9 +1,11 @@
+#include "manager_adapter_msg.h"
+
 #include <stdlib.h>
 
 #include "adapter/adapter_internal.h"
-#include "manager_adapter_msg.h"
 #include "manager_internal.h"
 #include "node_manager.h"
+#include "sql/sql_handle.h"
 #include "utils/log.h"
 
 /* static UT_array *esvdrivers = NULL; */
@@ -72,6 +74,13 @@ int forward_thing_model_msg_to_all_esvdevicedriver(neu_manager_t *manager, const
 
     utarray_foreach(esvdevicedrivernodes, neu_adapter_t **, adapter) {
         nlog_debug("send msg to device driver adapter %s", (*adapter)->name);
+
+        char value[1024] = {0};
+        select_plugin_node(manager->sql_handle, (*adapter)->name, value);
+        int node_id = atoi(value);
+        nlog_info("node_name: %s, node_id: %d", (*adapter)->name, node_id);
+        ((esv_thing_model_msg_t *)msg)->plugin_id = node_id;
+
         nlog_info("send msg: %.*s", msg->msg_len, (char *) msg->msg);
         // nlog_info("send msg len: %d", msg->msg_len);
         (*adapter)->module->intf_funs->esvdriver.thing_model_msg_arrived((*adapter)->plugin, msg);

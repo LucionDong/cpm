@@ -321,6 +321,7 @@ int messageArrived5(void *context, char *topicName, int topicLen, MQTTAsync_mess
         thing_model_msg->msg_type = ESV_TMM_JSON_STRING_PTR;
         thing_model_msg->msg = m->payload;
         thing_model_msg->msg_len = m->payloadlen;
+        thing_model_msg->plugin_id = atoi(pluginNodeId);
         nlog_info("m->payload: %s", (char *) m->payload);
         nlog_info("m->payloadlen: %d", m->payloadlen);
         forward_thing_model_msg_to_plugin_node(service->manager, thing_model_msg, pluginNodeId);
