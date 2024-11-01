@@ -1,7 +1,8 @@
 #ifndef _LAN_MQTT_SERVICE_H_
 #define _LAN_MQTT_SERVICE_H_
 
-#include <paho-mqtt/MQTTAsync.h>
+// #include <paho-mqtt/MQTTAsync.h>
+#include "MQTTAsync.h"
 #include "core/manager_internal.h"
 #include "lan_mqtt_service_internal.h"
 

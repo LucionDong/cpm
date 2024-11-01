@@ -24,6 +24,7 @@
 #define TOPIC_WILDCARD_WAN_THINGSUB_DISCOVERY "wan/+/+/thing/sub/+/+/thing/discovery"
 #define TOPIC_WILDCARD_WAN_THINGSUB_CONFIG_PUSH "wan/+/+/thing/sub/+/+/thing/config/push"
 #define TOPIC_WILDCARD_WAN_THING_PLUGIN_NODE_CONFIG_PUSH "wan/+/+/thing/pluginNode/+/config/push"
+#define TOPIC_WILDCARD_WAN_THING_RESTART_SET "wan/+/+/thing/restart/set"
 // lan
 #define TOPIC_WILDCARD_LAN_THINGSUB_EVENT_PROPERTY_POST "lan/thing/sub/+/+/thing/event/property/post"
 #define TOPIC_WILDCARD_LAN_THINGSUB_SERVICE_PROPERTY_SET "lan/thing/sub/+/+/thing/service/property/set"
@@ -59,7 +60,7 @@ void connected5(void *context, char *cause) {
     nlog_notice("Connected5");
     esv_lan_mqtt5_service_t *service = (esv_lan_mqtt5_service_t *) context;
     nlog_info("contex=%p service=%p, service client=%p", context, service, service->client);
-    int topic_count = 12;
+    int topic_count = 13;
     MQTTAsync client = service->client;
     /* MQTTAsync_responseOptions opts = MQTTAsync_responseOptions_initializer; */
     MQTTSubscribe_options subscribe_options = MQTTSubscribe_options_initializer;
@@ -81,11 +82,13 @@ void connected5(void *context, char *cause) {
                                    TOPIC_WILDCARD_WAN_THING_DISCOVERY,
                                    TOPIC_WILDCARD_WAN_THINGSUB_DISCOVERY,
                                    TOPIC_WILDCARD_WAN_THINGSUB_CONFIG_PUSH,
-                                   TOPIC_WILDCARD_WAN_THING_PLUGIN_NODE_CONFIG_PUSH};
-    const int qos[] = {QOS, QOS, QOS, QOS, QOS, QOS, QOS, QOS, QOS, QOS, QOS, QOS};
+                                   TOPIC_WILDCARD_WAN_THING_PLUGIN_NODE_CONFIG_PUSH,
+                                   TOPIC_WILDCARD_WAN_THING_RESTART_SET};
+    const int qos[] = {QOS, QOS, QOS, QOS, QOS, QOS, QOS, QOS, QOS, QOS, QOS, QOS, QOS};
     MQTTSubscribe_options subopts[] = {subscribe_options, subscribe_options, subscribe_options, subscribe_options,
                                        subscribe_options, subscribe_options, subscribe_options, subscribe_options,
-                                       subscribe_options, subscribe_options, subscribe_options, subscribe_options};
+                                       subscribe_options, subscribe_options, subscribe_options, subscribe_options,
+                                       subscribe_options};
     copts.subscribeOptionsList = subopts;
     if ((rc = MQTTAsync_subscribeMany(client, topic_count, topics_to_subscribe, qos, &copts)) != MQTTASYNC_SUCCESS) {
         nlog_warn("Failed to start subscribe, return code %d", rc);
@@ -332,6 +335,9 @@ int messageArrived5(void *context, char *topicName, int topicLen, MQTTAsync_mess
         MQTTAsync_freeMessage(&m);
         MQTTAsync_free(topicName);
 
+    } else if (topic_matches_wildcard(topicName, TOPIC_WILDCARD_WAN_THING_RESTART_SET)) {
+        nlog_info("!!!!!!!!!!!!!!!!!!!!restart set");
+        exit(0);
     }
     // lan
     else if (topic_matches_wildcard(topicName, TOPIC_WILDCARD_LAN_THINGSUB_SERVICE_PROPERTY_GET)) {

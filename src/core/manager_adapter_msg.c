@@ -51,6 +51,13 @@ int forward_thing_model_msg_to_esvdriver(neu_manager_t *manager, const esv_thing
         nlog_warn("do not find adapter of node name: %s", node_name);
         return EXIT_FAILURE;
     }
+
+    char value[1024] = {0};
+    select_plugin_node(manager->sql_handle, adapter->name, value);
+    int node_id = atoi(value);
+    nlog_info("node_name: %s, node_id: %d", adapter->name, node_id);
+    ((esv_thing_model_msg_t *) msg)->plugin_id = node_id;
+
     nlog_info("to send ting model msg to esvdriver:%s", adapter->name);
     int rv = adapter->module->intf_funs->esvdriver.thing_model_msg_arrived(adapter->plugin, msg);
 end:
@@ -79,7 +86,7 @@ int forward_thing_model_msg_to_all_esvdevicedriver(neu_manager_t *manager, const
         select_plugin_node(manager->sql_handle, (*adapter)->name, value);
         int node_id = atoi(value);
         nlog_info("node_name: %s, node_id: %d", (*adapter)->name, node_id);
-        ((esv_thing_model_msg_t *)msg)->plugin_id = node_id;
+        ((esv_thing_model_msg_t *) msg)->plugin_id = node_id;
 
         nlog_info("send msg: %.*s", msg->msg_len, (char *) msg->msg);
         // nlog_info("send msg len: %d", msg->msg_len);
