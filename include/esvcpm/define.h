@@ -50,7 +50,7 @@
 #define ESV_DEVICE_NAME_LEN 64
 #define ESV_THING_MODEL_FUNC_BLOCK_ID_LEN 64
 
-extern int  default_log_level;
+extern int default_log_level;
 extern bool disable_jwt;
 extern char host_port[24];
 
@@ -61,34 +61,35 @@ typedef enum neu_plugin_kind {
 } neu_plugin_kind_e;
 
 typedef enum {
-    NEU_NA_TYPE_DRIVER  = 1,
-    NEU_NA_TYPE_APP     = 2,
+    NEU_NA_TYPE_DRIVER = 1,
+    NEU_NA_TYPE_APP = 2,
     NEU_NA_TYPE_NDRIVER = 4,
-	/* 为了兼容web南向驱动获取设置为8+1 */
-	/* 设备驱动：cpm只传输对应pk dn的数据给对应驱动 */
-	NEU_NA_TYPE_ESVDEVICEDRIVER = 9,
-	/* 应用驱动：cpm传输所有设备信息给应用驱动 */
-	NEU_NA_TYPE_ESVAPPDRIVER = 10,
-	/* 应用：cpm传输所有设备信息给应用 */
-	NEU_NA_TYPE_ESVAPP = 11,
-	/* RS485-232设备驱动：cpm只传输对应pk dn的数据给对应驱动 */
-	NEU_NA_TYPE_ESVDEVICEDRIVER232 = 12,
-	/* RS485-232应用驱动：cpm传输所有设备信息给应用驱动 */
-	NEU_NA_TYPE_ESVAPPDRIVER232 = 13,
-	/* RS485-232应用：cpm传输所有设备信息给应用 */
-	NEU_NA_TYPE_ESVAPP232 = 14,
+    /* 为了兼容web南向驱动获取设置为8+1 */
+    /* 设备驱动：cpm只传输对应pk dn的数据给对应驱动 */
+    NEU_NA_TYPE_ESVDEVICEDRIVER = 9,
+    /* 应用驱动：cpm传输所有设备信息给应用驱动 */
+    NEU_NA_TYPE_ESVAPPDRIVER = 10,
+    /* 应用：cpm传输所有设备信息给应用 */
+    NEU_NA_TYPE_ESVAPP = 11,
+    /* RS485-232设备驱动：cpm只传输对应pk dn的数据给对应驱动 */
+    NEU_NA_TYPE_ESVDEVICEDRIVER232 = 12,
+    /* RS485-232应用驱动：cpm传输所有设备信息给应用驱动 */
+    NEU_NA_TYPE_ESVAPPDRIVER232 = 13,
+    /* RS485-232应用：cpm传输所有设备信息给应用 */
+    NEU_NA_TYPE_ESVAPP232 = 14,
+    NEU_NA_TYPE_ESVSELFDEVICEDRIVER = 15,
 
 } neu_adapter_type_e,
     neu_node_type_e;
 
 typedef enum {
     NEU_NODE_LINK_STATE_DISCONNECTED = 0,
-    NEU_NODE_LINK_STATE_CONNECTED    = 1,
+    NEU_NODE_LINK_STATE_CONNECTED = 1,
 } neu_node_link_state_e;
 
 typedef enum {
-    NEU_NODE_RUNNING_STATE_INIT    = 1,
-    NEU_NODE_RUNNING_STATE_READY   = 2,
+    NEU_NODE_RUNNING_STATE_INIT = 1,
+    NEU_NODE_RUNNING_STATE_READY = 2,
     NEU_NODE_RUNNING_STATE_RUNNING = 3,
     NEU_NODE_RUNNING_STATE_STOPPED = 4,
 } neu_node_running_state_e;

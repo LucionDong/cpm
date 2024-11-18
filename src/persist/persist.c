@@ -1796,7 +1796,7 @@ int esv_persister_load_normal_nodes(UT_array **esv_node_infos)
     int           rv    = 0;
     sqlite3_stmt *stmt  = NULL;
     const char *  query = "SELECT node_id, node_name, plugin_name, lib_name, node_type, install_type, node_config, node_config_index, state \
-						   FROM plugin_node WHERE node_type IN ('9', '10', '11');";
+						   FROM plugin_node WHERE node_type IN ('9', '10', '11', '15');";
 
     utarray_new(*esv_node_infos, &esv_node_info_icd);
 
@@ -2063,7 +2063,7 @@ error:
 static int query_normal_plugins_from_db(neu_json_plugin_req_t **result) {
 	sqlite3_stmt *stmt = NULL;
 	/* const char *query ="SELECT lib_name FROM plugin_lib"; */
-	const char *query ="SELECT lib_name FROM plugin_lib WHERE node_type IN ('9', '10', '11')";
+	const char *query ="SELECT lib_name FROM plugin_lib WHERE node_type IN ('9', '10', '11' ,'15')";
     neu_json_plugin_req_t *req      = calloc(1, sizeof(neu_json_plugin_req_t));
     if (req == NULL) {
         return -1;

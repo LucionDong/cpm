@@ -19,7 +19,7 @@ static int select_plugin_node_callback(void *data, int argc, char **argv, char *
 
 int select_plugin_node(sql_handle_t *sql_handle, const char *node_name, char *value) {
     char sql[1024] = {0};
-    snprintf(sql, sizeof(sql), "SELECT * FROM `plugin_node` WHERE `node_name` = '%s'", node_name);
+    snprintf(sql, sizeof(sql), "SELECT node_id FROM `plugin_node` WHERE `node_name` = '%s';", node_name);
     nlog_info("select plugin node sql: %s", sql);
 
     int rc = sqlite3_exec(sql_handle->plugin_node_db, sql, select_plugin_node_callback, value, NULL);

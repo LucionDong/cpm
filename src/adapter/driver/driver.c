@@ -1569,7 +1569,8 @@ static int thing_model_msg_arrived(neu_adapter_t *adapter, const esv_thing_model
     nlog_debug("thing_model_msg_arrived from driver: %s product_key: %s, device_name: %s, method: %d  msg_type: %d",
                adapter->name, thing_model_msg->product_key, thing_model_msg->device_name, thing_model_msg->method,
                thing_model_msg->msg_type);
-    if (adapter->module->type != NEU_NA_TYPE_ESVDEVICEDRIVER && adapter->module->type != NEU_NA_TYPE_ESVAPP) {
+    if (adapter->module->type != NEU_NA_TYPE_ESVDEVICEDRIVER && adapter->module->type != NEU_NA_TYPE_ESVAPP &&
+        adapter->module->type != NEU_NA_TYPE_ESVSELFDEVICEDRIVER) {
         nlog_debug("adapter type(%d) error", adapter->module->type);
         return 1;
     }
@@ -1730,7 +1731,7 @@ static int thing_model_msg_arrived(neu_adapter_t *adapter, const esv_thing_model
             // char *topic = "wan/thing/pluginNode/84/config/pushReply";
             // neu_asprintf(&topic, topic_formate, thing_model_msg->product_key, thing_model_msg->device_name);
             char topic[1024] = {0};
-			sprintf(topic,"wan/thing/pluginNode/%d/config/pushReply",thing_model_msg->plugin_id);
+            sprintf(topic, "wan/thing/pluginNode/%d/config/pushReply", thing_model_msg->plugin_id);
             lan_mqtt5_service_publish(adapter->lan_mqtt5_service, topic, thing_model_msg->msg);
             // free(topic);
         }

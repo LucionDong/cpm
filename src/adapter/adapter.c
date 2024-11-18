@@ -142,6 +142,7 @@ neu_adapter_t *neu_adapter_create(neu_adapter_info_t *info, bool load)
         break;
 	case NEU_NA_TYPE_ESVDEVICEDRIVER:
 	case NEU_NA_TYPE_ESVAPP:
+    case NEU_NA_TYPE_ESVSELFDEVICEDRIVER:
         adapter = (neu_adapter_t *) neu_adapter_esvdriver_create();
 		break;
 	default:
@@ -188,6 +189,7 @@ neu_adapter_t *neu_adapter_create(neu_adapter_info_t *info, bool load)
         break;
 	case NEU_NA_TYPE_ESVDEVICEDRIVER:
 	case NEU_NA_TYPE_ESVAPP:
+    case NEU_NA_TYPE_ESVSELFDEVICEDRIVER:
 		neu_adapter_esvdriver_init((neu_adapter_driver_t *)adapter);
 		break;
 	default:
@@ -251,6 +253,8 @@ neu_adapter_t *neu_adapter_create(neu_adapter_info_t *info, bool load)
         if (adapter->module->type == NEU_NA_TYPE_DRIVER) {
 			neu_adapter_driver_destroy((neu_adapter_driver_t *) adapter);
 		} else if (adapter->module->type == NEU_NA_TYPE_ESVDEVICEDRIVER) {
+			neu_adapter_esvdriver_destroy((neu_adapter_driver_t *)adapter);
+        } else if (adapter->module->type == NEU_NA_TYPE_ESVSELFDEVICEDRIVER) {
 			neu_adapter_esvdriver_destroy((neu_adapter_driver_t *)adapter);
         }
         /* stop_log_level_timer(adapter); */
