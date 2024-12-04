@@ -88,7 +88,8 @@ static UT_array *esvdevicedrivernodes = NULL;
 int forward_thing_model_msg_to_all_esvdevicedriver(neu_manager_t *manager, const esv_thing_model_msg_t *msg) {
     if (esvdevicedrivernodes == NULL) {
         nlog_debug("to get adapter type %d", NEU_NA_TYPE_ESVDEVICEDRIVER);
-        esvdevicedrivernodes = neu_node_manager_get_adapter(manager->node_manager, NEU_NA_TYPE_ESVDEVICEDRIVER);
+        // esvdevicedrivernodes = neu_node_manager_get_adapter(manager->node_manager, NEU_NA_TYPE_ESVDEVICEDRIVER);
+        esvdevicedrivernodes = neu_node_manager_get_adapter(manager->node_manager, NEU_NA_TYPE_ESVSELFDEVICEDRIVER);
     }
 
     if (esvdevicedrivernodes == NULL) {

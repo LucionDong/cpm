@@ -229,6 +229,7 @@ int messageArrived5(void *context, char *topicName, int topicLen, MQTTAsync_mess
     } else if (topic_matches_wildcard(topicName, TOPIC_WILDCARD_WAN_THINGSUB_PROPERTY_GET)) {
         char *pk;
         char *dn;
+        nlog_info("#############################\n");
         get_pk_dn_from_thingsub_topic(topicName, 5, &pk, &dn);
         nlog_debug("pk:%s dn:%s", pk, dn);
         esv_lan_mqtt5_service_t *service = (esv_lan_mqtt5_service_t *) context;
