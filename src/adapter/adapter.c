@@ -1037,6 +1037,10 @@ void neu_adapter_destroy(neu_adapter_t *adapter) {
     if (NULL != adapter->setting) {
         free(adapter->setting);
     }
+    if (NULL != adapter->uart_port) {
+        free(adapter->uart_port);
+        adapter->uart_port = NULL;
+    }
 
     neu_event_close(adapter->events);
     free(adapter);
