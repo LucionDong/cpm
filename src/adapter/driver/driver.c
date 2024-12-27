@@ -1584,6 +1584,9 @@ static int thing_model_msg_arrived(neu_adapter_t *adapter, const esv_thing_model
     nlog_debug("thing_model_msg_arrived from driver: %s product_key: %s, device_name: %s, method: %d  msg_type: %d",
                adapter->name, thing_model_msg->product_key, thing_model_msg->device_name, thing_model_msg->method,
                thing_model_msg->msg_type);
+    nlog_info("msg: %s", (char *) thing_model_msg->msg);
+    nlog_info("msg_len: %ld", strlen((char *) thing_model_msg->msg));
+    nlog_info("msg_json: %s", json_dumps(json_loads((char *) thing_model_msg->msg, 0, NULL), JSON_INDENT(2)));
     if (adapter->module->type != NEU_NA_TYPE_ESVDEVICEDRIVER232 && adapter->module->type != NEU_NA_TYPE_ESVAPP232) {
         nlog_debug("adapter type(%d) error", adapter->module->type);
         return 1;
@@ -1634,6 +1637,8 @@ static int thing_model_msg_arrived(neu_adapter_t *adapter, const esv_thing_model
         char *topic_formate = "lan/thing/sub/%s/%s/thing/service/property/setReply";
         if (ESV_TMM_JSON_STRING_PTR == thing_model_msg->msg_type) {
             char *topic = NULL;
+            json_t *test_msg_json = json_loads(thing_model_msg->msg, 0, NULL);
+            nlog_info("test_msg_json: %s", json_dumps(test_msg_json, JSON_INDENT(2)));
             neu_asprintf(&topic, topic_formate, thing_model_msg->product_key, thing_model_msg->device_name);
             lan_mqtt5_service_publish(adapter->lan_mqtt5_service, topic, thing_model_msg->msg);
             free(topic);

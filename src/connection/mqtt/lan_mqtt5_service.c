@@ -1,3 +1,5 @@
+#include "lan_mqtt5_service.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -5,7 +7,6 @@
 
 #include "core/manager_adapter_msg.h"
 #include "device.h"
-#include "lan_mqtt5_service.h"
 #include "lan_mqtt5_service_internal.h"
 #include "utils/asprintf.h"
 #include "utils/log.h"
@@ -358,6 +359,8 @@ int lan_mqtt5_service_publish(esv_lan_mqtt5_service_t *service, char *topicName,
     pubmsg.retained = 0;
 
     nlog_debug("+++mqtt async send");
+    nlog_info("msg: %s", (char *) pubmsg.payload);
+    nlog_info("msg_len: %d", pubmsg.payloadlen);
     if ((rc = MQTTAsync_sendMessage(service->client, topicName, &pubmsg, NULL)) != MQTTASYNC_SUCCESS) {
         nlog_warn("Failed to start sendMessage, return code %d", rc);
         return EXIT_FAILURE;
