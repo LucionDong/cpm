@@ -1,9 +1,10 @@
+#include "manager_adapter_msg.h"
+
 #include <jansson.h>
 #include <stdlib.h>
 
 #include "adapter/adapter_internal.h"
 #include "config/easeview_user_config.h"
-#include "manager_adapter_msg.h"
 #include "manager_internal.h"
 #include "node_manager.h"
 #include "utils/log.h"
@@ -33,6 +34,9 @@
 void parser_setting_to_uart_port(neu_adapter_t *adapter) {
     json_error_t error;
     json_t *root = json_loads(adapter->setting, 0, &error), *properties = NULL;
+    char *root_str = json_dumps(root, JSON_INDENT(2));
+    nlog_info("root_str: %s", root_str);
+    free(root_str);
     properties = json_object_get(root, "properties");
     adapter->uart_port = strdup(json_string_value(json_object_get(properties, "uartPort")));
     nlog_info("adapter->uart_port: %s", adapter->uart_port);

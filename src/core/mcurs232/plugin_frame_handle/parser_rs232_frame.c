@@ -396,6 +396,7 @@ void *send_complete_frame_task(void *arg) {
         complete_frame_list_t *tmp_head = NULL;
         nlog_info("send_complete_frame_to_plugin start");
         move_all_complete_list_node(outside_service_manager->mcurs232_relate, &tmp_head);
+        nlog_info("move_all_complete_list_node over");
 
         while (tmp_head) {
             if (tmp_head->frame_type == REQUEST_CONFIG_FRAME) {
