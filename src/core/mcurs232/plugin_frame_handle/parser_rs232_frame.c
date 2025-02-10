@@ -392,10 +392,13 @@ void *send_complete_frame_task(void *arg) {
                               &outside_service_manager->mcurs232_relate->complete_frame_list_share->mcurs_share_mutex);
             DL_COUNT(outside_service_manager->mcurs232_relate->complete_frame_list_head, elt, count);
         }
+        hnlog_notice(outside_service_manager->mcurs232_relate->complete_frame_list_head,
+                     outside_service_manager->mcurs232_relate->complete_frame_list_head->frame_buf_size);
         pthread_mutex_unlock(&outside_service_manager->mcurs232_relate->complete_frame_list_share->mcurs_share_mutex);
         complete_frame_list_t *tmp_head = NULL;
         nlog_info("send_complete_frame_to_plugin start");
         move_all_complete_list_node(outside_service_manager->mcurs232_relate, &tmp_head);
+        hnlog_notice(tmp_head, tmp_head->frame_buf_size);
         nlog_info("move_all_complete_list_node over");
 
         while (tmp_head) {

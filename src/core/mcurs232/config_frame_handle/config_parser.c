@@ -258,6 +258,7 @@ uint16_t calculate_crc16(const uint8_t *data, size_t length) {
 
 // int make_config_frame_element(json_t *uarts, int enable_port_count, serial_config_frame_t *serial_config_frame) {
 int composition_config_frame_element(json_t *uarts, int enable_port_count, serial_config_frame_t *serial_config_frame) {
+    int uarts_config_count = 0;
     json_t *uarts_value;
     size_t uarts_index;
     json_array_foreach(uarts, uarts_index, uarts_value) {
@@ -300,7 +301,8 @@ int composition_config_frame_element(json_t *uarts, int enable_port_count, seria
         tmp[7] = atoi(json_string_value(json_object_get(uarts_value, "stopbits")));
         nlog_info("tmp[7]: %d", tmp[7]);
 
-        append_array(serial_config_frame->config_frame, (uarts_index + 1) * CONFIG_PART_OFFSET, tmp, sizeof(tmp));
+        append_array(serial_config_frame->config_frame, (uarts_config_count + 1) * CONFIG_PART_OFFSET, tmp, sizeof(tmp));
+        uarts_config_count++;
     }
     nlog_info("2");
     uint16_t config_frame_crc_ret = calculate_crc16(
