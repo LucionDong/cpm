@@ -221,6 +221,20 @@ int composition_plugin_to_mcu_frame(int uart_port_num, uart_frame_t *uart_frame)
         return -1;
     }
 
+    json_t *uarts = json_array();
+    parse_easeview_config_json(uarts);
+    json_t *uarts_array_value;
+    size_t uarts_array_size;
+    json_array_foreach(uarts, uarts_array_size, uarts_array_value) {
+        const char *uart_port = json_string_value(json_object_get(uarts_array_value, "port"));
+        int enable = json_integer_value(json_object_get(uarts_array_value, "enable"));
+        nlog_info("uart_port: %s, uart_enable: %d", uart_port, enable);
+        if (atoi(uart_port) == uart_port_num && enable != 1) {
+            nlog_info("uart_port is not enable");
+            return -1;
+        }
+    }
+
     uint8_t *tmp_frame = malloc(sizeof(uint8_t) * (uart_frame->frame_element->frame_length + 18));
     int frame_command_length = uart_frame->frame_element->frame_length, crc_length = 0;
     nlog_info("frame_command_length: %d", frame_command_length);
@@ -363,7 +377,7 @@ void parser_rs232_frame_command_type(uart_frame_t *uart_frame, const uint8_t *fr
     }
 }
 
-void parser_rs232_frame_to_plugin_frame(uart_frame_t *uart_frame, const uint8_t *frame_msg) {
+int parser_rs232_frame_to_plugin_frame(uart_frame_t *uart_frame, const uint8_t *frame_msg) {
     uart_frame->frame_element = malloc(sizeof(frame_element_t));
     uart_frame->frame_element->frame_length = frame_msg[FRAME_COMMAND_DATA_LENGTH];
     uart_frame->frame_element->frame_msg = malloc(sizeof(uint8_t) * uart_frame->frame_element->frame_length);
@@ -372,13 +386,29 @@ void parser_rs232_frame_to_plugin_frame(uart_frame_t *uart_frame, const uint8_t 
     memcpy(uart_frame->frame_element->frame_msg, frame_msg + FRAME_COMMAND_DATA_LOCATION,
            uart_frame->frame_element->frame_length);
 
+    json_t *esv_driver_232_configs_array = json_array();
+    parse_easeview_config_json(esv_driver_232_configs_array);
+    json_t *uarts_array_value;
+    size_t uarts_array_size;
+    json_array_foreach(esv_driver_232_configs_array, uarts_array_size, uarts_array_value) {
+        const char *uart_port = json_string_value(json_object_get(uarts_array_value, "port"));
+        int enable = json_integer_value(json_object_get(uarts_array_value, "enable"));
+        if (atoi(uart_port) == uart_frame->serial_port_num && enable != 1) {
+            nlog_info("uart_port is not enable");
+            free(uart_frame->frame_element->frame_msg);
+            free(uart_frame->frame_element);
+            free(uart_frame);
+            return -1;
+        }
+    }
+
     uart_frame->msg_type = ESV_TAM_BYTES_PTR;
     uart_frame->serial_port_num = frame_msg[4];
     parser_rs232_frame_command_type(uart_frame, frame_msg);
+    return 0;
 }
 
 void *send_complete_frame_task(void *arg) {
-    // mcurs232_relate_t *mcurs232_relate = (mcurs232_relate_t *) arg;
     esv_outside_service_manager_t *outside_service_manager = (esv_outside_service_manager_t *) arg;
 
     nlog_info("send_complete_frame_to_plugin start");
@@ -392,14 +422,22 @@ void *send_complete_frame_task(void *arg) {
                               &outside_service_manager->mcurs232_relate->complete_frame_list_share->mcurs_share_mutex);
             DL_COUNT(outside_service_manager->mcurs232_relate->complete_frame_list_head, elt, count);
         }
-        hnlog_notice(outside_service_manager->mcurs232_relate->complete_frame_list_head,
-                     outside_service_manager->mcurs232_relate->complete_frame_list_head->frame_buf_size);
         pthread_mutex_unlock(&outside_service_manager->mcurs232_relate->complete_frame_list_share->mcurs_share_mutex);
+
         complete_frame_list_t *tmp_head = NULL;
         nlog_info("send_complete_frame_to_plugin start");
-        move_all_complete_list_node(outside_service_manager->mcurs232_relate, &tmp_head);
-        hnlog_notice(tmp_head, tmp_head->frame_buf_size);
-        nlog_info("move_all_complete_list_node over");
+        if (move_all_complete_list_node(outside_service_manager->mcurs232_relate, &tmp_head) < 0) {
+            nlog_warn("Invalid frame detected, skipping...");
+            continue;
+        }
+        if (tmp_head == NULL || tmp_head->frame_buf == NULL) {
+            nlog_warn("Empty frame detected, skipping...");
+            continue;
+        } else if (tmp_head->frame_buf[0] != FRAME_HEADER) {
+            nlog_warn("Invalid frame detected, skipping...");
+            pop_complete_list(&tmp_head);
+            continue;
+        }
 
         while (tmp_head) {
             if (tmp_head->frame_type == REQUEST_CONFIG_FRAME) {
@@ -439,10 +477,16 @@ void *send_complete_frame_task(void *arg) {
                 esv_frame232_msg_t send_to_plugin_msg;
                 // esv_between_adapter_driver_msg_t send_to_plugin_msg;
                 if (tmp_head->frame_buf[1] == 0x00) {
-                    return 0;
+                    nlog_info("frame from mcu is 0x00");
+                    pop_complete_list(&tmp_head);
+                    continue;
                 }
 
-                parser_rs232_frame_to_plugin_frame(&send_to_plugin_msg, tmp_head->frame_buf);
+                if (parser_rs232_frame_to_plugin_frame(&send_to_plugin_msg, tmp_head->frame_buf) != 0) {
+                    nlog_warn("parser_rs232_frame_to_plugin_frame failed");
+                    pop_complete_list(&tmp_head);
+                    continue;
+                }
                 // make_send_to_plugin_msg(&send_to_plugin_msg, tmp_head->frame_buf, tmp_head->frame_buf_size);
                 nlog_info("send_to_plugin_msg msg_type: %d", send_to_plugin_msg.msg_type);
                 //将信息发送给插件
@@ -510,7 +554,21 @@ int move_all_complete_list_node(mcurs232_relate_t *mcurs232_relate, complete_fra
     complete_frame_list_t *elt;
     pthread_mutex_lock(&mcurs232_relate->complete_frame_list_share->mcurs_share_mutex);
     DL_COUNT(mcurs232_relate->complete_frame_list_head, elt, count);
-    if (count < 1) {
+    if (count < 1 || mcurs232_relate->complete_frame_list_head == NULL) {
+        pthread_mutex_unlock(&mcurs232_relate->complete_frame_list_share->mcurs_share_mutex);
+        return -1;
+    }
+
+    // 验证帧的有效性
+    if (mcurs232_relate->complete_frame_list_head->frame_buf == NULL ||
+        mcurs232_relate->complete_frame_list_head->frame_buf[0] != FRAME_HEADER) {
+        // 无效帧，清理并返回
+        complete_frame_list_t *invalid_frame = mcurs232_relate->complete_frame_list_head;
+        DL_DELETE(mcurs232_relate->complete_frame_list_head, invalid_frame);
+        if (invalid_frame->frame_buf) {
+            free(invalid_frame->frame_buf);
+        }
+        free(invalid_frame);
         pthread_mutex_unlock(&mcurs232_relate->complete_frame_list_share->mcurs_share_mutex);
         return -1;
     }
@@ -549,7 +607,7 @@ int find_frame_head_and_change_event(mcurs232_relate_t *mcurs232_relate) {
     // pthread_mutex_unlock(&plugin->serial_port_trans_mutex);
     // pthread_mutex_unlock(&mcurs232_relate->serial_port_trans_share->mcurs_share_mutex);
 
-    printf("find_frame_head erase\n");
+    nlog_info("find_frame_head erase");
     erase_serial_port_read_buf(mcurs232_relate, 1);
     return -1;
 }
@@ -658,8 +716,8 @@ int check_serial_port_message(mcurs232_relate_t *mcurs232_relate) {
                 nlog_info("find_frame_header");
                 //找帧头
                 int ret = find_frame_head_and_change_event(mcurs232_relate);
-                printf("utarray_len: %d\n", utarray_len(mcurs232_relate->serial_port_read_buf_head));
-                printf("find frame_head ret: %d\n", ret);
+                nlog_info("utarray_len: %d", utarray_len(mcurs232_relate->serial_port_read_buf_head));
+                nlog_info("find frame_head ret: %d", ret);
                 // if (ret == -1) {
                 // goto switch_end;
                 // }
@@ -675,13 +733,13 @@ int check_serial_port_message(mcurs232_relate_t *mcurs232_relate) {
                     pthread_mutex_unlock(&mcurs232_relate->serial_port_trans_share->mcurs_share_mutex);
                     return -1;
                 }
-                printf("end find_frame_data_length\n");
+                nlog_info("end find_frame_data_length");
                 break;
             }
             case FIND_FRAME_TAIL: {
                 //找帧尾
 
-                printf("begin find frame tail\n");
+                nlog_info("begin find frame tail");
                 int tmp_distance_from_head =
                     DATA_LENGTH_DISTANCE_FROM_FRAME_HEADER + 1 + frame_data_length + DATA_LENGTH_TO_FRAME_END_OFFSET;
                 int tail_distance_from_head = tmp_distance_from_head - 1;
@@ -705,11 +763,11 @@ int check_serial_port_message(mcurs232_relate_t *mcurs232_relate) {
                 break;
             }
         }
-    switch_end : { printf("while_end\n"); }
+    switch_end : { nlog_info("while_end"); }
     }
-    nlog_info("+++++++++++++++++++check_serial_port_message to unlock: %ld\n", syscall(SYS_gettid));
+    nlog_info("+++++++++++++++++++check_serial_port_message to unlock: %ld", syscall(SYS_gettid));
     pthread_mutex_unlock(&mcurs232_relate->serial_port_trans_share->mcurs_share_mutex);
-    nlog_info("------------------check_serial_port_message unlock: %ld\n", syscall(SYS_gettid));
+    nlog_info("------------------check_serial_port_message unlock: %ld", syscall(SYS_gettid));
     return 0;
 }
 

@@ -38,5 +38,6 @@ typedef struct serial_config_frame serial_config_frame_t;
 int composition_config_frame(serial_config_frame_t *serial_config_frame);
 // int make_config_frame(serial_config_frame_t *serial_config_frame);
 uint16_t calculate_crc16(const uint8_t *data, size_t length);
+int parse_easeview_config_json(json_t *esv_driver_232_configs_array);
 
 #endif /* !__JSON_PARSE_H__ */

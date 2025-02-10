@@ -37,14 +37,14 @@ int parse_easeview_config_json(json_t *esv_driver_232_configs_array) {
         return -1;
     }
 
-    nlog_info("while start");
     while ((easeview_config_array_value = (char **) utarray_next(easeview_config_array, easeview_config_array_value))) {
-        nlog_info("in while start");
         nlog_info("*easeview_config_array_value: %s", *easeview_config_array_value);
         json_error_t error;
         json_t *tmp_json_array_value = json_loads(*easeview_config_array_value, 0, &error);
-        json_array_append(esv_driver_232_configs_array, tmp_json_array_value);
-        json_decref(tmp_json_array_value);
+        if (tmp_json_array_value != NULL) {
+            json_array_append(esv_driver_232_configs_array, tmp_json_array_value);
+            json_decref(tmp_json_array_value);
+        }
     }
 
     return 0;
@@ -52,6 +52,7 @@ int parse_easeview_config_json(json_t *esv_driver_232_configs_array) {
 
 // int make_config_frame(serial_config_frame_t *serial_config_frame) {
 int composition_config_frame(serial_config_frame_t *serial_config_frame) {
+    nlog_info("composition_config_frame start");
     // json_t *root = json_object();
     json_t *uarts = json_array(), *uarts_array_value;
     size_t uarts_array_size;

@@ -1832,12 +1832,12 @@ static int esv_msg_to_adapter(neu_adapter_t *adapter, const esv_frame232_msg_t *
     uart_frame_msg->frame_element->response_timeout = msg->frame_element->response_timeout;
 
     parser_setting_to_uart_port(adapter);
-    composition_plugin_to_mcu_frame(atoi(adapter->uart_port), uart_frame_msg);
-
-    nlog_info("esv_msg_to_adapter");
-    push_back_serial_port_read_buf_and_check(adapter->outside_service_manager->mcurs232_relate,
-                                             uart_frame_msg->frame_element->frame_msg,
-                                             uart_frame_msg->frame_element->frame_length);
+    if (composition_plugin_to_mcu_frame(atoi(adapter->uart_port), uart_frame_msg) == 0) {
+        nlog_info("esv_msg_to_adapter");
+        push_back_serial_port_read_buf_and_check(adapter->outside_service_manager->mcurs232_relate,
+                                                 uart_frame_msg->frame_element->frame_msg,
+                                                 uart_frame_msg->frame_element->frame_length);
+    }
 
     free(uart_frame_msg->frame_element->frame_msg);
     free(uart_frame_msg->frame_element);
