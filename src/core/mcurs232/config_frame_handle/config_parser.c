@@ -6,13 +6,14 @@
 // #include <esvcpm/utils/log.h>
 // #include <esvcpm/utils/log.h>
 // #include <esvcpm/utils/log.h>
+#include "./config_parser.h"
+
 #include <jansson.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #include <utils/log.h>
 
-#include "./config_parser.h"
 #include "config/easeview_user_config.h"
 #include "ut_include/utarray.h"
 // #include "outside_service_manager.h"
@@ -24,6 +25,26 @@ int get_config_json_array_and_size(json_t *root, int *array_size, json_t **uarts
 // int make_config_frame_element(json_t *uarts, int enable_port_count, serial_config_frame_t *serial_config_frame);
 int create_empty_config_frame(unsigned char **config_frame, int uart_enble_count);
 int composition_config_frame_element(json_t *uarts, int enable_port_count, serial_config_frame_t *serial_config_frame);
+
+int is_valid_json(const char *json_str) {
+    if (!json_str || *json_str == '\0') {
+        return 0; // 空指针或空字符串直接返回无效
+    }
+
+    json_error_t error;
+    json_t *root = json_loads(json_str, 0, &error);
+    
+    int ret = root ? 1 : 0;
+    
+    if (root) {
+        json_decref(root); // 立即释放资源
+    } else {
+        // 可选：记录错误详细信息
+        nlog_debug("JSON validation failed at line %d: %s", error.line, error.text);
+    }
+    
+    return ret;
+}
 
 static UT_array *easeview_config_array;
 int parse_easeview_config_json(json_t *esv_driver_232_configs_array) {
@@ -37,13 +58,22 @@ int parse_easeview_config_json(json_t *esv_driver_232_configs_array) {
         return -1;
     }
 
+    nlog_info("\n---------------------------------------------\n");
+
     while ((easeview_config_array_value = (char **) utarray_next(easeview_config_array, easeview_config_array_value))) {
         nlog_info("*easeview_config_array_value: %s", *easeview_config_array_value);
+
+        if (!is_valid_json(*easeview_config_array_value)) {
+            nlog_error("Invalid JSON config: %.*s", 50, *easeview_config_array_value);
+            continue;
+        }
         json_error_t error;
         json_t *tmp_json_array_value = json_loads(*easeview_config_array_value, 0, &error);
         if (tmp_json_array_value != NULL) {
             json_array_append(esv_driver_232_configs_array, tmp_json_array_value);
             json_decref(tmp_json_array_value);
+        } else {
+            nlog_info("tmp_json_array_value is NULL");
         }
     }
 
@@ -270,27 +300,23 @@ int composition_config_frame_element(json_t *uarts, int enable_port_count, seria
         unsigned char tmp[CONFIG_PART_OFFSET];
         memset(tmp, 0x00, CONFIG_PART_OFFSET);
 
-        // json_t *uart_config = json_object_get(uarts_value, "uartConfig");
         tmp[0] = MASTER;
-        //         if (json_boolean_value(json_object_get(uart_config, "masterMode"))) {
-        //     tmp[0] = MASTER;
-        // } else {
-        //     tmp[0] = SLAVE;
-        // }
-
         tmp[1] = 0x01;
-        //    switch (check_device_type(json_string_value(json_object_get(uart_config, "deviceType")))) {
-        // case GENERAL:
-        //     // append_array(tmp, 1, 0x01, 1);
-        //     printf("GENERAL\n");
-        //     tmp[1] = 0x01;
-        //     break;
-        //    }
+
+        json_t *port_obj = json_object_get(uarts_value, "port");
+        json_t *baudrate_obj = json_object_get(uarts_value, "baudrate");
+        json_t *databytes_obj = json_object_get(uarts_value, "dataByes");  // 注意字段名拼写是否正确
+        json_t *parity_obj = json_object_get(uarts_value, "parity");
+        json_t *stopbits_obj = json_object_get(uarts_value, "stopbits");
+
+        if (!port_obj || !json_is_string(port_obj) || !baudrate_obj || !json_is_string(baudrate_obj) ||
+            !databytes_obj || !json_is_string(databytes_obj) || !parity_obj || !json_is_string(parity_obj) ||
+            !stopbits_obj || !json_is_string(stopbits_obj)) {
+            nlog_error("Invalid uart config structure at index %zd", uarts_index);
+            return -1;
+        }
 
         tmp[3] = atoi(json_string_value(json_object_get(uarts_value, "port")));
-        // tmp[3] = json_integer_value(json_object_get(uarts_value, "uartNum"));
-        // tmp[3] = 0x01;
-        // int baudrate = json_integer_value(json_object_get(uart_config, "baudrate"));
         int baudrate = atoi(json_string_value(json_object_get(uarts_value, "baudrate")));
         get_baudrate(&baudrate);
         tmp[4] = baudrate;
@@ -302,7 +328,8 @@ int composition_config_frame_element(json_t *uarts, int enable_port_count, seria
         tmp[7] = atoi(json_string_value(json_object_get(uarts_value, "stopbits")));
         nlog_info("tmp[7]: %d", tmp[7]);
 
-        append_array(serial_config_frame->config_frame, (uarts_config_count + 1) * CONFIG_PART_OFFSET, tmp, sizeof(tmp));
+        append_array(serial_config_frame->config_frame, (uarts_config_count + 1) * CONFIG_PART_OFFSET, tmp,
+                     sizeof(tmp));
         uarts_config_count++;
     }
     nlog_info("2");

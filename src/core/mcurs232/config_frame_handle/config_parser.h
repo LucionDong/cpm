@@ -11,6 +11,7 @@
 // #define FILE_PATH "./serial_config.json"
 #include <stdint.h>
 #include <stdlib.h>
+#include <jansson.h>
 #define FILE_PATH "/usr/local/etc/deviceconfig/custom_uart.json"
 #define CONFIG_FRAME_LEN 27
 #define FIX_FRAME_ELEMENT_LEN 7

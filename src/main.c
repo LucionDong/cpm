@@ -47,10 +47,10 @@ static int neuron_run(const neu_cli_args_t *args)
     signal(SIGSEGV, sig_handler);
 
     // try to enable core dump
-    rl.rlim_cur = rl.rlim_max = RLIM_INFINITY;
-    if (setrlimit(RLIMIT_CORE, &rl) < 0) {
-        nlog_warn("neuron process failed enable core dump, ignore");
-    }
+    // rl.rlim_cur = rl.rlim_max = RLIM_INFINITY;
+    // if (setrlimit(RLIMIT_CORE, &rl) < 0) {
+    //     nlog_warn("neuron process failed enable core dump, ignore");
+    // }
 
     /* rv = neu_persister_create(args->config_dir); */
     /* assert(rv == 0); */

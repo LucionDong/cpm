@@ -221,19 +221,31 @@ int composition_plugin_to_mcu_frame(int uart_port_num, uart_frame_t *uart_frame)
         return -1;
     }
 
+#if 0
     json_t *uarts = json_array();
     parse_easeview_config_json(uarts);
     json_t *uarts_array_value;
     size_t uarts_array_size;
     json_array_foreach(uarts, uarts_array_size, uarts_array_value) {
-        const char *uart_port = json_string_value(json_object_get(uarts_array_value, "port"));
-        int enable = json_integer_value(json_object_get(uarts_array_value, "enable"));
-        nlog_info("uart_port: %s, uart_enable: %d", uart_port, enable);
-        if (atoi(uart_port) == uart_port_num && enable != 1) {
+        if (!json_is_object(uarts_array_value))
+            continue;
+        json_t *port = json_object_get(uarts_array_value, "port");
+        json_t *enable = json_object_get(uarts_array_value, "enable");
+        if (!json_is_string(port) || !json_is_integer(enable)) {
+            nlog_error("Invalid uart config structure at index %zd", uarts_array_size);
+            continue;
+        }
+
+        const char *uart_port = json_string_value(port);
+        int enable_val = json_integer_value(enable);
+        nlog_info("uart_port: %s, uart_enable: %d", uart_port, enable_val);
+        if (atoi(uart_port) == uart_port_num && enable_val != 1) {
             nlog_info("uart_port is not enable");
             return -1;
         }
     }
+    json_decref(uarts);
+#endif
 
     uint8_t *tmp_frame = malloc(sizeof(uint8_t) * (uart_frame->frame_element->frame_length + 18));
     int frame_command_length = uart_frame->frame_element->frame_length, crc_length = 0;
@@ -267,21 +279,17 @@ int composition_plugin_to_mcu_frame(int uart_port_num, uart_frame_t *uart_frame)
     uint16_t frame_crc_ret = calculate_crc16(tmp_frame, crc_length);
     nlog_debug("%x", frame_crc_ret);
 
-    // uint8_t frame_crc_msb = (frame_crc_ret >> 8) & 0xff;
-    // uint8_t frame_crc_lsb = frame_crc_ret & 0xff;
-    // nlog_debug("frame crc msb: %x ,lsb: %x", frame_crc_msb, frame_crc_lsb);
-    // tmp_frame[crc_length + 1] = frame_crc_msb;
-    // tmp_frame[crc_length + 2] = frame_crc_lsb;
     hnlog_notice(tmp_frame, frame_command_length + 18);
 
     memcpy(tmp_frame + crc_length, &frame_crc_ret, 2);
-    // memcpy(tmp_frame + crc_length + 1, frame_crc_msb, 1);
-    // memcpy(tmp_frame + crc_length + 2, frame_crc_lsb, 1);
+
     tmp_frame[crc_length + 2] = 0x1a;
     hnlog_notice(tmp_frame, frame_command_length + 18);
 
-    if (uart_frame->frame_element->frame_msg)
+    if (uart_frame->frame_element->frame_msg) {
         free(uart_frame->frame_element->frame_msg);
+        uart_frame->frame_element->frame_msg = NULL;
+    }
     uart_frame->frame_element->frame_msg = malloc(sizeof(uint8_t) * (frame_command_length + 18));
     uart_frame->frame_element->frame_length = frame_command_length + 18;
     memcpy(uart_frame->frame_element->frame_msg, tmp_frame, uart_frame->frame_element->frame_length);
@@ -291,6 +299,15 @@ int composition_plugin_to_mcu_frame(int uart_port_num, uart_frame_t *uart_frame)
 
 int push_back_serial_port_read_buf_and_check(mcurs232_relate_t *mcurs232_relate, const unsigned char *buf,
                                              int buf_length) {
+    nlog_notice("buf_length: %d", buf_length);
+    if (buf == NULL) {
+        nlog_warn("buf is NULL");
+        return -1;
+    } else if (mcurs232_relate->serial_port_read_buf_head == NULL) {
+        nlog_warn("serial_port_read_buf_head is NULL");
+        return -1;
+    }
+
     uint8_t *recv_buf = malloc(sizeof(uint8_t) * buf_length);
     memcpy(recv_buf, buf, buf_length);
 
@@ -502,6 +519,12 @@ void *send_complete_frame_task(void *arg) {
 }
 
 int write_to_mcu(mcurs232_relate_t *mcurs232_relate, void *frame_buf, int buf_length) {
+    hnlog_notice(frame_buf, buf_length);
+    if (!mcurs232_relate || !mcurs232_relate->mcu_rs232_port) {
+        nlog_error("Invalid port handle");
+        return -1;
+    }
+
     int write_ret = 0;
     uint8_t *send_frame_buf = malloc(sizeof(uint8_t) * buf_length);
     memcpy(send_frame_buf, frame_buf, buf_length);
@@ -619,6 +642,7 @@ int find_frame_data_length_and_change_event(mcurs232_relate_t *mcurs232_relate, 
 
     // pthread_mutex_lock(&plugin->serial_port_trans_mutex);
     // pthread_mutex_lock(&mcurs232_relate->serial_port_trans_share->mcurs_share_mutex);
+    nlog_info("find_frame_data_length utarray_len: %d", utarray_len(mcurs232_relate->serial_port_read_buf_head));
     unsigned char *buf = (unsigned char *) utarray_front(mcurs232_relate->serial_port_read_buf_head);
     printf("find_frame_data_length utarray_len: %d\n", utarray_len(mcurs232_relate->serial_port_read_buf_head));
     if (utarray_len(mcurs232_relate->serial_port_read_buf_head) >= DATA_LENGTH_DISTANCE_FROM_FRAME_HEADER + 1 &&
