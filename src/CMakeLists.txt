@@ -143,6 +143,20 @@ set(ESVCPM_SOURCE
 	src/connection/mqtt/lan_mqtt5_service.c
 	)
 
+add_custom_command(
+	OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/git_info.h
+	COMMAND ${CMAKE_SOURCE_DIR}/scripts/generate_git_info.sh
+	WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+	COMMENT "Generating git_info.h"
+	VERBATIM
+)
+
+# 创建自定义目标
+add_custom_target(
+    generate_git_info
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/git_info.h
+)
+
 # set(CMAKE_BUILD_RPATH ./)
 # add_executable(${PROJECT_NAME} ${ESVCPM_SOURCE})
 message(STATUS CMAKE_FIND_ROOT_PATH:${CMAKE_FIND_ROOT_PATH})
@@ -155,6 +169,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}
 	${CMAKE_CURRENT_SOURCE_DIR}/src
 	${CMAKE_CURRENT_SOURCE_DIR}/plugins
+	${CMAKE_CURRENT_SOURCE_DIR}/include
 	)
 
 
@@ -197,3 +212,13 @@ install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include/"
 install(TARGETS esvcpm esvcpm-base
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin)
+
+
+  # 修改目标包含目录
+target_include_directories(${PROJECT_NAME} PRIVATE 
+    include/${PROJECT_NAME}
+    src
+)
+
+# 添加对主目标的依赖
+add_dependencies(${PROJECT_NAME} generate_git_info)

@@ -9,6 +9,7 @@
 
 #include "argparse.h"
 #include "daemon.h"
+#include "./include/git_info.h"
 
 static bool           exit_flag         = false;
 static neu_manager_t *g_manager         = NULL;
@@ -74,6 +75,9 @@ static int neuron_run(const neu_cli_args_t *args)
 
 int main(int argc, char *argv[])
 {
+    printf("git_commit_id: %s\n", GIT_COMMIT_ID);
+    printf("git_tag: %s\n", GIT_TAG);
+
 	int            rv     = 0;
     int            status = 0;
     int            signum = 0;
