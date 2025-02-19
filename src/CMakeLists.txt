@@ -69,6 +69,22 @@ set(ESVCPM_BASE_SOURCE
 	src/utils/mqtt.c
 	${PERSIST_SOURCES}
 	)
+# include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/include)
+
+# 添加生成git_info.h的自定义命令
+add_custom_command(
+    OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/include/git_info.h
+    COMMAND ${CMAKE_SOURCE_DIR}/scripts/generate_git_info.sh
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    COMMENT "Generating git_info.h"
+    VERBATIM
+)
+
+# 创建自定义目标
+add_custom_target(
+    generate_git_info
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/include/git_info.h
+)
 
 add_library(esvcpm-232-base SHARED)
 target_sources(esvcpm-232-base PRIVATE 
@@ -78,7 +94,11 @@ target_sources(esvcpm-232-base PRIVATE
 target_include_directories(esvcpm-232-base PRIVATE 
 	include/${PROJECT_NAME}
 	src
+	${CMAKE_CURRENT_SOURCE_DIR}/src/include
 	)
+
+# 添加对自定义目标的依赖
+add_dependencies(esvcpm-232-base generate_git_info)
 
 find_library(DL_LIB NAMES dl REQUIRED)
 find_library(MATH_LIB NAMES m REQUIRED)
@@ -203,3 +223,6 @@ install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include/"
 install(TARGETS esvcpm-232 esvcpm-232-base
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin)
+
+# 添加对主目标的依赖
+add_dependencies(${PROJECT_NAME} generate_git_info)
