@@ -1,10 +1,11 @@
+#include "lan_mqtt5_service.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
 #include "core/manager_adapter_msg.h"
-#include "lan_mqtt5_service.h"
 #include "lan_mqtt5_service_internal.h"
 #include "utils/asprintf.h"
 #include "utils/log.h"
@@ -23,8 +24,13 @@
 #define TOPIC_WILDCARD_WAN_THING_DISCOVERY "wan/+/+/thing/discovery"
 #define TOPIC_WILDCARD_WAN_THINGSUB_DISCOVERY "wan/+/+/thing/sub/+/+/thing/discovery"
 #define TOPIC_WILDCARD_WAN_THINGSUB_CONFIG_PUSH "wan/+/+/thing/sub/+/+/thing/config/push"
-#define TOPIC_WILDCARD_WAN_THING_PLUGIN_NODE_CONFIG_PUSH "wan/+/+/thing/pluginNode/+/config/push"
+// #define TOPIC_WILDCARD_WAN_THING_PLUGIN_NODE_CONFIG_PUSH "wan/+/+/easyHbes/+/thing/config/push"
+#define TOPIC_WILDCARD_WAN_EASYHBES_THING_PLUGIN_NODE_CONFIG_PUSH "wan/+/+/easyHbes/+/thing/config/push"
 #define TOPIC_WILDCARD_WAN_THING_RESTART_SET "wan/+/+/thing/restart/set"
+// reload config topic
+#define TOPIC_WILDCARD_WAN_THING_PLUGIN_CONFIG_PUSH "wan/+/+/thing/pluginNode/config/push"
+// scenes
+#define TOPIC_WILDCARD_WAN_THING_PLUGIN_CONFIG_ACTION_PUSH "wan/+/+/thing/pluginNode/action/push"
 // lan
 #define TOPIC_WILDCARD_LAN_THINGSUB_EVENT_PROPERTY_POST "lan/thing/sub/+/+/thing/event/property/post"
 #define TOPIC_WILDCARD_LAN_THINGSUB_SERVICE_PROPERTY_SET "lan/thing/sub/+/+/thing/service/property/set"
@@ -82,13 +88,15 @@ void connected5(void *context, char *cause) {
                                    TOPIC_WILDCARD_WAN_THING_DISCOVERY,
                                    TOPIC_WILDCARD_WAN_THINGSUB_DISCOVERY,
                                    TOPIC_WILDCARD_WAN_THINGSUB_CONFIG_PUSH,
-                                   TOPIC_WILDCARD_WAN_THING_PLUGIN_NODE_CONFIG_PUSH,
+                                   TOPIC_WILDCARD_WAN_EASYHBES_THING_PLUGIN_NODE_CONFIG_PUSH,
+                                   TOPIC_WILDCARD_WAN_THING_PLUGIN_CONFIG_PUSH,
+                                   TOPIC_WILDCARD_WAN_THING_PLUGIN_CONFIG_ACTION_PUSH,
                                    TOPIC_WILDCARD_WAN_THING_RESTART_SET};
-    const int qos[] = {QOS, QOS, QOS, QOS, QOS, QOS, QOS, QOS, QOS, QOS, QOS, QOS, QOS};
+    const int qos[] = {QOS, QOS, QOS, QOS, QOS, QOS, QOS, QOS, QOS, QOS, QOS, QOS, QOS, QOS};
     MQTTSubscribe_options subopts[] = {subscribe_options, subscribe_options, subscribe_options, subscribe_options,
                                        subscribe_options, subscribe_options, subscribe_options, subscribe_options,
                                        subscribe_options, subscribe_options, subscribe_options, subscribe_options,
-                                       subscribe_options};
+                                       subscribe_options, subscribe_options, subscribe_options};
     copts.subscribeOptionsList = subopts;
     if ((rc = MQTTAsync_subscribeMany(client, topic_count, topics_to_subscribe, qos, &copts)) != MQTTASYNC_SUCCESS) {
         nlog_warn("Failed to start subscribe, return code %d", rc);
@@ -226,6 +234,27 @@ int messageArrived5(void *context, char *topicName, int topicLen, MQTTAsync_mess
         MQTTAsync_freeMessage(&m);
         MQTTAsync_free(topicName);
 
+    } else if (topic_matches_wildcard(topicName, TOPIC_WILDCARD_WAN_THING_PLUGIN_CONFIG_ACTION_PUSH)) {
+        char *pk;
+        char *dn;
+        get_pk_dn_from_thingsub_topic(topicName, 5, &pk, &dn);
+        nlog_debug("pk:%s dn:%s", pk, dn);
+        esv_lan_mqtt5_service_t *service = (esv_lan_mqtt5_service_t *) context;
+        esv_thing_model_msg_t *thing_model_msg = calloc(1, sizeof(esv_thing_model_msg_t));
+        thing_model_msg->method = ESV_TMM_MTD_WAN_SUBTHING_THING_PLUGIN_NODE_ACTION_PUSH;
+        thing_model_msg->product_key = pk;
+        thing_model_msg->device_name = dn;
+        thing_model_msg->msg_type = ESV_TMM_JSON_STRING_PTR;
+        thing_model_msg->msg = m->payload;
+        thing_model_msg->msg_len = m->payloadlen;
+        forward_thing_model_msg_to_esvdriver(service->manager, thing_model_msg);
+    end_wan_action_push:
+        free(pk);
+        free(dn);
+        free(thing_model_msg);
+        MQTTAsync_freeMessage(&m);
+        MQTTAsync_free(topicName);
+
     } else if (topic_matches_wildcard(topicName, TOPIC_WILDCARD_WAN_THINGSUB_PROPERTY_GET)) {
         char *pk;
         char *dn;
@@ -242,6 +271,28 @@ int messageArrived5(void *context, char *topicName, int topicLen, MQTTAsync_mess
         thing_model_msg->msg_len = m->payloadlen;
         forward_thing_model_msg_to_esvdriver(service->manager, thing_model_msg);
     end_wan_prop_get:
+        free(pk);
+        free(dn);
+        free(thing_model_msg);
+        MQTTAsync_freeMessage(&m);
+        MQTTAsync_free(topicName);
+
+        // 插件重启
+    } else if (topic_matches_wildcard(topicName, TOPIC_WILDCARD_WAN_THING_PLUGIN_CONFIG_PUSH)) {
+        char *pk;
+        char *dn;
+        nlog_info("reload config push comming\n");
+        get_pk_dn_from_thingsub_topic(topicName, 1, &pk, &dn);
+        esv_lan_mqtt5_service_t *service = (esv_lan_mqtt5_service_t *) context;
+        esv_thing_model_msg_t *thing_model_msg = calloc(1, sizeof(esv_thing_model_msg_t));
+        thing_model_msg->method = ESV_TMM_MTD_WAN_SUBTHING_THING_PLUGIN_NODE_CONFIG_PUSH;
+        thing_model_msg->product_key = pk;
+        thing_model_msg->device_name = dn;
+        thing_model_msg->msg_type = ESV_TMM_JSON_STRING_PTR;
+        thing_model_msg->msg = m->payload;
+        thing_model_msg->msg_len = m->payloadlen;
+        forward_thing_control_msg_to_esvdriver(service->manager, thing_model_msg);
+    end_wan_plugin_node:
         free(pk);
         free(dn);
         free(thing_model_msg);
@@ -311,15 +362,15 @@ int messageArrived5(void *context, char *topicName, int topicLen, MQTTAsync_mess
         MQTTAsync_freeMessage(&m);
         MQTTAsync_free(topicName);
 
-    } else if (topic_matches_wildcard(topicName, TOPIC_WILDCARD_WAN_THING_PLUGIN_NODE_CONFIG_PUSH)) {
+    } else if (topic_matches_wildcard(topicName, TOPIC_WILDCARD_WAN_EASYHBES_THING_PLUGIN_NODE_CONFIG_PUSH)) {
         char *pluginNodeId = "";
         char *pk = "";
         char *dn = "";
-        get_data_from_topic(topicName, 5, &pluginNodeId);
+        get_data_from_topic(topicName, 4, &pluginNodeId);
         nlog_debug("pluginNodeId:%s", pluginNodeId);
         esv_lan_mqtt5_service_t *service = (esv_lan_mqtt5_service_t *) context;
         esv_thing_model_msg_t *thing_model_msg = calloc(1, sizeof(esv_thing_model_msg_t));
-        thing_model_msg->method = ESV_TMM_MTD_WAN_THING_PLUGIN_NODE_CONFIG_PUSH;
+        thing_model_msg->method = ESV_TMM_MTD_WAN_EASYHBES_THING_PLUGIN_NODE_CONFIG_PUSH;
         thing_model_msg->product_key = pk;
         thing_model_msg->device_name = dn;
         thing_model_msg->msg_type = ESV_TMM_JSON_STRING_PTR;
@@ -329,7 +380,7 @@ int messageArrived5(void *context, char *topicName, int topicLen, MQTTAsync_mess
         nlog_info("m->payload: %s", (char *) m->payload);
         nlog_info("m->payloadlen: %d", m->payloadlen);
         forward_thing_model_msg_to_plugin_node(service->manager, thing_model_msg, pluginNodeId);
-    end_wan_plugin_node_config_push:
+    end_wan_easyhbes_plugin_node_config_push:
         /* free(pk); */
         /* free(dn); */
         free(thing_model_msg);

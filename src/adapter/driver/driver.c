@@ -1577,7 +1577,8 @@ static int thing_model_msg_arrived(neu_adapter_t *adapter, const esv_thing_model
 
     if (adapter->module->type == NEU_NA_TYPE_ESVAPP) {
         if (ESV_TMM_MTD_LAN_SUBTHING_THING_SERVICE_PROPERTY_SET != thing_model_msg->method &&
-            ESV_TMM_MTD_LAN_SUBTHING_THING_SERVICE_PROPERTY_GET != thing_model_msg->method) {
+            ESV_TMM_MTD_LAN_SUBTHING_THING_SERVICE_PROPERTY_GET != thing_model_msg->method &&
+            ESV_TMM_MTD_WAN_SUBTHING_THING_PLUGIN_NODE_CONFIG_PUSH_REPLY != thing_model_msg->method) {
             nlog_debug("esv app do not pass msg method != property set and != property get");
             return 1;
         }
@@ -1724,15 +1725,29 @@ static int thing_model_msg_arrived(neu_adapter_t *adapter, const esv_thing_model
             lan_mqtt5_service_publish(adapter->lan_mqtt5_service, topic, thing_model_msg->msg);
             free(topic);
         }
-    } else if (ESV_TMM_MTD_WAN_THING_PLUGIN_NODE_CONFIG_PUSH_REPLY == thing_model_msg->method) {
+    } else if (ESV_TMM_MTD_WAN_EASYHBES_THING_PLUGIN_NODE_CONFIG_PUSH_REPLY == thing_model_msg->method) {
         // char *topic_formate = "wan/thing/pluginNode/+/config/pushReply";
         if (ESV_TMM_JSON_STRING_PTR == thing_model_msg->msg_type) {
             // char *topic = "wan/thing/pluginNode/+/config/pushReply";
             // char *topic = "wan/thing/pluginNode/84/config/pushReply";
             // neu_asprintf(&topic, topic_formate, thing_model_msg->product_key, thing_model_msg->device_name);
             char topic[1024] = {0};
-            sprintf(topic, "wan/thing/pluginNode/%d/config/pushReply", thing_model_msg->plugin_id);
+            sprintf(topic, "wan/thing/easyHbes/%d/config/pushReply", thing_model_msg->plugin_id);
             lan_mqtt5_service_publish(adapter->lan_mqtt5_service, topic, thing_model_msg->msg);
+            // free(topic);
+        }
+    } else if (ESV_TMM_MTD_WAN_SUBTHING_THING_PLUGIN_NODE_CONFIG_PUSH_REPLY == thing_model_msg->method) {
+        char *topic_formate = "wan/%s/%s/thing/pluginNode/config/pushReply";
+        if (ESV_TMM_JSON_STRING_PTR == thing_model_msg->msg_type) {
+            char *topic = NULL;
+            neu_asprintf(&topic, topic_formate, thing_model_msg->product_key, thing_model_msg->device_name);
+            lan_mqtt5_service_publish(adapter->lan_mqtt5_service, topic, thing_model_msg->msg);
+            free(topic);
+        }
+    } else if (ESV_TMM_MTD_WAN_SUBTHING_THING_PLUGIN_NODE_ACTION_PUSH_REPLY == thing_model_msg->method) {
+        char *topic_formate = "wan/thing/pluginNode/action/pushReply";
+        if (ESV_TMM_JSON_STRING_PTR == thing_model_msg->msg_type) {
+            lan_mqtt5_service_publish(adapter->lan_mqtt5_service, topic_formate, thing_model_msg->msg);
             // free(topic);
         }
     }

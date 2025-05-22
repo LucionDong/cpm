@@ -17,7 +17,7 @@ if(NOT CMAKE_SYSTEM_NAME)
   set(CMAKE_SYSTEM_NAME "Linux")
 endif()
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fdiagnostics-color=always -Wall -Wextra -g -Wno-missing-braces -luuid -lsqlite3")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fdiagnostics-color=always -Wall -Wextra -g -Wno-missing-braces -luuid -lsqlite3 -lssl -lcrypto")
 # set(CMAKE_C_FLAGS "-Wall -Wextra -g")
 # set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS} -O1")
 set(CMAKE_C_FLAGS_RELEASE "-O1")
@@ -131,6 +131,7 @@ set(ESVCPM_SOURCE
 	src/core/manager_internal.c
 	src/core/plugin_manager.c
 	src/core/node_manager.c
+    src/core/parser_adapter_config.c
 	src/core/storage.c
 	src/core/manager_adapter_msg.c
 	# src/core/manager_thing_model.c
