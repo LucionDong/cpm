@@ -1578,7 +1578,8 @@ static int thing_model_msg_arrived(neu_adapter_t *adapter, const esv_thing_model
     if (adapter->module->type == NEU_NA_TYPE_ESVAPP) {
         if (ESV_TMM_MTD_LAN_SUBTHING_THING_SERVICE_PROPERTY_SET != thing_model_msg->method &&
             ESV_TMM_MTD_LAN_SUBTHING_THING_SERVICE_PROPERTY_GET != thing_model_msg->method &&
-            ESV_TMM_MTD_WAN_SUBTHING_THING_PLUGIN_NODE_CONFIG_PUSH_REPLY != thing_model_msg->method) {
+            ESV_TMM_MTD_WAN_SUBTHING_THING_PLUGIN_NODE_CONFIG_PUSH_REPLY != thing_model_msg->method &&
+            ESV_TMM_MTD_WAN_SUBTHING_THING_PLUGIN_NODE_ACTION_PUSH_REPLY != thing_model_msg->method) {
             nlog_debug("esv app do not pass msg method != property set and != property get");
             return 1;
         }
