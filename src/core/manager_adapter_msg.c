@@ -41,20 +41,38 @@ int forward_thing_control_msg_to_esvdriver(neu_manager_t *manager, const esv_thi
     int config_result = 2;
 
     if (msg->method == ESV_TMM_MTD_WAN_SUBTHING_THING_PLUGIN_NODE_ACTION_PUSH) {
-        esv_persister_query_device_node_name_by_node_id("3", &node_name);
+        json_t *msg_js = json_loads(msg->msg, 0, NULL);
+        if (NULL == msg_js) {
+            nlog_error("msg.msg is NULL");
+            return -1;
+        }
+
+        json_t *params = json_object_get(msg_js, "params");
+        const char *plugin_node_id = json_string_value(json_object_get(params, "pluginNodeId"));
+        if (NULL == plugin_node_id) {
+            nlog_error("plugin_node_id is NULL");
+            return -1;
+        }
+        nlog_debug("plugin_node_id: %s", plugin_node_id);
+
+        esv_persister_query_device_node_name_by_node_id(plugin_node_id, &node_name);
+        nlog_debug("node_name:%s", node_name);
         if (NULL == node_name) {
             return EXIT_FAILURE;
         }
         neu_adapter_t *adapter = neu_node_manager_find(manager->node_manager, node_name);
+        nlog_debug("neu_node_manager_find over");
         if (NULL == adapter) {
             nlog_warn("do not find adapter of node name: %s", node_name);
             return EXIT_FAILURE;
         }
         int ret = adapter->module->intf_funs->esvdriver.thing_model_msg_arrived(adapter->plugin, msg);
+        nlog_debug("ret:%d", ret);
         if (ret != 0) {
             nlog_error("thing_model_msg_arrived error");
             return EXIT_FAILURE;
         }
+        json_decref(msg_js);
     } else {
         int config_type = json_integer_value(json_object_get(recv_config, "configType"));
         const char *plugin_node_id =

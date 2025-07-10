@@ -17,30 +17,27 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  **/
 
-#include <stdarg.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include "persist/persist.h"
 
 #include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <pthread.h>
+#include <sqlite3.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
 
-#include <sqlite3.h>
-
+#include "argparse.h"
 #include "errcodes.h"
+#include "json/neu_json_fn.h"
+#include "persist/json/persist_json_plugin.h"
 #include "utils/asprintf.h"
 #include "utils/log.h"
-
-#include "argparse.h"
-#include "persist/json/persist_json_plugin.h"
-#include "persist/persist.h"
-
-#include "json/neu_json_fn.h"
 
 #if defined _WIN32 || defined __CYGWIN__
 #define PATH_SEP_CHAR '\\'
@@ -50,19 +47,18 @@
 
 #define PATH_MAX_SIZE 128
 
-static const char *default_plugin_file       = "config/default_plugins.json";
-static const char *plugin_file       = "persistence/plugins.json";
-static const char *db_file           = "persistence/sqlite.db";
+static const char *default_plugin_file = "config/default_plugins.json";
+static const char *plugin_file = "persistence/plugins.json";
+static const char *db_file = "persistence/sqlite.db";
 /* static const char *thing_db_file     = "persistence/thing.db"; */
-static const char *thing_db_file     = "/usr/local/iot/persistence/easeview_thing.db";
-static sqlite3 *   global_db         = NULL;
-static sqlite3 *   thing_db         = NULL;
-pthread_rwlock_t   global_rwlock     = PTHREAD_RWLOCK_INITIALIZER;
-static int         global_node_count = 0;
-static int         global_tag_count  = 0;
+static const char *thing_db_file = "/usr/local/iot/persistence/easeview_thing.db";
+static sqlite3 *global_db = NULL;
+static sqlite3 *thing_db = NULL;
+pthread_rwlock_t global_rwlock = PTHREAD_RWLOCK_INITIALIZER;
+static int global_node_count = 0;
+static int global_tag_count = 0;
 
-static inline bool ends_with(const char *str, const char *suffix)
-{
+static inline bool ends_with(const char *str, const char *suffix) {
     size_t m = strlen(str);
     size_t n = strlen(suffix);
     return m >= n && !strcmp(str + m - n, suffix);
@@ -79,8 +75,7 @@ static inline bool ends_with(const char *str, const char *suffix)
  * @return length of the result path string excluding the terminating NULL
  *         byte, `size` indicates overflow.
  */
-static int path_cat(char *dst, size_t len, size_t size, const char *src)
-{
+static int path_cat(char *dst, size_t len, size_t size, const char *src) {
     size_t i = len;
 
     if (0 < i && i < size && (PATH_SEP_CHAR != dst[i - 1])) {
@@ -102,8 +97,7 @@ static int path_cat(char *dst, size_t len, size_t size, const char *src)
     return i;
 }
 
-static int write_file_string(const char *fn, const char *s)
-{
+static int write_file_string(const char *fn, const char *s) {
     char *tmp = NULL;
     if (0 > neu_asprintf(&tmp, "%s.tmp", fn)) {
         nlog_error("persister too long file name:%s", fn);
@@ -142,8 +136,7 @@ static int write_file_string(const char *fn, const char *s)
 }
 
 // read all file contents as string
-static int read_file_string(const char *fn, char **out)
-{
+static int read_file_string(const char *fn, char **out) {
     int rv = 0;
     int fd = open(fn, O_RDONLY);
     if (-1 == fd) {
@@ -178,7 +171,7 @@ static int read_file_string(const char *fn, char **out)
     }
 
     buf[fsize] = 0;
-    *out       = buf;
+    *out = buf;
     close(fd);
     return rv;
 
@@ -192,8 +185,7 @@ error_open:
     return rv;
 }
 
-static inline int execute_sql(sqlite3 *db, const char *sql, ...)
-{
+static inline int execute_sql(sqlite3 *db, const char *sql, ...) {
     int rv = 0;
 
     va_list args;
@@ -220,11 +212,11 @@ static inline int execute_sql(sqlite3 *db, const char *sql, ...)
     return rv;
 }
 
-static int get_schema_version(sqlite3 *db, char **version_p, bool *dirty_p)
-{
-    sqlite3_stmt *stmt  = NULL;
-    const char *  query = "SELECT version, dirty FROM migrations ORDER BY "
-                        "version DESC LIMIT 1";
+static int get_schema_version(sqlite3 *db, char **version_p, bool *dirty_p) {
+    sqlite3_stmt *stmt = NULL;
+    const char *query =
+        "SELECT version, dirty FROM migrations ORDER BY "
+        "version DESC LIMIT 1";
 
     if (SQLITE_OK != sqlite3_prepare_v2(db, query, -1, &stmt, NULL)) {
         nlog_error("prepare `%s` fail: %s", query, sqlite3_errmsg(db));
@@ -240,7 +232,7 @@ static int get_schema_version(sqlite3 *db, char **version_p, bool *dirty_p)
         }
 
         *version_p = version;
-        *dirty_p   = sqlite3_column_int(stmt, 1);
+        *dirty_p = sqlite3_column_int(stmt, 1);
     } else if (SQLITE_DONE != step) {
         nlog_warn("query `%s` fail: %s", query, sqlite3_errmsg(db));
     }
@@ -249,14 +241,11 @@ static int get_schema_version(sqlite3 *db, char **version_p, bool *dirty_p)
     return 0;
 }
 
-int schema_version_cmp(const void *a, const void *b)
-{
+int schema_version_cmp(const void *a, const void *b) {
     return strcmp(*(char **) a, *(char **) b);
 }
 
-static int extract_schema_info(const char *file, char **version_p,
-                               char **description_p)
-{
+static int extract_schema_info(const char *file, char **version_p, char **description_p) {
     if (!ends_with(file, ".sql")) {
         return NEU_ERR_EINTERNAL;
     }
@@ -283,7 +272,7 @@ static int extract_schema_info(const char *file, char **version_p,
     }
     strncat(version, file, n);
 
-    n                 = strlen(sep) - 4;
+    n = strlen(sep) - 4;
     char *description = calloc(n + 1, sizeof(char));
     if (NULL == description) {
         free(version);
@@ -291,17 +280,16 @@ static int extract_schema_info(const char *file, char **version_p,
     }
     strncat(description, sep, n);
 
-    *version_p     = version;
+    *version_p = version;
     *description_p = description;
 
     return 0;
 }
 
-static int should_apply(sqlite3 *db, const char *version)
-{
-    int           rv   = 0;
+static int should_apply(sqlite3 *db, const char *version) {
+    int rv = 0;
     sqlite3_stmt *stmt = NULL;
-    const char *  sql  = "SELECT count(*) FROM migrations WHERE version=?";
+    const char *sql = "SELECT count(*) FROM migrations WHERE version=?";
 
     if (SQLITE_OK != sqlite3_prepare_v2(db, sql, -1, &stmt, NULL)) {
         nlog_error("prepare `%s` fail: %s", sql, sqlite3_errmsg(global_db));
@@ -310,8 +298,7 @@ static int should_apply(sqlite3 *db, const char *version)
     }
 
     if (SQLITE_OK != sqlite3_bind_text(stmt, 1, version, -1, NULL)) {
-        nlog_error("bind `%s` with version=`%s` fail: %s", sql, version,
-                   sqlite3_errmsg(global_db));
+        nlog_error("bind `%s` with version=`%s` fail: %s", sql, version, sqlite3_errmsg(global_db));
         rv = -1;
         goto end;
     }
@@ -328,14 +315,13 @@ end:
     return rv;
 }
 
-static int apply_schema_file(sqlite3 *db, const char *dir, const char *file)
-{
-    int   rv          = 0;
-    char *version     = NULL;
+static int apply_schema_file(sqlite3 *db, const char *dir, const char *file) {
+    int rv = 0;
+    char *version = NULL;
     char *description = NULL;
-    char *sql         = NULL;
-    char *path        = NULL;
-    int   n           = 0;
+    char *sql = NULL;
+    char *path = NULL;
+    int n = 0;
 
     path = calloc(PATH_MAX_SIZE, sizeof(char));
     if (NULL == path) {
@@ -378,7 +364,7 @@ static int apply_schema_file(sqlite3 *db, const char *dir, const char *file)
     }
 
     char *err_msg = NULL;
-    rv            = sqlite3_exec(db, sql, NULL, NULL, &err_msg);
+    rv = sqlite3_exec(db, sql, NULL, NULL, &err_msg);
     if (SQLITE_OK != rv) {
         nlog_error("execute %s fail: (%d)%s", path, rv, err_msg);
         sqlite3_free(err_msg);
@@ -386,16 +372,13 @@ static int apply_schema_file(sqlite3 *db, const char *dir, const char *file)
         goto end;
     }
 
-    rv = execute_sql(db, "UPDATE migrations SET dirty = 0 WHERE version=%Q",
-                     version);
+    rv = execute_sql(db, "UPDATE migrations SET dirty = 0 WHERE version=%Q", version);
 
 end:
     if (0 == rv) {
-        nlog_notice("success apply schema `%s`, version=`%s` description=`%s`",
-                    path, version, description);
+        nlog_notice("success apply schema `%s`, version=`%s` description=`%s`", path, version, description);
     } else {
-        nlog_error("fail apply schema `%s`, version=`%s` description=`%s`",
-                   path, version, description);
+        nlog_error("fail apply schema `%s`, version=`%s` description=`%s`", path, version, description);
     }
 
     free(sql);
@@ -405,11 +388,10 @@ end:
     return rv;
 }
 
-static UT_array *collect_schemas(const char *dir)
-{
-    DIR *          dirp  = NULL;
-    struct dirent *dent  = NULL;
-    UT_array *     files = NULL;
+static UT_array *collect_schemas(const char *dir) {
+    DIR *dirp = NULL;
+    struct dirent *dent = NULL;
+    UT_array *files = NULL;
 
     if ((dirp = opendir(dir)) == NULL) {
         nlog_error("fail open dir: %s", dir);
@@ -429,20 +411,20 @@ static UT_array *collect_schemas(const char *dir)
     return files;
 }
 
-static int apply_schemas(sqlite3 *db, const char *dir)
-{
+static int apply_schemas(sqlite3 *db, const char *dir) {
     int rv = 0;
 
-    const char *sql = "CREATE TABLE IF NOT EXISTS migrations ( migration_id "
-                      "INTEGER PRIMARY KEY, version TEXT NOT NULL UNIQUE, "
-                      "description TEXT NOT NULL, dirty INTEGER NOT NULL, "
-                      "created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP) ";
+    const char *sql =
+        "CREATE TABLE IF NOT EXISTS migrations ( migration_id "
+        "INTEGER PRIMARY KEY, version TEXT NOT NULL UNIQUE, "
+        "description TEXT NOT NULL, dirty INTEGER NOT NULL, "
+        "created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP) ";
     if (0 != execute_sql(db, sql)) {
         nlog_error("create migration table fail");
         return NEU_ERR_EINTERNAL;
     }
 
-    bool  dirty   = false;
+    bool dirty = false;
     char *version = NULL;
     if (0 != get_schema_version(db, &version, &dirty)) {
         nlog_error("find schema version fail");
@@ -468,8 +450,7 @@ static int apply_schemas(sqlite3 *db, const char *dir)
 
     utarray_sort(files, schema_version_cmp);
 
-    utarray_foreach(files, char **, file)
-    {
+    utarray_foreach(files, char **, file) {
         if (0 != apply_schema_file(db, dir, *file)) {
             rv = NEU_ERR_EINTERNAL;
             break;
@@ -482,14 +463,12 @@ static int apply_schemas(sqlite3 *db, const char *dir)
     return rv;
 }
 
-static inline int node_count_load()
-{
-    int           rv    = 0;
-    sqlite3_stmt *stmt  = NULL;
-    char *        query = "select count(*) from nodes";
+static inline int node_count_load() {
+    int rv = 0;
+    sqlite3_stmt *stmt = NULL;
+    char *query = "select count(*) from nodes";
 
-    if (SQLITE_OK == sqlite3_prepare_v2(global_db, query, -1, &stmt, NULL) &&
-        SQLITE_ROW == sqlite3_step(stmt)) {
+    if (SQLITE_OK == sqlite3_prepare_v2(global_db, query, -1, &stmt, NULL) && SQLITE_ROW == sqlite3_step(stmt)) {
         pthread_rwlock_wrlock(&global_rwlock);
         global_node_count = sqlite3_column_int(stmt, 0);
         pthread_rwlock_unlock(&global_rwlock);
@@ -501,14 +480,12 @@ static inline int node_count_load()
     return rv;
 }
 
-static inline int tag_count_load()
-{
-    int           rv    = 0;
-    sqlite3_stmt *stmt  = NULL;
-    char *        query = "select count(*) from tags";
+static inline int tag_count_load() {
+    int rv = 0;
+    sqlite3_stmt *stmt = NULL;
+    char *query = "select count(*) from tags";
 
-    if (SQLITE_OK == sqlite3_prepare_v2(global_db, query, -1, &stmt, NULL) &&
-        SQLITE_ROW == sqlite3_step(stmt)) {
+    if (SQLITE_OK == sqlite3_prepare_v2(global_db, query, -1, &stmt, NULL) && SQLITE_ROW == sqlite3_step(stmt)) {
         pthread_rwlock_wrlock(&global_rwlock);
         global_tag_count = sqlite3_column_int(stmt, 0);
         pthread_rwlock_unlock(&global_rwlock);
@@ -520,8 +497,7 @@ static inline int tag_count_load()
     return rv;
 }
 
-int neu_persister_create(const char *schema_dir)
-{
+int neu_persister_create(const char *schema_dir) {
     int rv = sqlite3_open(db_file, &global_db);
 
     if (SQLITE_OK != rv) {
@@ -532,8 +508,7 @@ int neu_persister_create(const char *schema_dir)
 
     rv = sqlite3_exec(global_db, "PRAGMA foreign_keys=ON", NULL, NULL, NULL);
     if (rv != SQLITE_OK) {
-        nlog_fatal("db foreign key support fail: %s",
-                   sqlite3_errmsg(global_db));
+        nlog_fatal("db foreign key support fail: %s", sqlite3_errmsg(global_db));
         sqlite3_close(global_db);
         return -1;
     }
@@ -561,61 +536,52 @@ int neu_persister_create(const char *schema_dir)
     return 0;
 }
 
-sqlite3 *neu_persister_get_db()
-{
+sqlite3 *neu_persister_get_db() {
     return global_db;
 }
 
-static inline void node_count_add(int n)
-{
+static inline void node_count_add(int n) {
     pthread_rwlock_wrlock(&global_rwlock);
     global_node_count += n;
     pthread_rwlock_unlock(&global_rwlock);
 }
 
-int neu_persister_node_count()
-{
+int neu_persister_node_count() {
     pthread_rwlock_rdlock(&global_rwlock);
     int cnt = global_node_count;
     pthread_rwlock_unlock(&global_rwlock);
     return cnt;
 }
 
-static inline void tag_count_add(int n)
-{
+static inline void tag_count_add(int n) {
     pthread_rwlock_wrlock(&global_rwlock);
     global_tag_count += n;
     pthread_rwlock_unlock(&global_rwlock);
 }
 
-int neu_persister_tag_count()
-{
+int neu_persister_tag_count() {
     pthread_rwlock_rdlock(&global_rwlock);
     int cnt = global_tag_count;
     pthread_rwlock_unlock(&global_rwlock);
     return cnt;
 }
 
-void neu_persister_destroy()
-{
+void neu_persister_destroy() {
     sqlite3_close(global_db);
 }
 
-int neu_persister_store_node(neu_persist_node_info_t *info)
-{
+int neu_persister_store_node(neu_persist_node_info_t *info) {
     int rv = 0;
     if (strcmp(info->plugin_name, "Monitor") == 0) {
-        rv = execute_sql(
-            global_db,
-            "INSERT OR IGNORE INTO nodes (name, type, state, plugin_name) "
-            "VALUES (%Q, %i, %i, %Q)",
-            info->name, info->type, info->state, info->plugin_name);
+        rv = execute_sql(global_db,
+                         "INSERT OR IGNORE INTO nodes (name, type, state, plugin_name) "
+                         "VALUES (%Q, %i, %i, %Q)",
+                         info->name, info->type, info->state, info->plugin_name);
     } else {
-        rv =
-            execute_sql(global_db,
-                        "INSERT INTO nodes (name, type, state, plugin_name) "
-                        "VALUES (%Q, %i, %i, %Q)",
-                        info->name, info->type, info->state, info->plugin_name);
+        rv = execute_sql(global_db,
+                         "INSERT INTO nodes (name, type, state, plugin_name) "
+                         "VALUES (%Q, %i, %i, %Q)",
+                         info->name, info->type, info->state, info->plugin_name);
         if (0 == rv) {
             node_count_add(1);
         }
@@ -630,11 +596,10 @@ static UT_icd node_info_icd = {
     (dtor_f *) neu_persist_node_info_fini,
 };
 
-int neu_persister_load_nodes(UT_array **node_infos)
-{
-    int           rv    = 0;
-    sqlite3_stmt *stmt  = NULL;
-    const char *  query = "SELECT name, type, state, plugin_name FROM nodes;";
+int neu_persister_load_nodes(UT_array **node_infos) {
+    int rv = 0;
+    sqlite3_stmt *stmt = NULL;
+    const char *query = "SELECT name, type, state, plugin_name FROM nodes;";
 
     utarray_new(*node_infos, &node_info_icd);
 
@@ -659,9 +624,9 @@ int neu_persister_load_nodes(UT_array **node_infos)
             break;
         }
 
-        info.name        = name;
-        info.type        = sqlite3_column_int(stmt, 1);
-        info.state       = sqlite3_column_int(stmt, 2);
+        info.name = name;
+        info.type = sqlite3_column_int(stmt, 1);
+        info.state = sqlite3_column_int(stmt, 2);
         info.plugin_name = plugin_name;
         utarray_push_back(*node_infos, &info);
 
@@ -677,12 +642,10 @@ int neu_persister_load_nodes(UT_array **node_infos)
     return rv;
 }
 
-int neu_persister_delete_node(const char *node_name)
-{
+int neu_persister_delete_node(const char *node_name) {
     // rely on foreign key constraints to remove settings, groups, tags and
     // subscriptions
-    int rv =
-        execute_sql(global_db, "DELETE FROM nodes WHERE name=%Q;", node_name);
+    int rv = execute_sql(global_db, "DELETE FROM nodes WHERE name=%Q;", node_name);
     if (0 == rv) {
         node_count_add(-1);
         tag_count_load();
@@ -690,29 +653,23 @@ int neu_persister_delete_node(const char *node_name)
     return rv;
 }
 
-int neu_persister_update_node(const char *node_name, const char *new_name)
-{
-    return execute_sql(global_db, "UPDATE nodes SET name=%Q WHERE name=%Q;",
-                       new_name, node_name);
+int neu_persister_update_node(const char *node_name, const char *new_name) {
+    return execute_sql(global_db, "UPDATE nodes SET name=%Q WHERE name=%Q;", new_name, node_name);
 }
 
-int neu_persister_update_node_state(const char *node_name, int state)
-{
-    return execute_sql(global_db, "UPDATE nodes SET state=%i WHERE name=%Q;",
-                       state, node_name);
+int neu_persister_update_node_state(const char *node_name, int state) {
+    return execute_sql(global_db, "UPDATE nodes SET state=%i WHERE name=%Q;", state, node_name);
 }
 
-int neu_persister_store_plugins(UT_array *plugin_infos)
-{
-    int                    index       = 0;
+int neu_persister_store_plugins(UT_array *plugin_infos) {
+    int index = 0;
     neu_json_plugin_resp_t plugin_resp = {
         .n_plugin = utarray_len(plugin_infos),
     };
 
     plugin_resp.plugins = calloc(utarray_len(plugin_infos), sizeof(char *));
 
-    utarray_foreach(plugin_infos, neu_resp_plugin_info_t *, plugin)
-    {
+    utarray_foreach(plugin_infos, neu_resp_plugin_info_t *, plugin) {
         if (NEU_PLUGIN_KIND_SYSTEM == plugin->kind) {
             // filter out system plugins
             continue;
@@ -722,8 +679,7 @@ int neu_persister_store_plugins(UT_array *plugin_infos)
     }
 
     char *result = NULL;
-    int   rv = neu_json_encode_by_fn(&plugin_resp, neu_json_encode_plugin_resp,
-                                   &result);
+    int rv = neu_json_encode_by_fn(&plugin_resp, neu_json_encode_plugin_resp, &result);
 
     free(plugin_resp.plugins);
     if (rv != 0) {
@@ -736,10 +692,9 @@ int neu_persister_store_plugins(UT_array *plugin_infos)
     return rv;
 }
 
-static int load_plugins_file(const char *fname, UT_array *plugin_infos)
-{
+static int load_plugins_file(const char *fname, UT_array *plugin_infos) {
     char *json_str = NULL;
-    int   rv       = read_file_string(fname, &json_str);
+    int rv = read_file_string(fname, &json_str);
     if (rv != 0) {
         return rv;
     }
@@ -762,21 +717,18 @@ static int load_plugins_file(const char *fname, UT_array *plugin_infos)
     return 0;
 }
 
-static int ut_str_cmp(const void *a, const void *b)
-{
+static int ut_str_cmp(const void *a, const void *b) {
     return strcmp(*(char **) a, *(char **) b);
 }
 
-int neu_persister_load_plugins(UT_array **plugin_infos)
-{
+int neu_persister_load_plugins(UT_array **plugin_infos) {
     UT_array *default_plugins = NULL;
-    UT_array *user_plugins    = NULL;
+    UT_array *user_plugins = NULL;
     utarray_new(default_plugins, &ut_ptr_icd);
     utarray_new(user_plugins, &ut_ptr_icd);
 
     // default plugins will always present
-    if (0 !=
-        load_plugins_file(default_plugin_file, default_plugins)) {
+    if (0 != load_plugins_file(default_plugin_file, default_plugins)) {
         nlog_warn("cannot load default plugins");
     }
     // user plugins
@@ -787,13 +739,12 @@ int neu_persister_load_plugins(UT_array **plugin_infos)
         utarray_sort(default_plugins, ut_str_cmp);
     }
 
-    utarray_foreach(user_plugins, char **, name)
-    {
+    utarray_foreach(user_plugins, char **, name) {
         // filter out duplicates in case of old persistence data
         char **find = utarray_find(default_plugins, name, ut_str_cmp);
         if (NULL == find) {
             utarray_push_back(default_plugins, name);
-            *name = NULL; // move to default_plugins
+            *name = NULL;  // move to default_plugins
         } else {
             free(*name);
         }
@@ -804,17 +755,14 @@ int neu_persister_load_plugins(UT_array **plugin_infos)
     return 0;
 }
 
-int neu_persister_store_tag(const char *driver_name, const char *group_name,
-                            const neu_datatag_t *tag)
-{
+int neu_persister_store_tag(const char *driver_name, const char *group_name, const neu_datatag_t *tag) {
     char *val_str = neu_tag_dump_static_value(tag);
-    int   rv      = execute_sql(global_db,
+    int rv = execute_sql(global_db,
                          "INSERT INTO tags ("
                          " driver_name, group_name, name, address, attribute,"
                          " precision, type, decimal, description, value"
                          ") VALUES (%Q, %Q, %Q, %Q, %i, %i, %i, %lf, %Q, %Q)",
-                         driver_name, group_name, tag->name, tag->address,
-                         tag->attribute, tag->precision, tag->type,
+                         driver_name, group_name, tag->name, tag->address, tag->attribute, tag->precision, tag->type,
                          tag->decimal, tag->description, val_str);
 
     if (0 == rv) {
@@ -824,61 +772,50 @@ int neu_persister_store_tag(const char *driver_name, const char *group_name,
     return rv;
 }
 
-static int put_tags(const char *query, sqlite3_stmt *stmt,
-                    const neu_datatag_t *tags, size_t n)
-{
+static int put_tags(const char *query, sqlite3_stmt *stmt, const neu_datatag_t *tags, size_t n) {
     for (size_t i = 0; i < n; ++i) {
         const neu_datatag_t *tag = &tags[i];
 
         sqlite3_reset(stmt);
 
         if (SQLITE_OK != sqlite3_bind_text(stmt, 3, tag->name, -1, NULL)) {
-            nlog_error("bind `%s` with name=`%s` fail: %s", query, tag->name,
-                       sqlite3_errmsg(global_db));
+            nlog_error("bind `%s` with name=`%s` fail: %s", query, tag->name, sqlite3_errmsg(global_db));
             return -1;
         }
 
         if (SQLITE_OK != sqlite3_bind_text(stmt, 4, tag->address, -1, NULL)) {
-            nlog_error("bind `%s` with address=`%s` fail: %s", query,
-                       tag->address, sqlite3_errmsg(global_db));
+            nlog_error("bind `%s` with address=`%s` fail: %s", query, tag->address, sqlite3_errmsg(global_db));
             return -1;
         }
 
         if (SQLITE_OK != sqlite3_bind_int(stmt, 5, tag->attribute)) {
-            nlog_error("bind `%s` with attribute=`%i` fail: %s", query,
-                       tag->attribute, sqlite3_errmsg(global_db));
+            nlog_error("bind `%s` with attribute=`%i` fail: %s", query, tag->attribute, sqlite3_errmsg(global_db));
             return -1;
         }
 
         if (SQLITE_OK != sqlite3_bind_int(stmt, 6, tag->precision)) {
-            nlog_error("bind `%s` with precision=`%i` fail: %s", query,
-                       tag->precision, sqlite3_errmsg(global_db));
+            nlog_error("bind `%s` with precision=`%i` fail: %s", query, tag->precision, sqlite3_errmsg(global_db));
             return -1;
         }
 
         if (SQLITE_OK != sqlite3_bind_int(stmt, 7, tag->type)) {
-            nlog_error("bind `%s` with type=`%i` fail: %s", query, tag->type,
-                       sqlite3_errmsg(global_db));
+            nlog_error("bind `%s` with type=`%i` fail: %s", query, tag->type, sqlite3_errmsg(global_db));
             return -1;
         }
 
         if (SQLITE_OK != sqlite3_bind_double(stmt, 8, tag->decimal)) {
-            nlog_error("bind `%s` with decimal=`%f` fail: %s", query,
-                       tag->decimal, sqlite3_errmsg(global_db));
+            nlog_error("bind `%s` with decimal=`%f` fail: %s", query, tag->decimal, sqlite3_errmsg(global_db));
             return -1;
         }
 
-        if (SQLITE_OK !=
-            sqlite3_bind_text(stmt, 9, tag->description, -1, NULL)) {
-            nlog_error("bind `%s` with description=`%s` fail: %s", query,
-                       tag->description, sqlite3_errmsg(global_db));
+        if (SQLITE_OK != sqlite3_bind_text(stmt, 9, tag->description, -1, NULL)) {
+            nlog_error("bind `%s` with description=`%s` fail: %s", query, tag->description, sqlite3_errmsg(global_db));
             return -1;
         }
 
         char *val_str = neu_tag_dump_static_value(tag);
         if (SQLITE_OK != sqlite3_bind_text(stmt, 10, val_str, -1, NULL)) {
-            nlog_error("bind `%s` with value=`%s` fail: %s", query, val_str,
-                       sqlite3_errmsg(global_db));
+            nlog_error("bind `%s` with value=`%s` fail: %s", query, val_str, sqlite3_errmsg(global_db));
             free(val_str);
             return -1;
         }
@@ -895,14 +832,13 @@ static int put_tags(const char *query, sqlite3_stmt *stmt,
     return 0;
 }
 
-int neu_persister_store_tags(const char *driver_name, const char *group_name,
-                             const neu_datatag_t *tags, size_t n)
-{
-    sqlite3_stmt *stmt  = NULL;
-    const char *  query = "INSERT INTO tags ("
-                        " driver_name, group_name, name, address, attribute,"
-                        " precision, type, decimal, description, value"
-                        ") VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)";
+int neu_persister_store_tags(const char *driver_name, const char *group_name, const neu_datatag_t *tags, size_t n) {
+    sqlite3_stmt *stmt = NULL;
+    const char *query =
+        "INSERT INTO tags ("
+        " driver_name, group_name, name, address, attribute,"
+        " precision, type, decimal, description, value"
+        ") VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)";
 
     if (SQLITE_OK != sqlite3_exec(global_db, "BEGIN", NULL, NULL, NULL)) {
         nlog_error("begin transaction fail: %s", sqlite3_errmsg(global_db));
@@ -915,14 +851,12 @@ int neu_persister_store_tags(const char *driver_name, const char *group_name,
     }
 
     if (SQLITE_OK != sqlite3_bind_text(stmt, 1, driver_name, -1, NULL)) {
-        nlog_error("bind `%s` with driver_name=`%s` fail: %s", query,
-                   driver_name, sqlite3_errmsg(global_db));
+        nlog_error("bind `%s` with driver_name=`%s` fail: %s", query, driver_name, sqlite3_errmsg(global_db));
         goto error;
     }
 
     if (SQLITE_OK != sqlite3_bind_text(stmt, 2, group_name, -1, NULL)) {
-        nlog_error("bind `%s` with group_name=`%s` fail: %s", query, group_name,
-                   sqlite3_errmsg(global_db));
+        nlog_error("bind `%s` with group_name=`%s` fail: %s", query, group_name, sqlite3_errmsg(global_db));
         goto error;
     }
 
@@ -946,23 +880,21 @@ error:
     return NEU_ERR_EINTERNAL;
 }
 
-static int collect_tag_info(sqlite3_stmt *stmt, UT_array **tags)
-{
+static int collect_tag_info(sqlite3_stmt *stmt, UT_array **tags) {
     int step = sqlite3_step(stmt);
     while (SQLITE_ROW == step) {
         neu_datatag_t tag = {
-            .name        = (char *) sqlite3_column_text(stmt, 0),
-            .address     = (char *) sqlite3_column_text(stmt, 1),
-            .attribute   = sqlite3_column_int(stmt, 2),
-            .precision   = sqlite3_column_int64(stmt, 3),
-            .type        = sqlite3_column_int(stmt, 4),
-            .decimal     = sqlite3_column_double(stmt, 5),
+            .name = (char *) sqlite3_column_text(stmt, 0),
+            .address = (char *) sqlite3_column_text(stmt, 1),
+            .attribute = sqlite3_column_int(stmt, 2),
+            .precision = sqlite3_column_int64(stmt, 3),
+            .type = sqlite3_column_int(stmt, 4),
+            .decimal = sqlite3_column_double(stmt, 5),
             .description = (char *) sqlite3_column_text(stmt, 6),
         };
         utarray_push_back(*tags, &tag);
         if (neu_tag_attribute_test(&tag, NEU_ATTRIBUTE_STATIC)) {
-            neu_tag_load_static_value(utarray_back(*tags),
-                                      (char *) sqlite3_column_text(stmt, 7));
+            neu_tag_load_static_value(utarray_back(*tags), (char *) sqlite3_column_text(stmt, 7));
         }
 
         step = sqlite3_step(stmt);
@@ -975,14 +907,13 @@ static int collect_tag_info(sqlite3_stmt *stmt, UT_array **tags)
     return 0;
 }
 
-int neu_persister_load_tags(const char *driver_name, const char *group_name,
-                            UT_array **tags)
-{
-    sqlite3_stmt *stmt  = NULL;
-    const char *  query = "SELECT name, address, attribute, precision, type, "
-                        "decimal, description, value "
-                        "FROM tags WHERE driver_name=? AND group_name=? "
-                        "ORDER BY rowid ASC";
+int neu_persister_load_tags(const char *driver_name, const char *group_name, UT_array **tags) {
+    sqlite3_stmt *stmt = NULL;
+    const char *query =
+        "SELECT name, address, attribute, precision, type, "
+        "decimal, description, value "
+        "FROM tags WHERE driver_name=? AND group_name=? "
+        "ORDER BY rowid ASC";
 
     utarray_new(*tags, neu_tag_get_icd());
 
@@ -992,14 +923,12 @@ int neu_persister_load_tags(const char *driver_name, const char *group_name,
     }
 
     if (SQLITE_OK != sqlite3_bind_text(stmt, 1, driver_name, -1, NULL)) {
-        nlog_error("bind `%s` with `%s` fail: %s", query, driver_name,
-                   sqlite3_errmsg(global_db));
+        nlog_error("bind `%s` with `%s` fail: %s", query, driver_name, sqlite3_errmsg(global_db));
         goto error;
     }
 
     if (SQLITE_OK != sqlite3_bind_text(stmt, 2, group_name, -1, NULL)) {
-        nlog_error("bind `%s` with `%s` fail: %s", query, group_name,
-                   sqlite3_errmsg(global_db));
+        nlog_error("bind `%s` with `%s` fail: %s", query, group_name, sqlite3_errmsg(global_db));
         goto error;
     }
 
@@ -1017,28 +946,22 @@ error:
     return NEU_ERR_EINTERNAL;
 }
 
-int neu_persister_update_tag(const char *driver_name, const char *group_name,
-                             const neu_datatag_t *tag)
-{
+int neu_persister_update_tag(const char *driver_name, const char *group_name, const neu_datatag_t *tag) {
     char *val_str = neu_tag_dump_static_value(tag);
-    int   rv      = execute_sql(global_db,
+    int rv = execute_sql(global_db,
                          "UPDATE tags SET"
                          " address=%Q, attribute=%i, precision=%i, type=%i,"
                          " decimal=%lf, description=%Q, value=%Q "
                          "WHERE driver_name=%Q AND group_name=%Q AND name=%Q",
-                         tag->address, tag->attribute, tag->precision,
-                         tag->type, tag->decimal, tag->description, val_str,
-                         driver_name, group_name, tag->name);
+                         tag->address, tag->attribute, tag->precision, tag->type, tag->decimal, tag->description,
+                         val_str, driver_name, group_name, tag->name);
     free(val_str);
     return rv;
 }
 
-int neu_persister_update_tag_value(const char *         driver_name,
-                                   const char *         group_name,
-                                   const neu_datatag_t *tag)
-{
+int neu_persister_update_tag_value(const char *driver_name, const char *group_name, const neu_datatag_t *tag) {
     char *val_str = neu_tag_dump_static_value(tag);
-    int   rv      = execute_sql(global_db,
+    int rv = execute_sql(global_db,
                          "UPDATE tags SET value=%Q "
                          "WHERE driver_name=%Q AND group_name=%Q AND name=%Q",
                          val_str, driver_name, group_name, tag->name);
@@ -1046,13 +969,9 @@ int neu_persister_update_tag_value(const char *         driver_name,
     return rv;
 }
 
-int neu_persister_delete_tag(const char *driver_name, const char *group_name,
-                             const char *tag_name)
-{
-    int rv = execute_sql(
-        global_db,
-        "DELETE FROM tags WHERE driver_name=%Q AND group_name=%Q AND name=%Q",
-        driver_name, group_name, tag_name);
+int neu_persister_delete_tag(const char *driver_name, const char *group_name, const char *tag_name) {
+    int rv = execute_sql(global_db, "DELETE FROM tags WHERE driver_name=%Q AND group_name=%Q AND name=%Q", driver_name,
+                         group_name, tag_name);
     if (0 == rv) {
         tag_count_add(-1);
     }
@@ -1275,37 +1194,29 @@ int neu_persister_delete_tag(const char *driver_name, const char *group_name,
 /*     return rv; */
 /* } */
 
-int neu_persister_store_node_setting(const char *node_name, const char *setting)
-{
-    return execute_sql(
-        global_db,
-        "INSERT OR REPLACE INTO settings (node_name, setting) VALUES (%Q, %Q)",
-        node_name, setting);
+int neu_persister_store_node_setting(const char *node_name, const char *setting) {
+    return execute_sql(global_db, "INSERT OR REPLACE INTO settings (node_name, setting) VALUES (%Q, %Q)", node_name,
+                       setting);
 }
 
-int neu_persister_load_node_setting(const char *       node_name,
-                                    const char **const setting)
-{
-    int           rv    = 0;
-    sqlite3_stmt *stmt  = NULL;
-    const char *  query = "SELECT setting FROM settings WHERE node_name=?";
+int neu_persister_load_node_setting(const char *node_name, const char **const setting) {
+    int rv = 0;
+    sqlite3_stmt *stmt = NULL;
+    const char *query = "SELECT setting FROM settings WHERE node_name=?";
 
     if (SQLITE_OK != sqlite3_prepare_v2(global_db, query, -1, &stmt, NULL)) {
-        nlog_error("prepare `%s` with `%s` fail: %s", query, node_name,
-                   sqlite3_errmsg(global_db));
+        nlog_error("prepare `%s` with `%s` fail: %s", query, node_name, sqlite3_errmsg(global_db));
         return NEU_ERR_EINTERNAL;
     }
 
     if (SQLITE_OK != sqlite3_bind_text(stmt, 1, node_name, -1, NULL)) {
-        nlog_error("bind `%s` with `%s` fail: %s", query, node_name,
-                   sqlite3_errmsg(global_db));
+        nlog_error("bind `%s` with `%s` fail: %s", query, node_name, sqlite3_errmsg(global_db));
         rv = NEU_ERR_EINTERNAL;
         goto end;
     }
 
     if (SQLITE_ROW != sqlite3_step(stmt)) {
-        nlog_warn("SQL `%s` with `%s` fail: %s", query, node_name,
-                  sqlite3_errmsg(global_db));
+        nlog_warn("SQL `%s` with `%s` fail: %s", query, node_name, sqlite3_errmsg(global_db));
         rv = NEU_ERR_EINTERNAL;
         goto end;
     }
@@ -1324,10 +1235,8 @@ end:
     return rv;
 }
 
-int neu_persister_delete_node_setting(const char *node_name)
-{
-    return execute_sql(global_db, "DELETE FROM settings WHERE node_name=%Q",
-                       node_name);
+int neu_persister_delete_node_setting(const char *node_name) {
+    return execute_sql(global_db, "DELETE FROM settings WHERE node_name=%Q", node_name);
 }
 
 /* int neu_persister_store_user(const neu_persist_user_info_t *user) */
@@ -1749,8 +1658,7 @@ int neu_persister_delete_node_setting(const char *node_name)
 /* } */
 
 /* easeview */
-int esv_persister_create(const char *schema_dir)
-{
+int esv_persister_create(const char *schema_dir) {
     int rv = sqlite3_open(thing_db_file, &thing_db);
 
     if (SQLITE_OK != rv) {
@@ -1761,8 +1669,7 @@ int esv_persister_create(const char *schema_dir)
 
     rv = sqlite3_exec(thing_db, "PRAGMA foreign_keys=ON", NULL, NULL, NULL);
     if (rv != SQLITE_OK) {
-        nlog_fatal("db foreign key support fail: %s",
-                   sqlite3_errmsg(thing_db));
+        nlog_fatal("db foreign key support fail: %s", sqlite3_errmsg(thing_db));
         sqlite3_close(thing_db);
         return -1;
     }
@@ -1791,11 +1698,11 @@ static UT_icd esv_node_info_icd = {
     (dtor_f *) esv_persist_node_info_fini,
 };
 
-int esv_persister_load_normal_nodes(UT_array **esv_node_infos)
-{
-    int           rv    = 0;
-    sqlite3_stmt *stmt  = NULL;
-    const char *  query = "SELECT node_id, node_name, plugin_name, lib_name, node_type, install_type, node_config, node_config_index, state \
+int esv_persister_load_normal_nodes(UT_array **esv_node_infos) {
+    int rv = 0;
+    sqlite3_stmt *stmt = NULL;
+    const char *query =
+        "SELECT node_id, node_name, plugin_name, lib_name, node_type, install_type, node_config, node_config_index, state \
 						   FROM plugin_node WHERE node_type IN ('9', '10', '11', '15');";
 
     utarray_new(*esv_node_infos, &esv_node_info_icd);
@@ -1813,46 +1720,56 @@ int esv_persister_load_normal_nodes(UT_array **esv_node_infos)
 
         char *node_id = strdup((char *) sqlite3_column_text(stmt, 0));
         /* if (NULL == node_id) { */
-			/* goto sql_error; */
+        /* goto sql_error; */
         /* } */
 
         char *node_name = strdup((char *) sqlite3_column_text(stmt, 1));
         if (NULL == node_name) {
-			goto sql_error;
+            goto sql_error;
         }
 
         char *plugin_name = strdup((char *) sqlite3_column_text(stmt, 2));
         if (NULL == plugin_name) {
-			goto sql_error;
+            goto sql_error;
         }
 
         char *lib_name = strdup((char *) sqlite3_column_text(stmt, 3));
         /* if (NULL == lib_name) { */
-			/* goto sql_error; */
+        /* goto sql_error; */
         /* } */
 
         char *node_config = strdup((char *) sqlite3_column_text(stmt, 6));
         if (NULL == node_config) {
-			goto sql_error;
+            goto sql_error;
         }
 
-        info.node_id           = node_id;
-        info.node_name         = node_name;
-        info.plugin_name       = plugin_name;
-        info.lib_name          = lib_name;
-        info.node_type         = sqlite3_column_int(stmt, 4);
-        info.install_type      = sqlite3_column_int(stmt, 5);
-        info.node_config       = node_config;
+        info.node_id = node_id;
+        info.node_name = node_name;
+        info.plugin_name = plugin_name;
+        info.lib_name = lib_name;
+        info.node_type = sqlite3_column_int(stmt, 4);
+        info.install_type = sqlite3_column_int(stmt, 5);
+        info.node_config = node_config;
         info.node_config_index = sqlite3_column_int(stmt, 7);
-        info.state             = sqlite3_column_int(stmt, 8);
+        info.state = sqlite3_column_int(stmt, 8);
         utarray_push_back(*esv_node_infos, &info);
 
-sql_error:
-		if (NULL == node_id) {free(node_id);}
-		if (NULL == node_name) {free(node_name);}
-		if (NULL == plugin_name) {free(plugin_name);}
-		if (NULL == lib_name) {free(lib_name);}
-		if (NULL == node_config) {free(node_config);}
+    sql_error:
+        if (NULL == node_id) {
+            free(node_id);
+        }
+        if (NULL == node_name) {
+            free(node_name);
+        }
+        if (NULL == plugin_name) {
+            free(plugin_name);
+        }
+        if (NULL == lib_name) {
+            free(lib_name);
+        }
+        if (NULL == node_config) {
+            free(node_config);
+        }
         step = sqlite3_step(stmt);
     }
 
@@ -1865,29 +1782,24 @@ sql_error:
     return rv;
 }
 
-int esv_persister_load_node_config(const char *       node_name,
-                                    const char **const config)
-{
-    int           rv    = 0;
-    sqlite3_stmt *stmt  = NULL;
-    const char *  query = "SELECT node_config FROM plugin_node WHERE node_name=?";
+int esv_persister_load_node_config(const char *node_name, const char **const config) {
+    int rv = 0;
+    sqlite3_stmt *stmt = NULL;
+    const char *query = "SELECT node_config FROM plugin_node WHERE node_name=?";
 
     if (SQLITE_OK != sqlite3_prepare_v2(thing_db, query, -1, &stmt, NULL)) {
-        nlog_error("prepare `%s` with `%s` fail: %s", query, node_name,
-                   sqlite3_errmsg(thing_db));
+        nlog_error("prepare `%s` with `%s` fail: %s", query, node_name, sqlite3_errmsg(thing_db));
         return NEU_ERR_EINTERNAL;
     }
 
     if (SQLITE_OK != sqlite3_bind_text(stmt, 1, node_name, -1, NULL)) {
-        nlog_error("bind `%s` with `%s` fail: %s", query, node_name,
-                   sqlite3_errmsg(thing_db));
+        nlog_error("bind `%s` with `%s` fail: %s", query, node_name, sqlite3_errmsg(thing_db));
         rv = NEU_ERR_EINTERNAL;
         goto end;
     }
 
     if (SQLITE_ROW != sqlite3_step(stmt)) {
-        nlog_warn("SQL `%s` with `%s` fail: %s", query, node_name,
-                  sqlite3_errmsg(thing_db));
+        nlog_warn("SQL `%s` with `%s` fail: %s", query, node_name, sqlite3_errmsg(thing_db));
         rv = NEU_ERR_EINTERNAL;
         goto end;
     }
@@ -1906,11 +1818,9 @@ end:
     return rv;
 }
 
-void esv_persister_destroy()
-{
+void esv_persister_destroy() {
     sqlite3_close(thing_db);
 }
-
 
 static UT_icd device_info_icd = {
     sizeof(esv_persist_device_info_t),
@@ -1920,7 +1830,7 @@ static UT_icd device_info_icd = {
 };
 
 static int collect_device_info(sqlite3_stmt *stmt, UT_array **device_infos) {
-	int step = sqlite3_step(stmt);
+    int step = sqlite3_step(stmt);
     while (SQLITE_ROW == step) {
         esv_persist_device_info_t info = {};
         char *product_key = strdup((char *) sqlite3_column_text(stmt, 0));
@@ -1928,10 +1838,10 @@ static int collect_device_info(sqlite3_stmt *stmt, UT_array **device_infos) {
         char *device_secret = strdup((char *) sqlite3_column_text(stmt, 2));
         char *device_config = strdup((char *) sqlite3_column_text(stmt, 3));
 
-        info.product_key     = product_key;
-        info.device_name     = device_name;
-        info.device_secret     = device_secret;
-        info.device_config     = device_config;
+        info.product_key = product_key;
+        info.device_name = device_name;
+        info.device_secret = device_secret;
+        info.device_config = device_config;
 
         utarray_push_back(*device_infos, &info);
 
@@ -1946,28 +1856,28 @@ static int collect_device_info(sqlite3_stmt *stmt, UT_array **device_infos) {
 }
 
 int esv_persister_load_devices(const char *driver_name, UT_array **device_infos) {
-	sqlite3_stmt *stmt = NULL;
-	/* const char *query ="SELECT \ */
-	/* 					product_key, device_name, device_secret, device_config \ */
-	/* 					FROM thing_device WHERE plugin_node_name=?"; */
-	const char *query ="SELECT \
+    sqlite3_stmt *stmt = NULL;
+    /* const char *query ="SELECT \ */
+    /* 					product_key, device_name, device_secret, device_config \ */
+    /* 					FROM thing_device WHERE plugin_node_name=?"; */
+    const char *query =
+        "SELECT \
 						thing_device.product_key, thing_device.device_name, thing_device.device_secret, thing_device.device_config \
 						FROM thing_device INNER JOIN plugin_node ON thing_device.plugin_node_id = plugin_node.node_id WHERE plugin_node.node_name=?";
 
-	utarray_new(*device_infos, &device_info_icd);
-	
-	if (SQLITE_OK != sqlite3_prepare_v2(thing_db, query, -1, &stmt, NULL)) {
+    utarray_new(*device_infos, &device_info_icd);
+
+    if (SQLITE_OK != sqlite3_prepare_v2(thing_db, query, -1, &stmt, NULL)) {
         nlog_error("prepare `%s` fail: %s", query, sqlite3_errmsg(thing_db));
         goto error;
     }
 
     if (SQLITE_OK != sqlite3_bind_text(stmt, 1, driver_name, -1, NULL)) {
-        nlog_error("bind `%s` with `%s` fail: %s", query, driver_name,
-                   sqlite3_errmsg(thing_db));
+        nlog_error("bind `%s` with `%s` fail: %s", query, driver_name, sqlite3_errmsg(thing_db));
         goto error;
     }
 
-	if (0 != collect_device_info(stmt, device_infos)) {
+    if (0 != collect_device_info(stmt, device_infos)) {
         nlog_warn("query `%s` fail: %s", query, sqlite3_errmsg(thing_db));
         // do not set return code, return partial or empty result
     }
@@ -1979,39 +1889,36 @@ error:
     utarray_free(*device_infos);
     *device_infos = NULL;
     return NEU_ERR_EINTERNAL;
-
 }
 
 int esv_persister_query_device_node_name(const char *product_key, const char *device_name, char **node_name) {
-	sqlite3_stmt *stmt = NULL;
-	/* const char *query ="SELECT \ */
-	/* 					plugin_node_name \ */
-	/* 					FROM thing_device WHERE product_key=? and device_name=? LIMIT 1"; */
-	const char *query ="SELECT \
+    sqlite3_stmt *stmt = NULL;
+    /* const char *query ="SELECT \ */
+    /* 					plugin_node_name \ */
+    /* 					FROM thing_device WHERE product_key=? and device_name=? LIMIT 1"; */
+    const char *query =
+        "SELECT \
 						plugin_node.node_name \
 						FROM thing_device INNER JOIN plugin_node ON thing_device.plugin_node_id = plugin_node.node_id WHERE thing_device.product_key=? and thing_device.device_name=? LIMIT 1";
-	
-	if (SQLITE_OK != sqlite3_prepare_v2(thing_db, query, -1, &stmt, NULL)) {
+
+    if (SQLITE_OK != sqlite3_prepare_v2(thing_db, query, -1, &stmt, NULL)) {
         nlog_error("prepare `%s` fail: %s", query, sqlite3_errmsg(thing_db));
         goto error;
     }
 
     if (SQLITE_OK != sqlite3_bind_text(stmt, 1, product_key, -1, NULL)) {
-        nlog_error("bind `%s` with `%s` fail: %s", query, product_key,
-                   sqlite3_errmsg(thing_db));
+        nlog_error("bind `%s` with `%s` fail: %s", query, product_key, sqlite3_errmsg(thing_db));
         goto error;
     }
-
 
     if (SQLITE_OK != sqlite3_bind_text(stmt, 2, device_name, -1, NULL)) {
-        nlog_error("bind `%s` with `%s` fail: %s", query, device_name,
-                   sqlite3_errmsg(thing_db));
+        nlog_error("bind `%s` with `%s` fail: %s", query, device_name, sqlite3_errmsg(thing_db));
         goto error;
     }
 
-	int step = sqlite3_step(stmt);
-	if (SQLITE_ROW == step) {
-		*node_name = strdup((char *) sqlite3_column_text(stmt, 0));
+    int step = sqlite3_step(stmt);
+    if (SQLITE_ROW == step) {
+        *node_name = strdup((char *) sqlite3_column_text(stmt, 0));
         step = sqlite3_step(stmt);
     }
     if (SQLITE_DONE != step) {
@@ -2023,29 +1930,28 @@ int esv_persister_query_device_node_name(const char *product_key, const char *de
 
 error:
     return NEU_ERR_EINTERNAL;
-
 }
 
 int esv_persister_query_device_node_name_by_node_id(const char *plugin_node_id, char **node_name) {
-	sqlite3_stmt *stmt = NULL;
-	const char *query ="SELECT \
+    sqlite3_stmt *stmt = NULL;
+    const char *query =
+        "SELECT \
 						node_name \
 						FROM plugin_node WHERE node_id=? LIMIT 1";
-	
-	if (SQLITE_OK != sqlite3_prepare_v2(thing_db, query, -1, &stmt, NULL)) {
+
+    if (SQLITE_OK != sqlite3_prepare_v2(thing_db, query, -1, &stmt, NULL)) {
         nlog_error("prepare `%s` fail: %s", query, sqlite3_errmsg(thing_db));
         goto error;
     }
 
     if (SQLITE_OK != sqlite3_bind_text(stmt, 1, plugin_node_id, -1, NULL)) {
-        nlog_error("bind `%s` with `%s` fail: %s", query, plugin_node_id,
-                   sqlite3_errmsg(thing_db));
+        nlog_error("bind `%s` with `%s` fail: %s", query, plugin_node_id, sqlite3_errmsg(thing_db));
         goto error;
     }
 
-	int step = sqlite3_step(stmt);
-	if (SQLITE_ROW == step) {
-		*node_name = strdup((char *) sqlite3_column_text(stmt, 0));
+    int step = sqlite3_step(stmt);
+    if (SQLITE_ROW == step) {
+        *node_name = strdup((char *) sqlite3_column_text(stmt, 0));
         step = sqlite3_step(stmt);
     }
     if (SQLITE_DONE != step) {
@@ -2053,74 +1959,75 @@ int esv_persister_query_device_node_name_by_node_id(const char *plugin_node_id, 
     }
 
     sqlite3_finalize(stmt);
+    nlog_debug("esv_persister_query_device_node_name_by_node_id over");
+    nlog_debug("node_name: %s", *node_name);
     return EXIT_SUCCESS;
 
 error:
     return NEU_ERR_EINTERNAL;
-
 }
 
 static int query_normal_plugins_from_db(neu_json_plugin_req_t **result) {
-	sqlite3_stmt *stmt = NULL;
-	/* const char *query ="SELECT lib_name FROM plugin_lib"; */
-	const char *query ="SELECT lib_name FROM plugin_lib WHERE node_type IN ('9', '10', '11' ,'15')";
-    neu_json_plugin_req_t *req      = calloc(1, sizeof(neu_json_plugin_req_t));
+    sqlite3_stmt *stmt = NULL;
+    /* const char *query ="SELECT lib_name FROM plugin_lib"; */
+    const char *query = "SELECT lib_name FROM plugin_lib WHERE node_type IN ('9', '10', '11' ,'15')";
+    neu_json_plugin_req_t *req = calloc(1, sizeof(neu_json_plugin_req_t));
     if (req == NULL) {
         return -1;
     }
 
-	if (SQLITE_OK != sqlite3_prepare_v2(thing_db, query, -1, &stmt, NULL)) {
+    if (SQLITE_OK != sqlite3_prepare_v2(thing_db, query, -1, &stmt, NULL)) {
         nlog_error("prepare `%s` fail: %s", query, sqlite3_errmsg(thing_db));
         goto error;
     }
 
-	// Execute the statement and count rows
-	int step = sqlite3_step(stmt);
-	while (SQLITE_ROW == step) {
-		req->n_plugin++;
+    // Execute the statement and count rows
+    int step = sqlite3_step(stmt);
+    while (SQLITE_ROW == step) {
+        req->n_plugin++;
         step = sqlite3_step(stmt);
     }
     if (SQLITE_DONE != step) {
         nlog_warn("query count `%s` fail: %s", query, sqlite3_errmsg(thing_db));
-		goto sql_done_error;
+        goto sql_done_error;
     }
 
     req->plugins = calloc(req->n_plugin, sizeof(neu_json_plugin_req_plugin_t));
     neu_json_plugin_req_plugin_t *p_plugin = req->plugins;
 
-	// Reset the statement to use the results again
-	sqlite3_reset(stmt);
-	// Use the results again
-	step = sqlite3_step(stmt);
-	while (SQLITE_ROW == step) {
-		char *lib_name = strdup((char *) sqlite3_column_text(stmt, 0));
-		if (lib_name == NULL) {
-			goto sql_error;	
-		}
+    // Reset the statement to use the results again
+    sqlite3_reset(stmt);
+    // Use the results again
+    step = sqlite3_step(stmt);
+    while (SQLITE_ROW == step) {
+        char *lib_name = strdup((char *) sqlite3_column_text(stmt, 0));
+        if (lib_name == NULL) {
+            goto sql_error;
+        }
 
-		*p_plugin = lib_name;
-		p_plugin++;
+        *p_plugin = lib_name;
+        p_plugin++;
 
-sql_error:
+    sql_error:
         step = sqlite3_step(stmt);
     }
 
     if (SQLITE_DONE != step) {
         nlog_warn("query `%s` fail: %s", query, sqlite3_errmsg(thing_db));
-		goto sql_done_error;
+        goto sql_done_error;
     }
 
     *result = req;
-	goto sql_done;
+    goto sql_done;
 
 error:
 sql_done_error:
     if (req != NULL) {
-		neu_json_decode_plugin_req_free(req);
+        neu_json_decode_plugin_req_free(req);
     }
-	if (stmt != NULL) {
-		sqlite3_finalize(stmt);
-	}
+    if (stmt != NULL) {
+        sqlite3_finalize(stmt);
+    }
     return EXIT_FAILURE;
 
 sql_done:
@@ -2128,8 +2035,7 @@ sql_done:
     return EXIT_SUCCESS;
 }
 
-static int load_normal_plugins_from_db(UT_array *plugin_infos)
-{
+static int load_normal_plugins_from_db(UT_array *plugin_infos) {
     neu_json_plugin_req_t *plugin_req = NULL;
     int rv = query_normal_plugins_from_db(&plugin_req);
     if (rv != 0) {
@@ -2146,8 +2052,7 @@ static int load_normal_plugins_from_db(UT_array *plugin_infos)
     return 0;
 }
 
-int esv_persister_load_normal_plugins_from_db(UT_array **plugin_infos)
-{
+int esv_persister_load_normal_plugins_from_db(UT_array **plugin_infos) {
     UT_array *default_plugins = NULL;
     utarray_new(default_plugins, &ut_ptr_icd);
 
