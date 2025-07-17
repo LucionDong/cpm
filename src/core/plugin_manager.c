@@ -80,6 +80,7 @@ int neu_plugin_manager_add(neu_plugin_manager_t *mgr, const char *plugin_lib_nam
 
     assert(strlen(plugin_lib_name) <= NEU_PLUGIN_LIBRARY_LEN);
     snprintf(lib_path, sizeof(lib_path) - 1, "./plugins/%s", plugin_lib_name);
+    nlog_notice("lib_path: %s", lib_path);
 
     handle = dlopen(lib_path, RTLD_NOW | RTLD_NODELETE);
 
@@ -113,6 +114,7 @@ int neu_plugin_manager_add(neu_plugin_manager_t *mgr, const char *plugin_lib_nam
     }
 
     HASH_FIND_STR(mgr->plugins, pm->module_name, plugin);
+    nlog_notice("pm->module_name: %s", pm->module_name);
     if (plugin != NULL) {
         dlclose(handle);
         return NEU_ERR_LIBRARY_NAME_CONFLICT;
@@ -134,8 +136,8 @@ int neu_plugin_manager_add(neu_plugin_manager_t *mgr, const char *plugin_lib_nam
 
     HASH_ADD_STR(mgr->plugins, name, plugin);
 
-    nlog_notice("add plugin, name: %s, library: %s, kind: %d, type: %d", plugin->name, plugin->lib_name, plugin->kind,
-                plugin->type);
+    nlog_notice("add plugin, name: %s, library: %s, kind: %d, type: %d, version: %d", plugin->name, plugin->lib_name,
+                plugin->kind, plugin->type, pm->version);
 
     dlclose(handle);
     return NEU_ERR_SUCCESS;

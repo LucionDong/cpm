@@ -292,6 +292,7 @@ int messageArrived5(void *context, char *topicName, int topicLen, MQTTAsync_mess
         thing_model_msg->msg_type = ESV_TMM_JSON_STRING_PTR;
         thing_model_msg->msg = m->payload;
         thing_model_msg->msg_len = m->payloadlen;
+        nlog_debug("payload: %s", (char *) m->payload);
         forward_thing_control_msg_to_esvdriver(service->manager, thing_model_msg);
     end_wan_plugin_node:
         free(pk);

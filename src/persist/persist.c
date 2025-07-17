@@ -1699,6 +1699,7 @@ static UT_icd esv_node_info_icd = {
 };
 
 int esv_persister_load_normal_nodes(UT_array **esv_node_infos) {
+    printf("esv_persister_load_normal_nodes start\n");
     int rv = 0;
     sqlite3_stmt *stmt = NULL;
     const char *query =
@@ -1729,6 +1730,7 @@ int esv_persister_load_normal_nodes(UT_array **esv_node_infos) {
         }
 
         char *plugin_name = strdup((char *) sqlite3_column_text(stmt, 2));
+        nlog_debug("plugin_name: %s", plugin_name);
         if (NULL == plugin_name) {
             goto sql_error;
         }

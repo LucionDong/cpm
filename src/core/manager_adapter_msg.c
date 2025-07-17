@@ -36,7 +36,14 @@
 
 int forward_thing_control_msg_to_esvdriver(neu_manager_t *manager, const esv_thing_model_msg_t *msg) {
     nlog_info("parser control msg");
-    json_t *recv_config = json_loads(msg->msg, 0, NULL);
+    char *recv_msg = calloc(1, msg->msg_len);
+    strncpy(recv_msg, msg->msg, msg->msg_len);
+    nlog_debug("recv_msg: %s", recv_msg);
+    json_t *recv_config = json_loads(recv_msg, 0, NULL);
+    char *recv_config_str = json_dumps(recv_config, JSON_INDENT(2));
+    nlog_debug("recv_config_str: %s", recv_config_str);
+    free(recv_config_str);
+
     char *node_name = NULL;
     int config_result = 2;
 
@@ -77,6 +84,7 @@ int forward_thing_control_msg_to_esvdriver(neu_manager_t *manager, const esv_thi
         int config_type = json_integer_value(json_object_get(recv_config, "configType"));
         const char *plugin_node_id =
             json_string_value(json_object_get(json_object_get(recv_config, "params"), "pluginNodeId"));
+        nlog_debug("pluginNodeId: %s", plugin_node_id);
 
         esv_persister_query_device_node_name_by_node_id(plugin_node_id, &node_name);
         nlog_info("plugin_id: %s,node_name: %s", plugin_node_id, node_name);
@@ -124,6 +132,10 @@ int forward_thing_control_msg_to_esvdriver(neu_manager_t *manager, const esv_thi
     //     return EXIT_FAILURE;
     // }
 clean_up:
+    if (recv_msg) {
+        free(recv_msg);
+        recv_msg = NULL;
+    }
     if (node_name) {
         free(node_name);
         node_name = NULL;
