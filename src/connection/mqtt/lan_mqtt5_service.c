@@ -248,6 +248,7 @@ int messageArrived5(void *context, char *topicName, int topicLen, MQTTAsync_mess
         thing_model_msg->msg_type = ESV_TMM_JSON_STRING_PTR;
         thing_model_msg->msg = m->payload;
         thing_model_msg->msg_len = m->payloadlen;
+        nlog_debug("thing_model_msg.msg: %s", (char *) thing_model_msg->msg);
         forward_thing_control_msg_to_esvdriver(service->manager, thing_model_msg);
     end_wan_action_push:
         free(pk);
@@ -436,6 +437,27 @@ int messageArrived5(void *context, char *topicName, int topicLen, MQTTAsync_mess
         MQTTAsync_freeMessage(&m);
         MQTTAsync_free(topicName);
 
+    } else if (topic_matches_wildcard(topicName, TOPIC_WILDCARD_LAN_THINGSUB_EVENT_PROPERTY_POST)) {
+        char *pk;
+        char *dn;
+        get_pk_dn_from_thingsub_topic(topicName, 3, &pk, &dn);
+        nlog_debug("pk:%s dn:%s", pk, dn);
+        esv_lan_mqtt5_service_t *service = (esv_lan_mqtt5_service_t *) context;
+        esv_thing_model_msg_t *thing_model_msg = calloc(1, sizeof(esv_thing_model_msg_t));
+        thing_model_msg->method = ESV_TMM_MTD_LAN_SUBTHING_THING_EVENT_PROPERTY_POST;
+        thing_model_msg->product_key = pk;
+        thing_model_msg->device_name = dn;
+        thing_model_msg->msg_type = ESV_TMM_JSON_STRING_PTR;
+        thing_model_msg->msg = m->payload;
+        thing_model_msg->msg_len = m->payloadlen;
+        forward_thing_model_msg_to_esvdriver(service->manager, thing_model_msg);
+    end_lan_prop_post:
+        free(pk);
+        free(dn);
+        free(thing_model_msg);
+        MQTTAsync_freeMessage(&m);
+        MQTTAsync_free(topicName);
+
     } else if (topic_matches_wildcard(topicName, TOPIC_WILDCARD_LAN_THING_SERVICE_PROPERTY_POSTREQ)) {
         char *pk = "";
         char *dn = "";
@@ -450,7 +472,7 @@ int messageArrived5(void *context, char *topicName, int topicLen, MQTTAsync_mess
         thing_model_msg->msg = m->payload;
         thing_model_msg->msg_len = m->payloadlen;
         forward_thing_model_msg_to_all_esvdevicedriver(service->manager, thing_model_msg);
-    end_lan_prop_post:
+    end_lan_prop_postreq:
         /* free(pk); */
         /* free(dn); */
         free(thing_model_msg);

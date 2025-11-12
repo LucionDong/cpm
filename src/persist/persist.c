@@ -1934,6 +1934,44 @@ error:
     return NEU_ERR_EINTERNAL;
 }
 
+UT_array *esv_persister_query_device_node_name_by_node_type() {
+    sqlite3_stmt *stmt = NULL;
+    /* const char *query ="SELECT \ */
+    /* 					plugin_node_name \ */
+    /* 					FROM thing_device WHERE product_key=? and device_name=? LIMIT 1"; */
+    const char *query =
+        "SELECT \
+						node_name \
+						FROM plugin_node WHERE node_type IN ('9','11')";
+
+    if (SQLITE_OK != sqlite3_prepare_v2(thing_db, query, -1, &stmt, NULL)) {
+        nlog_error("prepare `%s` fail: %s", query, sqlite3_errmsg(thing_db));
+        goto error;
+    }
+
+    int step;
+    UT_array *array = NULL;
+    utarray_new(array, &ut_str_icd);
+
+    while ((step = sqlite3_step(stmt)) == SQLITE_ROW) {
+        const unsigned char *node_name_str = sqlite3_column_text(stmt, 0);
+        if (node_name_str) {
+            nlog_notice("node_name: %s", node_name_str);
+            utarray_push_back(array, &node_name_str);
+        }
+    }
+
+    if (SQLITE_DONE != step) {
+        nlog_warn("query `%s` fail: %s", query, sqlite3_errmsg(thing_db));
+    }
+
+    sqlite3_finalize(stmt);
+    return array;
+
+error:
+    return NULL;
+}
+
 int esv_persister_query_device_node_name_by_node_id(const char *plugin_node_id, char **node_name) {
     sqlite3_stmt *stmt = NULL;
     const char *query =

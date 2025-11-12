@@ -147,50 +147,57 @@ clean_up:
 int forward_thing_model_msg_to_esvdriver(neu_manager_t *manager, const esv_thing_model_msg_t *msg) {
     // 根据pk dn找到对应的node_name
     nlog_info("pk:%s dn:%s to find node_name", msg->product_key, msg->device_name);
-    UT_array *esv_self_device_drivers = NULL;
+    UT_array *esv_self_device_drivers = NULL, *esv_node_name_array = NULL;
+    char **temp = NULL;
+    int rv = 0;
     esv_self_device_drivers = neu_node_manager_get_adapter(manager->node_manager, NEU_NA_TYPE_ESVSELFDEVICEDRIVER);
-    char *node_name = NULL;
-    esv_persister_query_device_node_name(msg->product_key, msg->device_name, &node_name);
-    if (esv_self_device_drivers == NULL) {
-        nlog_warn("do not find esv self device driver!");
+    // char *node_name = NULL;
+    // esv_persister_query_device_node_name(msg->product_key, msg->device_name, &node_name);
+
+    esv_node_name_array = esv_persister_query_device_node_name_by_node_type();
+    nlog_notice("esv_node_name_array: %d", utarray_len(esv_node_name_array));
+    if (esv_self_device_drivers == NULL || esv_node_name_array == NULL) {
+        nlog_warn("do not find node name in persister");
         return EXIT_FAILURE;
     }
 
-    if (NULL == node_name) {
-        nlog_warn("do not find node of pk: %s dn: %s", msg->product_key, msg->device_name);
-        utarray_foreach(esv_self_device_drivers, neu_adapter_t **, adapter) {
-            nlog_debug("self adapter name: %s", (*adapter)->name);
-
-            char value[1024] = {0};
-            select_plugin_node(manager->sql_handle, (*adapter)->name, value);
-            int node_id = atoi(value);
-            ((esv_thing_model_msg_t *) msg)->plugin_id = node_id;
-            nlog_info("send adapter msg: %.*s", msg->msg_len, (char *) msg->msg);
-            (*adapter)->module->intf_funs->esvdriver.thing_model_msg_arrived((*adapter)->plugin, msg);
-        }
-        return EXIT_SUCCESS;
-    }
+    // if (NULL == node_name) {
+    //     nlog_warn("do not find node of pk: %s dn: %s", msg->product_key, msg->device_name);
+    //     utarray_foreach(esv_self_device_drivers, neu_adapter_t **, adapter) {
+    //         nlog_debug("self adapter name: %s", (*adapter)->name);
+    //
+    //         char value[1024] = {0};
+    //         select_plugin_node(manager->sql_handle, (*adapter)->name, value);
+    //         int node_id = atoi(value);
+    //         ((esv_thing_model_msg_t *) msg)->plugin_id = node_id;
+    //         nlog_info("send adapter msg: %.*s", msg->msg_len, (char *) msg->msg);
+    //         (*adapter)->module->intf_funs->esvdriver.thing_model_msg_arrived((*adapter)->plugin, msg);
+    //     }
+    //     return EXIT_SUCCESS;
+    // }
 
     /* TODO:  <13-05-24, winston>
      * 根据plugin type分发数据
      * */
 
     // 根据node_name找到对应的adapter
-    nlog_info("to find adapter of node_name:%s", node_name);
-    neu_adapter_t *adapter = neu_node_manager_find(manager->node_manager, node_name);
-    if (NULL == adapter) {
-        nlog_warn("do not find adapter of node name: %s", node_name);
-        return EXIT_FAILURE;
+    while ((temp = (char **) utarray_next(esv_node_name_array, temp))) {
+        nlog_info("to find adapter of node_name:%s", *temp);
+        neu_adapter_t *adapter = neu_node_manager_find(manager->node_manager, *temp);
+        if (NULL == adapter) {
+            nlog_warn("do not find adapter of node name: %s", *temp);
+            return EXIT_FAILURE;
+        }
+
+        char value[1024] = {0};
+        select_plugin_node(manager->sql_handle, adapter->name, value);
+        int node_id = atoi(value);
+        nlog_info("node_name: %s, node_id: %d", adapter->name, node_id);
+        ((esv_thing_model_msg_t *) msg)->plugin_id = node_id;
+
+        nlog_info("to send ting model msg to esvdriver:%s", adapter->name);
+        rv = adapter->module->intf_funs->esvdriver.thing_model_msg_arrived(adapter->plugin, msg);
     }
-
-    char value[1024] = {0};
-    select_plugin_node(manager->sql_handle, adapter->name, value);
-    int node_id = atoi(value);
-    nlog_info("node_name: %s, node_id: %d", adapter->name, node_id);
-    ((esv_thing_model_msg_t *) msg)->plugin_id = node_id;
-
-    nlog_info("to send ting model msg to esvdriver:%s", adapter->name);
-    int rv = adapter->module->intf_funs->esvdriver.thing_model_msg_arrived(adapter->plugin, msg);
 end:
     return rv;
 }

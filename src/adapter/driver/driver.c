@@ -1565,6 +1565,7 @@ static bool is_device_in_device_list(esv_device_list_t *list, const char *pk, co
     return false;
 }
 
+// 接收插件信息
 static int thing_model_msg_arrived(neu_adapter_t *adapter, const esv_thing_model_msg_t *thing_model_msg) {
     nlog_debug("thing_model_msg_arrived from driver: %s product_key: %s, device_name: %s, method: %d  msg_type: %d",
                adapter->name, thing_model_msg->product_key, thing_model_msg->device_name, thing_model_msg->method,
@@ -1578,6 +1579,7 @@ static int thing_model_msg_arrived(neu_adapter_t *adapter, const esv_thing_model
     if (adapter->module->type == NEU_NA_TYPE_ESVAPP) {
         if (ESV_TMM_MTD_LAN_SUBTHING_THING_SERVICE_PROPERTY_SET != thing_model_msg->method &&
             ESV_TMM_MTD_LAN_SUBTHING_THING_SERVICE_PROPERTY_GET != thing_model_msg->method &&
+            ESV_TMM_MTD_LAN_SUBTHING_THING_EVENT_PROPERTY_POST != thing_model_msg->method &&
             ESV_TMM_MTD_WAN_SUBTHING_THING_PLUGIN_NODE_CONFIG_PUSH_REPLY != thing_model_msg->method &&
             ESV_TMM_MTD_WAN_SUBTHING_THING_PLUGIN_NODE_ACTION_PUSH_REPLY != thing_model_msg->method) {
             nlog_debug("esv app do not pass msg method != property set and != property get");
@@ -1605,6 +1607,9 @@ static int thing_model_msg_arrived(neu_adapter_t *adapter, const esv_thing_model
             if (adapter->module->type == NEU_NA_TYPE_ESVDEVICEDRIVER) {
                 nlog_debug("forward thing model msg from device driver to app");
                 forward_thing_model_msg_to_esvapps(adapter->manager, thing_model_msg);
+            } else if (adapter->module->type == NEU_NA_TYPE_ESVAPP) {
+                nlog_debug("forward thing model msg from app to device driver");
+                forward_thing_model_msg_to_esvdriver(adapter->manager, thing_model_msg);
             }
         }
     } else if (ESV_TMM_MTD_LAN_SUBTHING_THING_SERVICE_PROPERTY_SET == thing_model_msg->method) {
@@ -1618,6 +1623,9 @@ static int thing_model_msg_arrived(neu_adapter_t *adapter, const esv_thing_model
             if (adapter->module->type == NEU_NA_TYPE_ESVAPP) {
                 nlog_debug("forward thing model msg from app to device driver");
                 forward_thing_model_msg_to_esvdriver(adapter->manager, thing_model_msg);
+            } else if (adapter->module->type == NEU_NA_TYPE_ESVDEVICEDRIVER) {
+                nlog_debug("KNX adapter forward set thing model msg to esvapps");
+                forward_thing_model_msg_to_esvapps(adapter->manager, thing_model_msg);
             }
         }
     } else if (ESV_TMM_MTD_LAN_SUBTHING_THING_SERVICE_PROPERTY_SET_REPLY == thing_model_msg->method) {
