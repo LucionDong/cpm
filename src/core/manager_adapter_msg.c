@@ -183,6 +183,9 @@ int forward_thing_model_msg_to_esvdriver(neu_manager_t *manager, const esv_thing
     // 根据node_name找到对应的adapter
     while ((temp = (char **) utarray_next(esv_node_name_array, temp))) {
         nlog_info("to find adapter of node_name:%s", *temp);
+        if (strcmp(*temp, "Matter") != 0) {
+            continue;
+        }
         neu_adapter_t *adapter = neu_node_manager_find(manager->node_manager, *temp);
         if (NULL == adapter) {
             nlog_warn("do not find adapter of node name: %s", *temp);

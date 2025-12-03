@@ -29,6 +29,10 @@ typedef enum esv_thing_model_msg_method {
 
     ESV_TMM_MTD_WAN_SUBTHING_THING_PLUGIN_NODE_ACTION_PUSH,
     ESV_TMM_MTD_WAN_SUBTHING_THING_PLUGIN_NODE_ACTION_PUSH_REPLY,
+
+    // matter test
+    ESV_TMM_MTD_WAN_SUBTHING_THING_MATTER_REGISTER_SET,
+    ESV_TMM_MTD_WAN_SUBTHING_THING_MATTER_DELETE_SET,
 } esv_thing_model_msg_method_e;
 
 typedef enum esv_thing_model_msg_type {
