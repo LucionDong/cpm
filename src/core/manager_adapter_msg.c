@@ -47,6 +47,7 @@ int forward_thing_control_msg_to_esvdriver(neu_manager_t *manager, const esv_thi
     char *node_name = NULL;
     int config_result = 2;
 
+    // 场景
     if (msg->method == ESV_TMM_MTD_WAN_SUBTHING_THING_PLUGIN_NODE_ACTION_PUSH) {
         json_t *msg_js = json_loads(msg->msg, 0, NULL);
         if (NULL == msg_js) {
