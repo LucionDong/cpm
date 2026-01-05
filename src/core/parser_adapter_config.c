@@ -40,6 +40,48 @@ int append_results(const char *plugin_node_id, int result, json_t **plugin_node_
 
     return 0;
 }
+int send_config_plugin_results_for_matter(neu_adapter_t *adapter, json_t *recv_msg, int result) {
+    unsigned char uuid[16];
+    char *uuid_str = calloc(1, sizeof(char) * 37);
+    uuid_generate(uuid);
+    uuid_unparser(uuid, uuid_str);
+
+    char *trans_id = strdup(json_string_value(json_object_get(recv_msg, "transId")));
+    char *plugin_node_id =
+        strdup(json_string_value(json_object_get(json_object_get(recv_msg, "params"), "pluginNodeId")));
+    int config_type = json_integer_value(json_object_get(json_object_get(recv_msg, "params"), "pluginNodeId"));
+
+    json_t *send_json = json_object(), *data = json_object(), *plugin_node_result = json_object();
+
+    json_object_set_new(send_json, "id", json_string(uuid_str));
+    json_object_set_new(send_json, "transId", json_string(trans_id));
+    json_object_set_new(send_json, "code", json_string("200"));
+    json_object_set_new(send_json, "method", json_string("thing.pluginNode.config.pushReply"));
+
+    json_object_set_new(data, "configType", json_integer(config_type));
+
+    json_object_set_new(plugin_node_result, "result", json_integer(result));
+    json_object_set_new(plugin_node_result, "pluginNodeId", json_string(plugin_node_id));
+    json_object_set_new(data, "configResult", plugin_node_result);
+
+    json_object_set_new(send_json, "data", data);
+
+    char *data_root_str = json_dumps(send_json, 0);
+    // esv_thing_model_msg_t thing_model_msg = {.method = ESV_TMM_MTD_APP_THING_PLUGIN_NODE_CONFIG_RELOAD_PUSH_REPLY,
+    //                                          .product_key = "",
+    //                                          .device_name = "",
+    //                                          .msg_type = ESV_TMM_JSON_STRING_PTR,
+    //                                          .msg = data_root_str};
+    // if (ESV_TMM_JSON_STRING_PTR == thing_model_msg.msg_type) {
+    char *topic_formate = "app/thing/pluginNode/config/pushReply";
+    lan_mqtt5_service_publish(adapter->lan_mqtt5_service, topic_formate, data_root_str);
+    // }
+
+    free(uuid_str);
+    free(data_root_str);
+    json_decref(data);
+    return 0;
+}
 
 int send_config_plugin_results(neu_adapter_t *adapter, const char *parent_product_key, const char *parent_device_name,
                                json_t *recv_msg, int result) {

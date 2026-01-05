@@ -1580,6 +1580,8 @@ static int thing_model_msg_arrived(neu_adapter_t *adapter, const esv_thing_model
         if (ESV_TMM_MTD_LAN_SUBTHING_THING_SERVICE_PROPERTY_SET != thing_model_msg->method &&
             ESV_TMM_MTD_LAN_SUBTHING_THING_SERVICE_PROPERTY_GET != thing_model_msg->method &&
             ESV_TMM_MTD_LAN_SUBTHING_THING_EVENT_PROPERTY_POST != thing_model_msg->method &&
+            ESV_TMM_MTD_APP_THING_PLUGIN_NODE_CONFIG_PUSH_REPLY != thing_model_msg->method &&
+            ESV_TMM_MTD_APP_THING_PLUGIN_NODE_CONFIG_RELOAD_PUSH_REPLY != thing_model_msg->method &&
             ESV_TMM_MTD_WAN_SUBTHING_THING_PLUGIN_NODE_CONFIG_PUSH_REPLY != thing_model_msg->method &&
             ESV_TMM_MTD_WAN_SUBTHING_THING_PLUGIN_NODE_ACTION_PUSH_REPLY != thing_model_msg->method) {
             nlog_debug("esv app do not pass msg method != property set and != property get");
@@ -1758,6 +1760,20 @@ static int thing_model_msg_arrived(neu_adapter_t *adapter, const esv_thing_model
         if (ESV_TMM_JSON_STRING_PTR == thing_model_msg->msg_type) {
             lan_mqtt5_service_publish(adapter->lan_mqtt5_service, topic_formate, thing_model_msg->msg);
             // free(topic);
+        }
+    } else if (ESV_TMM_MTD_APP_THING_PLUGIN_NODE_CONFIG_PUSH_REPLY == thing_model_msg->method) {
+        char *topic_formate = "app/thing/pluginNode/%d/config/pushReply";
+        if (ESV_TMM_JSON_STRING_PTR == thing_model_msg->msg_type) {
+            nlog_debug("thing_model_msg.plugin_id: %d", thing_model_msg->plugin_id);
+            char topic[1024] = {0};
+            sprintf(topic, "app/thing/pluginNode/%d/config/pushReply", thing_model_msg->plugin_id);
+            lan_mqtt5_service_publish(adapter->lan_mqtt5_service, topic, thing_model_msg->msg);
+        }
+    } else if (ESV_TMM_MTD_APP_THING_PLUGIN_NODE_CONFIG_RELOAD_PUSH_REPLY == thing_model_msg->method) {
+        char *topic_formate = "app/thing/pluginNode/config/pushReply";
+        if (ESV_TMM_JSON_STRING_PTR == thing_model_msg->msg_type) {
+            nlog_debug("thing_model_msg.plugin_id: %d", thing_model_msg->plugin_id);
+            lan_mqtt5_service_publish(adapter->lan_mqtt5_service, topic_formate, thing_model_msg->msg);
         }
     }
 
