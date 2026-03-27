@@ -33,39 +33,39 @@ typedef neu_json_plugin_req_plugin_t neu_persist_plugin_info_t;
 
 typedef struct {
     char *name;
-    int   type;
+    int type;
     char *plugin_name;
-    int   state;
+    int state;
 } neu_persist_node_info_t;
 
 /* easeview start */
 
 typedef struct {
-	char *node_id;
+    char *node_id;
     char *node_name;
     char *plugin_name;
     char *lib_name;
-    int   node_type;
-    int   install_type;
+    int node_type;
+    int install_type;
     char *node_config;
-    int   node_config_index;
-    int   state;
+    int node_config_index;
+    int state;
 } esv_persist_node_info_t;
 
 typedef struct {
-	char *product_key;
-	char *device_name;
-	char *device_secret;
-	char *plugin_node_name;
-	char *device_config;
+    char *product_key;
+    char *device_name;
+    char *device_secret;
+    char *plugin_node_name;
+    char *device_config;
 } esv_persist_device_info_t;
 
 static inline void esv_presist_device_info_fini(esv_persist_device_info_t *info) {
-	free(info->product_key);
-	free(info->device_name);
-	free(info->device_secret);
-	free(info->plugin_node_name);
-	free(info->device_config);
+    free(info->product_key);
+    free(info->device_name);
+    free(info->device_secret);
+    free(info->plugin_node_name);
+    free(info->device_config);
 }
 
 /**
@@ -92,15 +92,14 @@ int esv_persister_load_normal_nodes(UT_array **node_infos);
  * @param[out] setting              used to return node setting string.
  * @return 0 on success, non-zero otherwise
  */
-int esv_persister_load_node_config(const char *       node_name,
-                                    const char **const config);
+int esv_persister_load_node_config(const char *node_name, const char **const config);
 int esv_persister_load_devices(const char *driver_name, UT_array **device_infos);
 
 int esv_persister_query_device_node_name(const char *product_key, const char *device_name, char **driver_name);
 int esv_persister_query_device_node_name_by_node_id(const char *plugin_node_id, char **node_name);
+UT_array *esv_persister_query_device_node_name_by_node_type();
 
-static inline void esv_persist_node_info_fini(esv_persist_node_info_t *info)
-{
+static inline void esv_persist_node_info_fini(esv_persist_node_info_t *info) {
     free(info->node_id);
     free(info->node_name);
     free(info->plugin_name);
@@ -136,8 +135,7 @@ int esv_persister_load_normal_plugins_from_db(UT_array **plugin_infos);
 /*     utarray_free(plugin_infos); */
 /* } */
 
-static inline void neu_persist_node_info_fini(neu_persist_node_info_t *info)
-{
+static inline void neu_persist_node_info_fini(neu_persist_node_info_t *info) {
     free(info->name);
     free(info->plugin_name);
 }
@@ -367,16 +365,14 @@ int neu_persister_load_plugins(UT_array **plugin_infos);
  * @param setting                   node setting string.
  * @return 0 on success, non-zero otherwise
  */
-int neu_persister_store_node_setting(const char *node_name,
-                                     const char *setting);
+int neu_persister_store_node_setting(const char *node_name, const char *setting);
 /**
  * Load node setting.
  * @param node_name                 name of the node.
  * @param[out] setting              used to return node setting string.
  * @return 0 on success, non-zero otherwise
  */
-int neu_persister_load_node_setting(const char *       node_name,
-                                    const char **const setting);
+int neu_persister_load_node_setting(const char *node_name, const char **const setting);
 /**
  * Delete node setting.
  * @param node_name                 name of the node.

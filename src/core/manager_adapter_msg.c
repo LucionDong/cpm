@@ -33,6 +33,73 @@
 
 /* 	return 0; */
 /* } */
+int forward_thing_model_matter_reload_msg_to_esvdriver(neu_manager_t *manager, const esv_thing_model_msg_t *msg) {
+    char *recv_msg = strdup(msg->msg);
+    // char *recv_msg = calloc(1, msg->msg_len);
+    // strncpy(recv_msg, msg->msg, msg->msg_len);
+    nlog_debug("recv_msg: %s", recv_msg);
+    json_t *recv_config = json_loads(recv_msg, 0, NULL);
+
+    json_t *params = json_object_get(recv_config, "params");
+    const char *config_item_str = json_string_value(json_object_get(params, "configItem"));
+
+    int config_result = 0;
+    char *node_name = NULL, plugin_node_id[1024] = {0};
+    if (config_item_str) {
+        nlog_debug("msg.plugin_node_id: %d", msg->plugin_id);
+        sprintf(plugin_node_id, "%d", msg->plugin_id);
+    } else {
+        const char *plugin_node = json_string_value(json_object_get(params, "pluginNodeId"));
+        strcpy(plugin_node_id, plugin_node);
+    }
+
+    esv_persister_query_device_node_name_by_node_id(plugin_node_id, &node_name);
+    nlog_info("plugin_id: %s,node_name: %s", plugin_node_id, node_name);
+    if (NULL == node_name) {
+        nlog_warn("do not find node of plugin_node_id: %s", plugin_node_id);
+        config_result = 1;
+    }
+    neu_adapter_t *adapter = neu_node_manager_find(manager->node_manager, node_name);
+    if (NULL == adapter) {
+        nlog_warn("do not find adapter of node name: %s", node_name);
+        return EXIT_FAILURE;
+    }
+
+    nlog_debug("config_item_str: %s", config_item_str);
+    if (config_item_str &&
+        (!strcmp(config_item_str, "deviceRegister") || !strcmp(config_item_str, "deviceUnregister") ||
+         !strcmp(config_item_str, "deviceBatchUnregister") || !strcmp(config_item_str, "bridgeFactoryReset"))) {
+        int ret = adapter->module->intf_funs->esvdriver.thing_model_msg_arrived(adapter->plugin, msg);
+    } else if (NULL == config_item_str) {
+        int ret = adapter->module->intf_funs->stop(adapter->plugin);
+        nlog_debug("ret: %d", ret);
+        if (ret != 0) {
+            return 0;
+        }
+
+        if (esv_adapter_load_config(adapter->name, &adapter->setting) == 0) {
+            nlog_debug("setting: %s", adapter->setting);
+            if (adapter->module->intf_funs->setting(adapter->plugin, adapter->setting) == 0) {
+                adapter->state = NEU_NODE_RUNNING_STATE_READY;
+                config_result = 0;
+                nlog_info("setting is OK");
+            } else {
+                free(adapter->setting);
+                adapter->setting = NULL;
+            }
+        }
+        adapter->module->intf_funs->start(adapter->plugin);
+        nlog_debug("start over");
+        send_config_plugin_results_for_matter(adapter, recv_config, config_result);
+    }
+
+    free(recv_msg);
+    recv_msg = NULL;
+
+    json_decref(recv_config);
+
+    return 0;
+}
 
 int forward_thing_control_msg_to_esvdriver(neu_manager_t *manager, const esv_thing_model_msg_t *msg) {
     nlog_info("parser control msg");
@@ -40,6 +107,7 @@ int forward_thing_control_msg_to_esvdriver(neu_manager_t *manager, const esv_thi
     strncpy(recv_msg, msg->msg, msg->msg_len);
     nlog_debug("recv_msg: %s", recv_msg);
     json_t *recv_config = json_loads(recv_msg, 0, NULL);
+
     char *recv_config_str = json_dumps(recv_config, JSON_INDENT(2));
     nlog_debug("recv_config_str: %s", recv_config_str);
     free(recv_config_str);
@@ -184,6 +252,9 @@ int forward_thing_model_msg_to_esvdriver(neu_manager_t *manager, const esv_thing
     // 根据node_name找到对应的adapter
     while ((temp = (char **) utarray_next(esv_node_name_array, temp))) {
         nlog_info("to find adapter of node_name:%s", *temp);
+        // if (strcmp(*temp, "Matter") != 0) {
+        //     continue;
+        // }
         neu_adapter_t *adapter = neu_node_manager_find(manager->node_manager, *temp);
         if (NULL == adapter) {
             nlog_warn("do not find adapter of node name: %s", *temp);

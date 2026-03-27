@@ -1806,14 +1806,28 @@ int esv_persister_load_node_config(const char *node_name, const char **const con
         goto end;
     }
 
-    char *s = strdup((char *) sqlite3_column_text(stmt, 0));
-    if (NULL == s) {
+    nlog_debug("strdup before");
+    if (sqlite3_column_text(stmt, 0) == NULL) {
+        nlog_error("sqlite3_column_text fail");
+        rv = NEU_ERR_EINTERNAL;
+        goto end;
+    }
+    nlog_debug("strdup before");
+
+    char *text = ((char *) sqlite3_column_text(stmt, 0));
+    int len = sqlite3_column_bytes(stmt, 0);
+    nlog_debug("strdup before text: %s,len: %d", text, len);
+    char *buf = calloc(1, sizeof(char) * (len + 1));
+    memcpy(buf, text, len);
+    nlog_debug("strdup before");
+    if (NULL == buf) {
         nlog_error("strdup fail");
         rv = NEU_ERR_EINTERNAL;
         goto end;
     }
+    nlog_debug("strdup before");
 
-    *config = s;
+    *config = buf;
 
 end:
     sqlite3_finalize(stmt);

@@ -10,6 +10,8 @@
 #include "utils/log.h"
 #include "utils/time.h"
 
+#define VERSION "1.0.1"
+
 static bool exit_flag = false;
 static neu_manager_t *g_manager = NULL;
 zlog_category_t *neuron = NULL;
@@ -71,6 +73,10 @@ static int neuron_run(const neu_cli_args_t *args) {
 int main(int argc, char *argv[]) {
     printf("git_commit_id: %s\n", GIT_COMMIT_ID);
     printf("git_tag: %s\n", GIT_TAG);
+    if (argc == 2 && strcmp(argv[1], "-v") == 0) {
+        printf("esvcpm version %s\n", VERSION);
+        return 0;
+    }
 
     int rv = 0;
     int status = 0;
