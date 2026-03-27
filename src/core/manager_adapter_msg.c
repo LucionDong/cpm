@@ -67,12 +67,18 @@ int forward_thing_model_matter_reload_msg_to_esvdriver(neu_manager_t *manager, c
 
     nlog_debug("config_item_str: %s", config_item_str);
     if (config_item_str &&
-        (!strcmp(config_item_str, "deviceRegister") || !strcmp(config_item_str, "deviceUnregister"))) {
+        (!strcmp(config_item_str, "deviceRegister") || !strcmp(config_item_str, "deviceUnregister") ||
+         !strcmp(config_item_str, "deviceBatchUnregister") || !strcmp(config_item_str, "bridgeFactoryReset"))) {
         int ret = adapter->module->intf_funs->esvdriver.thing_model_msg_arrived(adapter->plugin, msg);
     } else if (NULL == config_item_str) {
-        adapter->module->intf_funs->stop(adapter->plugin);
-        nlog_debug("stop over");
+        int ret = adapter->module->intf_funs->stop(adapter->plugin);
+        nlog_debug("ret: %d", ret);
+        if (ret != 0) {
+            return 0;
+        }
+
         if (esv_adapter_load_config(adapter->name, &adapter->setting) == 0) {
+            nlog_debug("setting: %s", adapter->setting);
             if (adapter->module->intf_funs->setting(adapter->plugin, adapter->setting) == 0) {
                 adapter->state = NEU_NODE_RUNNING_STATE_READY;
                 config_result = 0;

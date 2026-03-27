@@ -10,7 +10,7 @@
 #include "utils/log.h"
 #include "utils/time.h"
 
-#define VERSION "1.0.0"
+#define VERSION "1.0.1"
 
 static bool exit_flag = false;
 static neu_manager_t *g_manager = NULL;

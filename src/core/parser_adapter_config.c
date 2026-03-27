@@ -55,7 +55,7 @@ int send_config_plugin_results_for_matter(neu_adapter_t *adapter, json_t *recv_m
 
     json_object_set_new(send_json, "id", json_string(uuid_str));
     json_object_set_new(send_json, "transId", json_string(trans_id));
-    json_object_set_new(send_json, "code", json_string("200"));
+    json_object_set_new(send_json, "code", json_integer(200));
     json_object_set_new(send_json, "method", json_string("thing.pluginNode.config.pushReply"));
 
     json_object_set_new(data, "configType", json_integer(config_type));
@@ -74,6 +74,7 @@ int send_config_plugin_results_for_matter(neu_adapter_t *adapter, json_t *recv_m
     //                                          .msg = data_root_str};
     // if (ESV_TMM_JSON_STRING_PTR == thing_model_msg.msg_type) {
     char *topic_formate = "app/thing/pluginNode/config/pushReply";
+    printf("data_root_str: %s\n", data_root_str);
     lan_mqtt5_service_publish(adapter->lan_mqtt5_service, topic_formate, data_root_str);
     // }
 
