@@ -1583,7 +1583,8 @@ static int thing_model_msg_arrived(neu_adapter_t *adapter, const esv_thing_model
             ESV_TMM_MTD_APP_THING_PLUGIN_NODE_CONFIG_PUSH_REPLY != thing_model_msg->method &&
             ESV_TMM_MTD_APP_THING_PLUGIN_NODE_CONFIG_RELOAD_PUSH_REPLY != thing_model_msg->method &&
             ESV_TMM_MTD_WAN_SUBTHING_THING_PLUGIN_NODE_CONFIG_PUSH_REPLY != thing_model_msg->method &&
-            ESV_TMM_MTD_WAN_SUBTHING_THING_PLUGIN_NODE_ACTION_PUSH_REPLY != thing_model_msg->method) {
+            ESV_TMM_MTD_WAN_SUBTHING_THING_PLUGIN_NODE_ACTION_PUSH_REPLY != thing_model_msg->method &&
+            ESV_TMM_MTD_LAN_SUBTHING_THING_SERVICE_PROPERTY_UPDATE != thing_model_msg->method) {
             nlog_debug("esv app do not pass msg method != property set and != property get");
             return 1;
         }
@@ -1774,6 +1775,14 @@ static int thing_model_msg_arrived(neu_adapter_t *adapter, const esv_thing_model
         if (ESV_TMM_JSON_STRING_PTR == thing_model_msg->msg_type) {
             nlog_debug("thing_model_msg.plugin_id: %d", thing_model_msg->plugin_id);
             lan_mqtt5_service_publish(adapter->lan_mqtt5_service, topic_formate, thing_model_msg->msg);
+        }
+    } else if (ESV_TMM_MTD_LAN_SUBTHING_THING_SERVICE_PROPERTY_UPDATE == thing_model_msg->method) {
+        /* UPDATE 仅用于本地缓存校正，不向 LAN MQTT 广播，不从 ESVDEVICEDRIVER 回转 */
+        if (ESV_TMM_JSON_STRING_PTR == thing_model_msg->msg_type) {
+            if (adapter->module->type == NEU_NA_TYPE_ESVAPP) {
+                nlog_debug("forward UPDATE from app to device driver (cache-only, no MQTT)");
+                forward_thing_model_msg_to_esvdriver(adapter->manager, thing_model_msg);
+            }
         }
     }
 
