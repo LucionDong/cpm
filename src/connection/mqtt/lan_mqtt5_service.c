@@ -238,12 +238,13 @@ int messageArrived5(void *context, char *topicName, int topicLen, MQTTAsync_mess
         thing_model_msg->product_key = pk;
         thing_model_msg->device_name = dn;
         thing_model_msg->msg_type = ESV_TMM_JSON_STRING_PTR;
-        thing_model_msg->msg = m->payload;
+        thing_model_msg->msg = strndup(m->payload, m->payloadlen);
         thing_model_msg->msg_len = m->payloadlen;
         forward_thing_model_msg_to_esvdriver(service->manager, thing_model_msg);
     end_wan_prop_set:
         free(pk);
         free(dn);
+        free(thing_model_msg->msg);
         free(thing_model_msg);
         MQTTAsync_freeMessage(&m);
         MQTTAsync_free(topicName);
@@ -260,13 +261,14 @@ int messageArrived5(void *context, char *topicName, int topicLen, MQTTAsync_mess
         thing_model_msg->product_key = pk;
         thing_model_msg->device_name = dn;
         thing_model_msg->msg_type = ESV_TMM_JSON_STRING_PTR;
-        thing_model_msg->msg = m->payload;
+        thing_model_msg->msg = strndup(m->payload, m->payloadlen);
         thing_model_msg->msg_len = m->payloadlen;
         nlog_debug("thing_model_msg.msg: %s", (char *) thing_model_msg->msg);
         forward_thing_control_msg_to_esvdriver(service->manager, thing_model_msg);
     end_wan_action_push:
         free(pk);
         free(dn);
+        free(thing_model_msg->msg);
         free(thing_model_msg);
         MQTTAsync_freeMessage(&m);
         MQTTAsync_free(topicName);
@@ -283,12 +285,13 @@ int messageArrived5(void *context, char *topicName, int topicLen, MQTTAsync_mess
         thing_model_msg->product_key = pk;
         thing_model_msg->device_name = dn;
         thing_model_msg->msg_type = ESV_TMM_JSON_STRING_PTR;
-        thing_model_msg->msg = m->payload;
+        thing_model_msg->msg = strndup(m->payload, m->payloadlen);
         thing_model_msg->msg_len = m->payloadlen;
         forward_thing_model_msg_to_esvdriver(service->manager, thing_model_msg);
     end_wan_prop_get:
         free(pk);
         free(dn);
+        free(thing_model_msg->msg);
         free(thing_model_msg);
         MQTTAsync_freeMessage(&m);
         MQTTAsync_free(topicName);
@@ -305,13 +308,14 @@ int messageArrived5(void *context, char *topicName, int topicLen, MQTTAsync_mess
         thing_model_msg->product_key = pk;
         thing_model_msg->device_name = dn;
         thing_model_msg->msg_type = ESV_TMM_JSON_STRING_PTR;
-        thing_model_msg->msg = m->payload;
+        thing_model_msg->msg = strndup(m->payload, m->payloadlen);
         thing_model_msg->msg_len = m->payloadlen;
-        nlog_debug("payload: %s", (char *) m->payload);
+        nlog_debug("payload: %s", (char *) thing_model_msg->msg);
         forward_thing_control_msg_to_esvdriver(service->manager, thing_model_msg);
     end_wan_plugin_node:
         free(pk);
         free(dn);
+        free(thing_model_msg->msg);
         free(thing_model_msg);
         MQTTAsync_freeMessage(&m);
         MQTTAsync_free(topicName);
@@ -330,9 +334,10 @@ int messageArrived5(void *context, char *topicName, int topicLen, MQTTAsync_mess
         thing_model_msg->msg = strndup(m->payload, m->payloadlen);
         thing_model_msg->msg_len = m->payloadlen;
         thing_model_msg->plugin_id = atoi(plugin_node_id);
-        nlog_debug("payload: %s", (char *) m->payload);
+        nlog_debug("payload: %s", (char *) thing_model_msg->msg);
         forward_thing_model_matter_reload_msg_to_esvdriver(service->manager, thing_model_msg);
     end_app_matter:
+        free(thing_model_msg->msg);
         free(thing_model_msg);
         MQTTAsync_freeMessage(&m);
         MQTTAsync_free(topicName);
@@ -348,9 +353,10 @@ int messageArrived5(void *context, char *topicName, int topicLen, MQTTAsync_mess
         thing_model_msg->msg_type = ESV_TMM_JSON_STRING_PTR;
         thing_model_msg->msg = strndup(m->payload, m->payloadlen);
         thing_model_msg->msg_len = m->payloadlen;
-        nlog_debug("payload: %s", (char *) m->payload);
+        nlog_debug("payload: %s", (char *) thing_model_msg->msg);
         forward_thing_model_matter_reload_msg_to_esvdriver(service->manager, thing_model_msg);
     end_reload_matter:
+        free(thing_model_msg->msg);
         free(thing_model_msg);
         MQTTAsync_freeMessage(&m);
         MQTTAsync_free(topicName);
@@ -366,12 +372,13 @@ int messageArrived5(void *context, char *topicName, int topicLen, MQTTAsync_mess
         thing_model_msg->product_key = pk;
         thing_model_msg->device_name = dn;
         thing_model_msg->msg_type = ESV_TMM_JSON_STRING_PTR;
-        thing_model_msg->msg = m->payload;
+        thing_model_msg->msg = strndup(m->payload, m->payloadlen);
         thing_model_msg->msg_len = m->payloadlen;
         forward_thing_model_msg_to_all_esvdevicedriver(service->manager, thing_model_msg);
     end_wan_disc:
         /* free(pk); */
         /* free(dn); */
+        free(thing_model_msg->msg);
         free(thing_model_msg);
         MQTTAsync_freeMessage(&m);
         MQTTAsync_free(topicName);
@@ -387,12 +394,13 @@ int messageArrived5(void *context, char *topicName, int topicLen, MQTTAsync_mess
         thing_model_msg->product_key = pk;
         thing_model_msg->device_name = dn;
         thing_model_msg->msg_type = ESV_TMM_JSON_STRING_PTR;
-        thing_model_msg->msg = m->payload;
+        thing_model_msg->msg = strndup(m->payload, m->payloadlen);
         thing_model_msg->msg_len = m->payloadlen;
         forward_thing_model_msg_to_all_esvdevicedriver(service->manager, thing_model_msg);
     end_wan_sub_disc:
         free(pk);
         free(dn);
+        free(thing_model_msg->msg);
         free(thing_model_msg);
         MQTTAsync_freeMessage(&m);
         MQTTAsync_free(topicName);
@@ -408,12 +416,13 @@ int messageArrived5(void *context, char *topicName, int topicLen, MQTTAsync_mess
         thing_model_msg->product_key = pk;
         thing_model_msg->device_name = dn;
         thing_model_msg->msg_type = ESV_TMM_JSON_STRING_PTR;
-        thing_model_msg->msg = m->payload;
+        thing_model_msg->msg = strndup(m->payload, m->payloadlen);
         thing_model_msg->msg_len = m->payloadlen;
         forward_thing_model_msg_to_all_esvdevicedriver(service->manager, thing_model_msg);
     end_wan_sub_config_push:
         free(pk);
         free(dn);
+        free(thing_model_msg->msg);
         free(thing_model_msg);
         MQTTAsync_freeMessage(&m);
         MQTTAsync_free(topicName);
@@ -430,15 +439,16 @@ int messageArrived5(void *context, char *topicName, int topicLen, MQTTAsync_mess
         thing_model_msg->product_key = pk;
         thing_model_msg->device_name = dn;
         thing_model_msg->msg_type = ESV_TMM_JSON_STRING_PTR;
-        thing_model_msg->msg = m->payload;
+        thing_model_msg->msg = strndup(m->payload, m->payloadlen);
         thing_model_msg->msg_len = m->payloadlen;
         thing_model_msg->plugin_id = atoi(pluginNodeId);
-        nlog_info("m->payload: %s", (char *) m->payload);
+        nlog_info("payload: %s", (char *) thing_model_msg->msg);
         nlog_info("m->payloadlen: %d", m->payloadlen);
         forward_thing_model_msg_to_plugin_node(service->manager, thing_model_msg, pluginNodeId);
     end_wan_easyhbes_plugin_node_config_push:
         /* free(pk); */
         /* free(dn); */
+        free(thing_model_msg->msg);
         free(thing_model_msg);
         MQTTAsync_freeMessage(&m);
         MQTTAsync_free(topicName);
@@ -459,12 +469,13 @@ int messageArrived5(void *context, char *topicName, int topicLen, MQTTAsync_mess
         thing_model_msg->product_key = pk;
         thing_model_msg->device_name = dn;
         thing_model_msg->msg_type = ESV_TMM_JSON_STRING_PTR;
-        thing_model_msg->msg = m->payload;
+        thing_model_msg->msg = strndup(m->payload, m->payloadlen);
         thing_model_msg->msg_len = m->payloadlen;
         forward_thing_model_msg_to_esvdriver(service->manager, thing_model_msg);
     end_lan_prop_get:
         free(pk);
         free(dn);
+        free(thing_model_msg->msg);
         free(thing_model_msg);
         MQTTAsync_freeMessage(&m);
         MQTTAsync_free(topicName);
@@ -480,12 +491,13 @@ int messageArrived5(void *context, char *topicName, int topicLen, MQTTAsync_mess
         thing_model_msg->product_key = pk;
         thing_model_msg->device_name = dn;
         thing_model_msg->msg_type = ESV_TMM_JSON_STRING_PTR;
-        thing_model_msg->msg = m->payload;
+        thing_model_msg->msg = strndup(m->payload, m->payloadlen);
         thing_model_msg->msg_len = m->payloadlen;
         forward_thing_model_msg_to_esvdriver(service->manager, thing_model_msg);
     end_lan_prop_set:
         free(pk);
         free(dn);
+        free(thing_model_msg->msg);
         free(thing_model_msg);
         MQTTAsync_freeMessage(&m);
         MQTTAsync_free(topicName);
@@ -524,12 +536,13 @@ int messageArrived5(void *context, char *topicName, int topicLen, MQTTAsync_mess
         thing_model_msg->product_key = pk;
         thing_model_msg->device_name = dn;
         thing_model_msg->msg_type = ESV_TMM_JSON_STRING_PTR;
-        thing_model_msg->msg = m->payload;
+        thing_model_msg->msg = strndup(m->payload, m->payloadlen);
         thing_model_msg->msg_len = m->payloadlen;
         forward_thing_model_msg_to_esvdriver(service->manager, thing_model_msg);
     end_lan_prop_post:
         free(pk);
         free(dn);
+        free(thing_model_msg->msg);
         free(thing_model_msg);
         MQTTAsync_freeMessage(&m);
         MQTTAsync_free(topicName);
@@ -545,12 +558,13 @@ int messageArrived5(void *context, char *topicName, int topicLen, MQTTAsync_mess
         thing_model_msg->product_key = pk;
         thing_model_msg->device_name = dn;
         thing_model_msg->msg_type = ESV_TMM_JSON_STRING_PTR;
-        thing_model_msg->msg = m->payload;
+        thing_model_msg->msg = strndup(m->payload, m->payloadlen);
         thing_model_msg->msg_len = m->payloadlen;
         forward_thing_model_msg_to_all_esvdevicedriver(service->manager, thing_model_msg);
     end_lan_prop_postreq:
         /* free(pk); */
         /* free(dn); */
+        free(thing_model_msg->msg);
         free(thing_model_msg);
         MQTTAsync_freeMessage(&m);
         MQTTAsync_free(topicName);
