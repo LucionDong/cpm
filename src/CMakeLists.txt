@@ -163,7 +163,7 @@ add_custom_target(
 message(STATUS CMAKE_FIND_ROOT_PATH:${CMAKE_FIND_ROOT_PATH})
 add_executable(${PROJECT_NAME})
 set_target_properties(${PROJECT_NAME} PROPERTIES
-    OUTPUT_NAME "esvcpm-1.0.1"
+    OUTPUT_NAME "esvcpm-1.1.0"
 )
 target_sources(${PROJECT_NAME} PRIVATE
  ${ESVCPM_SOURCE}
