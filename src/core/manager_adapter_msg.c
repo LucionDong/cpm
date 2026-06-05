@@ -230,6 +230,11 @@ int forward_thing_model_msg_to_esvdriver(neu_manager_t *manager, const esv_thing
         return EXIT_FAILURE;
     }
 
+    /* 设备驱动(ESVDEVICEDRIVER)只接收归属于自己的设备消息：按pk/dn查出该设备所属节点，
+     * 投递时仅发给该节点；App(ESVAPP)等其它类型不受此限制，仍广播接收全部消息 */
+    char *owner_node = NULL;
+    esv_persister_query_device_node_name(msg->product_key, msg->device_name, &owner_node);
+
     // if (NULL == node_name) {
     //     nlog_warn("do not find node of pk: %s dn: %s", msg->product_key, msg->device_name);
     //     utarray_foreach(esv_self_device_drivers, neu_adapter_t **, adapter) {
@@ -258,7 +263,15 @@ int forward_thing_model_msg_to_esvdriver(neu_manager_t *manager, const esv_thing
         neu_adapter_t *adapter = neu_node_manager_find(manager->node_manager, *temp);
         if (NULL == adapter) {
             nlog_warn("do not find adapter of node name: %s", *temp);
-            return EXIT_FAILURE;
+            continue;
+        }
+
+        /* 设备驱动只收自己拥有的设备；不是归属节点则跳过 */
+        if (adapter->module->type == NEU_NA_TYPE_ESVDEVICEDRIVER &&
+            (owner_node == NULL || strcmp(owner_node, adapter->name) != 0)) {
+            nlog_debug("skip esvdevicedriver %s: not owner of pk:%s dn:%s", adapter->name, msg->product_key,
+                       msg->device_name);
+            continue;
         }
 
         char value[1024] = {0};
@@ -271,6 +284,7 @@ int forward_thing_model_msg_to_esvdriver(neu_manager_t *manager, const esv_thing
         rv = adapter->module->intf_funs->esvdriver.thing_model_msg_arrived(adapter->plugin, msg);
     }
 end:
+    free(owner_node);
     return rv;
 }
 
