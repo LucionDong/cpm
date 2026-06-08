@@ -266,10 +266,12 @@ int forward_thing_model_msg_to_esvdriver(neu_manager_t *manager, const esv_thing
             continue;
         }
 
-        /* 设备驱动只收自己拥有的设备；不是归属节点则跳过 */
-        if (adapter->module->type == NEU_NA_TYPE_ESVDEVICEDRIVER &&
+        /* 设备驱动（KNX type-9 / 485 type-12）只收归属于自己的设备；非归属节点跳过。
+         * App 类型（type-11 / type-14）不受此限制，仍广播接收，实现跨族 handoff 与桥接 */
+        if ((adapter->module->type == NEU_NA_TYPE_ESVDEVICEDRIVER ||
+             adapter->module->type == NEU_NA_TYPE_ESVDEVICEDRIVER232) &&
             (owner_node == NULL || strcmp(owner_node, adapter->name) != 0)) {
-            nlog_debug("skip esvdevicedriver %s: not owner of pk:%s dn:%s", adapter->name, msg->product_key,
+            nlog_debug("skip device driver %s: not owner of pk:%s dn:%s", adapter->name, msg->product_key,
                        msg->device_name);
             continue;
         }
@@ -373,4 +375,100 @@ int forward_thing_model_msg_to_plugin_node(neu_manager_t *manager, const esv_thi
     int rv = adapter->module->intf_funs->esvdriver.thing_model_msg_arrived(adapter->plugin, msg);
 end:
     return rv;
+}
+
+
+/* ===== 以下并入自 core-plugin-manager-232：232/串口路由 ===== */
+
+void parser_setting_to_uart_port(neu_adapter_t *adapter) {
+    json_error_t error;
+    json_t *root = json_loads(adapter->setting, 0, &error), *properties = NULL;
+    char *root_str = json_dumps(root, JSON_INDENT(2));
+    nlog_info("root_str: %s", root_str);
+    free(root_str);
+    properties = json_object_get(root, "properties");
+    adapter->uart_port = strdup(json_string_value(json_object_get(properties, "uartPort")));
+    nlog_info("adapter->uart_port: %s", adapter->uart_port);
+}
+
+static UT_array *esv_app_driver_232_nodes = NULL;
+static UT_array *esv_app_232_nodes = NULL;
+int forward_msg_to_232esvdriver(neu_manager_t *manager, const uart_frame_t *msg) {
+    nlog_debug("forward_msg_to_232esvdriver begin");
+
+    if (manager == NULL) {
+        nlog_warn("manager is NULL");
+        return -1;
+    }
+
+    if (manager->node_manager == NULL) {
+        nlog_warn("node manager is NULL");
+        return -1;
+    }
+
+    if (esv_app_driver_232_nodes == NULL) {
+        nlog_debug("to get adapter type %d", NEU_NA_TYPE_ESVDEVICEDRIVER232);
+        esv_app_driver_232_nodes = neu_node_manager_get_adapter(manager->node_manager, NEU_NA_TYPE_ESVDEVICEDRIVER232);
+    }
+    if (esv_app_232_nodes == NULL) {
+        nlog_debug("to get adapter type %d", NEU_NA_TYPE_ESVAPP232);
+        esv_app_232_nodes = neu_node_manager_get_adapter(manager->node_manager, NEU_NA_TYPE_ESVAPP232);
+    }
+
+    if (esv_app_driver_232_nodes == NULL && esv_app_232_nodes == NULL) {
+        nlog_info("do not find esv appdriver232 and app232");
+        return -1;
+    }
+
+    if (esv_app_driver_232_nodes) {
+        utarray_foreach(esv_app_driver_232_nodes, neu_adapter_t **, adapter) {
+            /* 校验每个 adapter 的串口号是否一致，一致后调用插件实现的回调 */
+            parser_setting_to_uart_port(*adapter);
+            unsigned char adapter_serial_port_num = atoi((*adapter)->uart_port);
+            nlog_info("adapter_serial_port_num: %d", adapter_serial_port_num);
+            if (adapter_serial_port_num == msg->serial_port_num) {
+                if ((*adapter)->module->intf_funs->esvdriver.uart_frame_arrived == NULL) {
+                    nlog_warn("adapter->name: %s esvdriver.uart_frame_arrived is NULL", (*adapter)->name);
+                    return -1;
+                }
+
+                nlog_info("msg->msg_tpe: %d", msg->msg_type);
+                (*adapter)->module->intf_funs->esvdriver.uart_frame_arrived((*adapter)->plugin, msg);
+                free((*adapter)->uart_port);
+            }
+        }
+    }
+
+    if (esv_app_232_nodes) {
+        /* type 14 (ESVAPP232): broadcast all uart frames, no serial port filtering */
+        utarray_foreach(esv_app_232_nodes, neu_adapter_t **, adapter) {
+            if ((*adapter)->module->intf_funs->esvdriver.uart_frame_arrived == NULL) {
+                nlog_warn("adapter->name: %s esvdriver.uart_frame_arrived is NULL", (*adapter)->name);
+                continue;
+            }
+            nlog_info("msg->msg_tpe: %d", msg->msg_type);
+            (*adapter)->module->intf_funs->esvdriver.uart_frame_arrived((*adapter)->plugin, msg);
+        }
+    }
+    return 0;
+}
+
+static UT_array *esvapp232nodes = NULL;
+int forward_thing_model_msg_to_esvapp232s(neu_manager_t *manager, const esv_thing_model_msg_t *msg) {
+    if (esvapp232nodes == NULL) {
+        nlog_debug("to get adapter type %d", NEU_NA_TYPE_ESVAPP232);
+        esvapp232nodes = neu_node_manager_get_adapter(manager->node_manager, NEU_NA_TYPE_ESVAPP232);
+    }
+
+    if (esvapp232nodes == NULL) {
+        nlog_info("do not find esv app232!");
+        return -1;
+    }
+
+    utarray_foreach(esvapp232nodes, neu_adapter_t **, adapter) {
+        nlog_debug("send msg to app232 adapter %s", (*adapter)->name);
+        (*adapter)->module->intf_funs->esvdriver.thing_model_msg_arrived((*adapter)->plugin, msg);
+    }
+
+    return 0;
 }

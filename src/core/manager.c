@@ -35,7 +35,7 @@
 #include "utils/log.h"
 #include "utils/time.h"
 /* #include "subscribe.h" */
-/* #include "outside_service_manager.h" */
+#include "outside_service_manager.h"
 #include "connection/mqtt/lan_mqtt5_service.h"
 #include "manager.h"
 #include "manager_internal.h"
@@ -86,9 +86,9 @@ neu_manager_t *neu_manager_create() {
     manager->plugin_manager = neu_plugin_manager_create();
     manager->node_manager = neu_node_manager_create();
     manager->sql_handle = sql_handle_create();
-    /* manager->esv_outside_service_manager = esv_outside_service_manager_create(); */
+    manager->esv_outside_service_manager = esv_outside_service_manager_create();
 
-    /* esv_outside_service_manager_set_neu_manager(manager->esv_outside_service_manager, manager); */
+    esv_outside_service_manager_set_neu_manager(manager->esv_outside_service_manager, manager);
     /* manager->subscribe_manager = neu_subscribe_manager_create(); */
     /* manager->template_manager  = neu_template_manager_create(); */
 
@@ -523,8 +523,7 @@ static void start_static_adapter(neu_manager_t *manager, const char *name) {
     adapter_info.handle = instance.handle;
     adapter_info.module = instance.module;
 
-    /* adapter = neu_adapter_create(manager->esv_outside_service_manager, &adapter_info, true); */
-    adapter = neu_adapter_create(&adapter_info, true);
+    adapter = neu_adapter_create(manager->esv_outside_service_manager, &adapter_info, true);
     nlog_info("start_static_adapter adapter name :%s", adapter->name);
     neu_node_manager_add_static(manager->node_manager, adapter);
     neu_adapter_init(adapter, false);

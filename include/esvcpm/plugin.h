@@ -96,8 +96,9 @@ typedef struct neu_plugin_intf_funs {
             int (*add_devices)(neu_plugin_t *plugin, const int device_cnt, const esv_device_info_t *device_infos);
             int (*remove_devices)(neu_plugin_t *plugin, const int device_cnt, const esv_device_info_t *device_infos);
             int (*thing_model_msg_arrived)(neu_plugin_t *plugin, const esv_thing_model_msg_t *msg);
-            /* int (*msg_to_driver)(neu_plugin_t *plugin, const esv_between_adapter_driver_msg_t *msg); */ 
-            int (*func4)(neu_plugin_t *plugin); 
+            /* int (*msg_to_driver)(neu_plugin_t *plugin, const esv_between_adapter_driver_msg_t *msg); */
+            int (*uart_frame_arrived)(neu_plugin_t *plugin, const uart_frame_t *msg);
+            int (*func4)(neu_plugin_t *plugin);
             int (*func5)(neu_plugin_t *plugin); 
             int (*func6)(neu_plugin_t *plugin);
             int (*func7)(neu_plugin_t *plugin);

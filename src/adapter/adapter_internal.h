@@ -29,12 +29,14 @@
 
 #include "adapter_info.h"
 #include "core/manager.h"
+#include "core/outside_service_manager_internal.h"
 
 #define MANAGER_RECEIVER "manager"
 
 struct neu_adapter {
     char *name;
     char *setting;
+    char *uart_port;
 
     neu_node_running_state_e state;
 
@@ -60,7 +62,7 @@ struct neu_adapter {
 	// esview
 	/* esv_lan_mqtt_service_t *lan_mqtt_service; */
 	esv_lan_mqtt5_service_t *lan_mqtt5_service;
-	/* esv_outside_service_manager_t *outside_service_manager; */
+	esv_outside_service_manager_t *outside_service_manager;
 	neu_manager_t *manager;
 };
 
@@ -75,7 +77,8 @@ int  neu_adapter_error();
 void neu_adapter_set_error(int error);
 
 /* neu_adapter_t *neu_adapter_create(esv_outside_service_manager_t *outside_service_manager, neu_adapter_info_t *info, bool load); */
-neu_adapter_t *neu_adapter_create(neu_adapter_info_t *info, bool load);
+neu_adapter_t *neu_adapter_create(esv_outside_service_manager_t *outside_service_manager, neu_adapter_info_t *info,
+                                  bool load);
 void neu_adapter_init(neu_adapter_t *adapter, neu_node_running_state_e state);
 
 int neu_adapter_rename(neu_adapter_t *adapter, const char *new_name);

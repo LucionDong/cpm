@@ -14,7 +14,7 @@
 #include "utils/time.h"
 
 #define ADDRESS "tcp://127.0.0.1:1883"
-#define CLIENTID "cpm-lan-mqtt"
+#define CLIENTID "esvcpm"
 #define QOS 1
 #define TIMEOUT 10000L
 

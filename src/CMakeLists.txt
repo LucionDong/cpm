@@ -17,7 +17,7 @@ if(NOT CMAKE_SYSTEM_NAME)
     set(CMAKE_SYSTEM_NAME "Linux")
 endif()
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fdiagnostics-color=always -Wall -Wextra -g -Wno-missing-braces -luuid -lsqlite3 -lssl -lcrypto")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fdiagnostics-color=always -Wall -Wextra -g -Wno-missing-braces -luuid -lsqlite3 -lssl -lcrypto -lpthread -llua")
 # set(CMAKE_C_FLAGS "-Wall -Wextra -g")
 # set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS} -O1")
 set(CMAKE_C_FLAGS_RELEASE "-O1")
@@ -135,13 +135,19 @@ set(ESVCPM_SOURCE
  src/core/storage.c
  src/core/manager_adapter_msg.c
   # src/core/manager_thing_model.c
-  # src/core/outside_service_manager.c
+ src/core/outside_service_manager.c
+ src/core/mcurs232/config_frame_handle/config_parser.c
+ src/core/mcurs232/plugin_frame_handle/parser_rs232_frame.c
+  # src/core/mcurs232/mcurs232_handle.c
+ src/core/mcurs232/mcurs232_helper_functions.c
+ src/core/mcurs232/serial_port.c
  src/adapter/adapter.c
  src/adapter/storage.c
  src/adapter/driver/cache.c
  src/adapter/driver/driver.c
  src/adapter/driver/device.c
  src/connection/mqtt/lan_mqtt5_service.c
+ src/config/easeview_user_config.c
  )
 
 add_custom_command(
@@ -163,7 +169,7 @@ add_custom_target(
 message(STATUS CMAKE_FIND_ROOT_PATH:${CMAKE_FIND_ROOT_PATH})
 add_executable(${PROJECT_NAME})
 set_target_properties(${PROJECT_NAME} PROPERTIES
-    OUTPUT_NAME "esvcpm-1.1.0"
+    OUTPUT_NAME "esvcpm-1.2.0"
 )
 target_sources(${PROJECT_NAME} PRIVATE
  ${ESVCPM_SOURCE}
@@ -174,11 +180,13 @@ target_include_directories(${PROJECT_NAME} PRIVATE
  ${CMAKE_CURRENT_SOURCE_DIR}/src
  ${CMAKE_CURRENT_SOURCE_DIR}/plugins
  ${CMAKE_CURRENT_SOURCE_DIR}/include
+ /usr/include/uuid
  )
 
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
  esvcpm-base
+ uuid
  ${DL_LIB}
  ${MATH_LIB}
  ${ZLOG_LIB}

@@ -30,7 +30,7 @@
 #include "plugin_manager.h"
 #include "subscribe.h"
 #include "template_manager.h"
-/* #include "outside_service_manager_internal.h" */
+#include "outside_service_manager_internal.h"
 #include "connection/mqtt/lan_mqtt5_service_internal.h"
 #include "sql/sql_handle.h"
 
@@ -43,7 +43,7 @@ typedef struct neu_manager {
     neu_node_manager_t *    node_manager;
     neu_subscribe_mgr_t *   subscribe_manager;
     neu_template_manager_t *template_manager;
-	/* esv_outside_service_manager_t *esv_outside_service_manager; */
+	esv_outside_service_manager_t *esv_outside_service_manager;
 	//mqtt3
 	/* esv_lan_mqtt_service_t * esv_lan_mqtt_service; */
 	//mqtt5

@@ -40,6 +40,9 @@
 #include "device.h"
 #include "driver.h"
 #include "driver_internal.h"
+#include "core/outside_service_manager.h"
+#include "core/mcurs232/plugin_frame_handle/parser_rs232_frame.h"
+#include "core/manager_adapter_msg.h"
 #include "errcodes.h"
 #include "tag.h"
 /* #include "core/outside_service_manager.h" */
@@ -1571,11 +1574,24 @@ static int thing_model_msg_arrived(neu_adapter_t *adapter, const esv_thing_model
                adapter->name, thing_model_msg->product_key, thing_model_msg->device_name, thing_model_msg->method,
                thing_model_msg->msg_type);
     if (adapter->module->type != NEU_NA_TYPE_ESVDEVICEDRIVER && adapter->module->type != NEU_NA_TYPE_ESVAPP &&
-        adapter->module->type != NEU_NA_TYPE_ESVSELFDEVICEDRIVER) {
+        adapter->module->type != NEU_NA_TYPE_ESVSELFDEVICEDRIVER &&
+        adapter->module->type != NEU_NA_TYPE_ESVDEVICEDRIVER232 &&
+        adapter->module->type != NEU_NA_TYPE_ESVAPP232) {
         nlog_debug("adapter type(%d) error", adapter->module->type);
         return 1;
     }
 
+    /* ESVAPP232 (14): 仅放行 SET/GET/POST */
+    if (adapter->module->type == NEU_NA_TYPE_ESVAPP232) {
+        if (ESV_TMM_MTD_LAN_SUBTHING_THING_SERVICE_PROPERTY_SET != thing_model_msg->method &&
+            ESV_TMM_MTD_LAN_SUBTHING_THING_SERVICE_PROPERTY_GET != thing_model_msg->method &&
+            ESV_TMM_MTD_LAN_SUBTHING_THING_EVENT_PROPERTY_POST != thing_model_msg->method) {
+            nlog_debug("esv app232 do not pass msg method != property set/get/post");
+            return 1;
+        }
+    }
+
+    /* ESVAPP (11): KNX 应用层白名单 */
     if (adapter->module->type == NEU_NA_TYPE_ESVAPP) {
         if (ESV_TMM_MTD_LAN_SUBTHING_THING_SERVICE_PROPERTY_SET != thing_model_msg->method &&
             ESV_TMM_MTD_LAN_SUBTHING_THING_SERVICE_PROPERTY_GET != thing_model_msg->method &&
@@ -1588,6 +1604,14 @@ static int thing_model_msg_arrived(neu_adapter_t *adapter, const esv_thing_model
             nlog_debug("esv app do not pass msg method != property set and != property get");
             return 1;
         }
+    }
+
+    /* ESVDEVICEDRIVER232 (12): 归属过滤，非本插件设备丢弃 */
+    if (adapter->module->type == NEU_NA_TYPE_ESVDEVICEDRIVER232 &&
+        !is_device_in_device_list(((neu_adapter_driver_t *) adapter)->device_list, thing_model_msg->product_key,
+                                  thing_model_msg->device_name)) {
+        nlog_warn("illegal device pk: %s dn: %s msg", thing_model_msg->product_key, thing_model_msg->device_name);
+        return 1;
     }
 
     /* TODO:  <11-09-24, winston>
@@ -1606,12 +1630,15 @@ static int thing_model_msg_arrived(neu_adapter_t *adapter, const esv_thing_model
             neu_asprintf(&topic, topic_formate, thing_model_msg->product_key, thing_model_msg->device_name);
             lan_mqtt5_service_publish(adapter->lan_mqtt5_service, topic, thing_model_msg->msg);
             free(topic);
-            // msg from device-driver to app
-            if (adapter->module->type == NEU_NA_TYPE_ESVDEVICEDRIVER) {
-                nlog_debug("forward thing model msg from device driver to app");
+            /* 设备上报 → 两族 app 都投递（替代原双进程经 broker 的跨族桥接）：
+             * KNX 设备(9)/485 设备(12) 的事件都同时给 KNX app(11) 和 232 app(14)，
+             * 这样 device_map 等 KNX app 能把 485 状态桥接到云端，232 app 也能感知 KNX 状态 */
+            if (adapter->module->type == NEU_NA_TYPE_ESVDEVICEDRIVER ||
+                adapter->module->type == NEU_NA_TYPE_ESVDEVICEDRIVER232) {
                 forward_thing_model_msg_to_esvapps(adapter->manager, thing_model_msg);
-            } else if (adapter->module->type == NEU_NA_TYPE_ESVAPP) {
-                nlog_debug("forward thing model msg from app to device driver");
+                forward_thing_model_msg_to_esvapp232s(adapter->manager, thing_model_msg);
+            } else if (adapter->module->type == NEU_NA_TYPE_ESVAPP ||
+                       adapter->module->type == NEU_NA_TYPE_ESVAPP232) {
                 forward_thing_model_msg_to_esvdriver(adapter->manager, thing_model_msg);
             }
         }
@@ -1622,13 +1649,17 @@ static int thing_model_msg_arrived(neu_adapter_t *adapter, const esv_thing_model
             neu_asprintf(&topic, topic_formate, thing_model_msg->product_key, thing_model_msg->device_name);
             lan_mqtt5_service_publish(adapter->lan_mqtt5_service, topic, thing_model_msg->msg);
             free(topic);
-            // msg from app to device-driver
-            if (adapter->module->type == NEU_NA_TYPE_ESVAPP) {
-                nlog_debug("forward thing model msg from app to device driver");
+            /* ESVAPP(11) 或 ESVAPP232(14)：unified router 按 pk/dn owner type 分派
+             * （handoff：owner 为 485 设备时直接投递给该 485 adapter） */
+            if (adapter->module->type == NEU_NA_TYPE_ESVAPP ||
+                adapter->module->type == NEU_NA_TYPE_ESVAPP232) {
                 forward_thing_model_msg_to_esvdriver(adapter->manager, thing_model_msg);
             } else if (adapter->module->type == NEU_NA_TYPE_ESVDEVICEDRIVER) {
-                nlog_debug("KNX adapter forward set thing model msg to esvapps");
+                /* KNX device 上行 SET → 广播给 KNX app 族 */
                 forward_thing_model_msg_to_esvapps(adapter->manager, thing_model_msg);
+            } else if (adapter->module->type == NEU_NA_TYPE_ESVDEVICEDRIVER232) {
+                /* 485 device 上行 SET → 广播给 232 app 族 */
+                forward_thing_model_msg_to_esvapp232s(adapter->manager, thing_model_msg);
             }
         }
     } else if (ESV_TMM_MTD_LAN_SUBTHING_THING_SERVICE_PROPERTY_SET_REPLY == thing_model_msg->method) {
@@ -1638,10 +1669,10 @@ static int thing_model_msg_arrived(neu_adapter_t *adapter, const esv_thing_model
             neu_asprintf(&topic, topic_formate, thing_model_msg->product_key, thing_model_msg->device_name);
             lan_mqtt5_service_publish(adapter->lan_mqtt5_service, topic, thing_model_msg->msg);
             free(topic);
-            // msg from device-driver to app
             if (adapter->module->type == NEU_NA_TYPE_ESVDEVICEDRIVER) {
-                nlog_debug("forward thing model msg from device driver to app");
                 forward_thing_model_msg_to_esvapps(adapter->manager, thing_model_msg);
+            } else if (adapter->module->type == NEU_NA_TYPE_ESVDEVICEDRIVER232) {
+                forward_thing_model_msg_to_esvapp232s(adapter->manager, thing_model_msg);
             }
         }
     } else if (ESV_TMM_MTD_LAN_SUBTHING_THING_SERVICE_PROPERTY_GET == thing_model_msg->method) {
@@ -1651,9 +1682,9 @@ static int thing_model_msg_arrived(neu_adapter_t *adapter, const esv_thing_model
             neu_asprintf(&topic, topic_formate, thing_model_msg->product_key, thing_model_msg->device_name);
             lan_mqtt5_service_publish(adapter->lan_mqtt5_service, topic, thing_model_msg->msg);
             free(topic);
-            // msg from app to device-driver
-            if (adapter->module->type == NEU_NA_TYPE_ESVAPP) {
-                nlog_debug("forward thing model msg from app to device driver");
+            /* unified router：ESVAPP(11) 或 ESVAPP232(14) 查 owner 分派（KNX 或 485）*/
+            if (adapter->module->type == NEU_NA_TYPE_ESVAPP ||
+                adapter->module->type == NEU_NA_TYPE_ESVAPP232) {
                 forward_thing_model_msg_to_esvdriver(adapter->manager, thing_model_msg);
             }
         }
@@ -1664,10 +1695,10 @@ static int thing_model_msg_arrived(neu_adapter_t *adapter, const esv_thing_model
             neu_asprintf(&topic, topic_formate, thing_model_msg->product_key, thing_model_msg->device_name);
             lan_mqtt5_service_publish(adapter->lan_mqtt5_service, topic, thing_model_msg->msg);
             free(topic);
-            // msg from device-driver to app
             if (adapter->module->type == NEU_NA_TYPE_ESVDEVICEDRIVER) {
-                nlog_debug("forward thing model msg from device driver to app");
                 forward_thing_model_msg_to_esvapps(adapter->manager, thing_model_msg);
+            } else if (adapter->module->type == NEU_NA_TYPE_ESVDEVICEDRIVER232) {
+                forward_thing_model_msg_to_esvapp232s(adapter->manager, thing_model_msg);
             }
         }
     }
@@ -1779,7 +1810,8 @@ static int thing_model_msg_arrived(neu_adapter_t *adapter, const esv_thing_model
     } else if (ESV_TMM_MTD_LAN_SUBTHING_THING_SERVICE_PROPERTY_UPDATE == thing_model_msg->method) {
         /* UPDATE 仅用于本地缓存校正，不向 LAN MQTT 广播，不从 ESVDEVICEDRIVER 回转 */
         if (ESV_TMM_JSON_STRING_PTR == thing_model_msg->msg_type) {
-            if (adapter->module->type == NEU_NA_TYPE_ESVAPP) {
+            if (adapter->module->type == NEU_NA_TYPE_ESVAPP ||
+                adapter->module->type == NEU_NA_TYPE_ESVAPP232) {
                 nlog_debug("forward UPDATE from app to device driver (cache-only, no MQTT)");
                 forward_thing_model_msg_to_esvdriver(adapter->manager, thing_model_msg);
             }
@@ -1840,13 +1872,59 @@ static void esv_func4(neu_adapter_t *adapter) {
     nlog_info("esv_func4");
 }
 
+/* 串口写入回调：485 插件把待发帧回传框架 → 写串口（并入自 core-plugin-manager-232）*/
+static int esv_msg_to_adapter(neu_adapter_t *adapter, const esv_frame232_msg_t *msg) {
+    if (adapter == NULL) {
+        nlog_warn("adapter is NULL");
+        return -1;
+    }
+    if (msg == NULL) {
+        nlog_warn("adapter->name: %s uart_frame_msg is NULL", adapter->name);
+        return -1;
+    }
+
+    uart_frame_t *uart_frame_msg = malloc(sizeof(uart_frame_t));
+    uart_frame_msg->frame_element = malloc(sizeof(frame_element_t));
+    uart_frame_msg->frame_element->frame_msg = malloc(sizeof(uint8_t) * msg->frame_element->frame_length);
+
+    memcpy(uart_frame_msg->frame_element->frame_msg, msg->frame_element->frame_msg, msg->frame_element->frame_length);
+
+    uart_frame_msg->frame_element->frame_length          = msg->frame_element->frame_length;
+    uart_frame_msg->frame_element->frame_command_type    = msg->frame_element->frame_command_type;
+    uart_frame_msg->frame_element->response_command_bytes = msg->frame_element->response_command_bytes;
+    uart_frame_msg->frame_element->has_response          = msg->frame_element->has_response;
+    uart_frame_msg->frame_element->response_timeout      = msg->frame_element->response_timeout;
+
+    int uart_port_num;
+    if (msg->serial_port_num != 0) {
+        /* 插件已显式设置 serial_port_num（如 ESVAPP232 多串口），直接用 */
+        uart_port_num = (int) msg->serial_port_num;
+    } else {
+        /* 从 adapter->setting 的 properties.uartPort 解析 */
+        parser_setting_to_uart_port(adapter);
+        uart_port_num = atoi(adapter->uart_port);
+    }
+    if (composition_plugin_to_mcu_frame(uart_port_num, uart_frame_msg) == 0) {
+        nlog_info("esv_msg_to_adapter: write to serial port %d", uart_port_num);
+        push_back_serial_port_read_buf_and_check(adapter->outside_service_manager->mcurs232_relate,
+                                                 uart_frame_msg->frame_element->frame_msg,
+                                                 uart_frame_msg->frame_element->frame_length);
+    }
+
+    free(uart_frame_msg->frame_element->frame_msg);
+    free(uart_frame_msg->frame_element);
+    free(uart_frame_msg);
+
+    return 0;
+}
+
 neu_adapter_driver_t *neu_adapter_esvdriver_create() {
     neu_adapter_driver_t *driver = calloc(1, sizeof(neu_adapter_driver_t));
 
     /* driver->cache                                   = neu_driver_cache_new(); */
     driver->driver_events = neu_event_new();
     driver->adapter.cb_funs.esvdriver.thing_model_msg_arrived = thing_model_msg_arrived;
-    /* driver->adapter.cb_funs.esvdriver.msg_to_adapter = esv_msg_to_adapter; */
+    driver->adapter.cb_funs.esvdriver.uart_frame_arrived      = esv_msg_to_adapter;
     driver->adapter.cb_funs.esvdriver.func3 = esv_func3;
     driver->adapter.cb_funs.esvdriver.func4 = esv_func4;
 
@@ -1899,7 +1977,9 @@ int esv_adapter_driver_load_devices(neu_adapter_driver_t *driver, const UT_array
         esv_device_list_add(driver->device_list, p->product_key, p->device_name);
     }
 
-    if (driver->adapter.module->type == NEU_NA_TYPE_ESVDEVICEDRIVER) {
+    if (driver->adapter.module->type == NEU_NA_TYPE_ESVDEVICEDRIVER ||
+        driver->adapter.module->type == NEU_NA_TYPE_ESVDEVICEDRIVER232 ||
+        driver->adapter.module->type == NEU_NA_TYPE_ESVAPP232) {
         if (driver->adapter.module->intf_funs->esvdriver.add_devices != NULL) {
             driver->adapter.module->intf_funs->esvdriver.add_devices(driver->adapter.plugin, device_cnt,
                                                                      device_infos_unpacked);

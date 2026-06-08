@@ -58,3 +58,19 @@ build/
 
 deploy/
 src/include/git_info.h
+
+# build artifacts (cross / host)
+build_arm/
+build_host/
+
+# clangd / editor tooling cache
+.cache/
+
+# runtime-generated databases (seed dbs are tracked explicitly)
+persistence/dev/device.db
+persistence/iot/device.db
+persistence/release/device.db
+
+# merge working notes
+/MERGE_PLAN.md
+/MERGE_FUNCTION_DIFF.md

@@ -105,7 +105,8 @@ void neu_adapter_set_error(int error) {
     create_adapter_error = error;
 }
 
-neu_adapter_t *neu_adapter_create(neu_adapter_info_t *info, bool load) {
+neu_adapter_t *neu_adapter_create(esv_outside_service_manager_t *outside_service_manager, neu_adapter_info_t *info,
+                                  bool load) {
     int rv = 0;
     int init_rv = 0;
     neu_adapter_t *adapter = NULL;
@@ -122,6 +123,8 @@ neu_adapter_t *neu_adapter_create(neu_adapter_info_t *info, bool load) {
         case NEU_NA_TYPE_ESVDEVICEDRIVER:
         case NEU_NA_TYPE_ESVAPP:
         case NEU_NA_TYPE_ESVSELFDEVICEDRIVER:
+        case NEU_NA_TYPE_ESVDEVICEDRIVER232:
+        case NEU_NA_TYPE_ESVAPP232:
             adapter = (neu_adapter_t *) neu_adapter_esvdriver_create();
             break;
         default:
@@ -143,7 +146,7 @@ neu_adapter_t *neu_adapter_create(neu_adapter_info_t *info, bool load) {
 
     nlog_info(">>>>>>>>>>>>>adapter name :%s", adapter->name);
 
-    /* adapter->outside_service_manager = outside_service_manager; */
+    adapter->outside_service_manager = outside_service_manager;
 
     /* rv = nng_pair1_open(&adapter->sock); */
     /* assert(rv == 0); */
@@ -168,6 +171,8 @@ neu_adapter_t *neu_adapter_create(neu_adapter_info_t *info, bool load) {
         case NEU_NA_TYPE_ESVDEVICEDRIVER:
         case NEU_NA_TYPE_ESVAPP:
         case NEU_NA_TYPE_ESVSELFDEVICEDRIVER:
+        case NEU_NA_TYPE_ESVDEVICEDRIVER232:
+        case NEU_NA_TYPE_ESVAPP232:
             neu_adapter_esvdriver_init((neu_adapter_driver_t *) adapter);
             break;
         default:
@@ -203,7 +208,9 @@ neu_adapter_t *neu_adapter_create(neu_adapter_info_t *info, bool load) {
     /*     adapter_load_group_and_tag((neu_adapter_driver_t *) adapter); */
     /* } */
 
-    if (info->module->type == NEU_NA_TYPE_ESVDEVICEDRIVER) {
+    if (info->module->type == NEU_NA_TYPE_ESVDEVICEDRIVER ||
+        info->module->type == NEU_NA_TYPE_ESVDEVICEDRIVER232 ||
+        info->module->type == NEU_NA_TYPE_ESVAPP232) {
         adapter_load_device((neu_adapter_driver_t *) adapter);
         nlog_info("adapter load device name :%s", adapter->name);
     }
